@@ -181,6 +181,69 @@
             height: auto;
             margin-bottom: 2rem;
         }
+
+        .permission-toggle-container {
+            display: flex;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        .permission-toggle-container button {
+            flex: 1;
+        }
+
+        .permission-toggle-container .selected {
+            background-color: var(--primary);
+            color: var(--white);
+        }
+
+        #hamburger-menu-btn {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            z-index: 20;
+            background-color: white;
+            padding: 0.75rem;
+            border-radius: 9999px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #side-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 900;
+        }
+
+        #side-menu.open {
+            transform: translateX(0);
+        }
+        
+        #side-menu .menu-content {
+            width: 75%;
+            max-width: 300px;
+            height: 100%;
+            background-color: white;
+            padding: 2rem;
+            box-shadow: 4px 0 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #side-menu a {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+        }
+
+        #side-menu a:hover {
+            background-color: var(--background);
+        }
     </style>
 </head>
 
@@ -200,22 +263,64 @@
             </div>
         </div>
 
-        <!-- Permissions Screen -->
+        <!-- Permissions Screen (New Design) -->
         <div id="permissions-screen" class="screen justify-center items-center p-8 text-center rainbow-bg">
-            <div class="flex flex-col items-center p-6 md:p-10 rounded-xl">
-                <img src="https://placehold.co/300x300/e2e8f0/64748b?text=Location" alt="Location Illustration"
-                    class="location-illustration">
-                <h2 class="text-3xl font-bold mb-2">Location is everything.</h2>
-                <p class="text-gray-500 mb-8 max-w-sm">Allowing location services is critical for us to show you nearby safe and unsafe spaces. We will never share your exact location.</p>
-                <div class="mt-8 flex flex-col gap-4 w-full max-w-sm">
-                    <button id="allow-location-btn" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Allow Location</button>
-                    <button id="skip-location-btn" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full">Skip for now</button>
+            <div class="flex flex-col items-center p-6 md:p-10 rounded-xl bg-white shadow-xl max-w-lg">
+                <h2 class="text-3xl font-bold mb-2">Your Privacy Matters.</h2>
+                <p class="text-gray-500 mb-8">To provide the best safety insights, we need your help.</p>
+
+                <!-- Location Permission -->
+                <div class="w-full mb-6">
+                    <div class="text-left mb-2">
+                        <h4 class="font-bold text-lg">Location</h4>
+                        <p class="text-sm text-gray-500 mt-1">
+                            This is **critical** for the Safety Map and additional features. It helps us show you nearby safe/unsafe spaces and resources. Your location is <strong>never</strong> shared publicly.
+                        </p>
+                    </div>
+                    <div class="permission-toggle-container">
+                        <button class="permission-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white" data-permission="location" data-allow="true">Allow</button>
+                        <button class="permission-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800" data-permission="location" data-allow="false">Don't Allow (Limited Features)</button>
+                    </div>
                 </div>
+
+                <!-- Notifications Permission -->
+                <div class="w-full mb-6">
+                    <div class="text-left mb-2">
+                        <h4 class="font-bold text-lg">Notifications</h4>
+                        <p class="text-sm text-gray-500 mt-1">
+                            Receive important safety alters, community updates, or crisis mode reminders. You can always manage this later.
+                        </p>
+                    </div>
+                    <div class="permission-toggle-container">
+                        <button class="permission-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white" data-permission="notifications" data-allow="true">Allow</button>
+                        <button class="permission-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800" data-permission="notifications" data-allow="false">Don't Allow (Limited Features)</button>
+                    </div>
+                </div>
+
+                <!-- Contacts Permission -->
+                <div class="w-full mb-6">
+                    <div class="text-left mb-2">
+                        <h4 class="font-bold text-lg">Contacts</h4>
+                        <p class="text-sm text-gray-500 mt-1">
+                            This allows you to automatically import selected contacts to designated your <strong>Trusted Contact(s)</strong>. If you decline, you can still manually add emergency contacts to use in crisis situations.
+                        </p>
+                    </div>
+                    <div class="permission-toggle-container">
+                        <button class="permission-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white" data-permission="contacts" data-allow="true">Allow</button>
+                        <button class="permission-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800" data-permission="contacts" data-allow="false">Don't Allow (Limited Features)</button>
+                    </div>
+                </div>
+                
+                <button id="continue-to-app-btn" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full mt-4">Continue to App</button>
+                <p class="text-xs text-gray-400 mt-4">You can manage your permissions again in your account settings.</p>
             </div>
         </div>
 
         <!-- Main App Screen (Map) -->
         <div id="main-screen" class="screen flex-col">
+            <button id="hamburger-menu-btn" class="text-primary text-xl">
+                <i class="fa-solid fa-bars"></i>
+            </button>
             <div id="search-container">
                 <div class="relative w-full shadow-md rounded-full overflow-hidden">
                     <input id="search-input" type="text" placeholder="Search for places..."
@@ -237,6 +342,30 @@
             </button>
             <div id="anonymous-banner" class="fixed bottom-0 left-0 right-0 text-center py-2 bg-yellow-400 text-gray-800 text-sm font-medium hidden">
                 You are in anonymous mode. Some features may be limited.
+            </div>
+        </div>
+
+        <!-- Side Menu -->
+        <div id="side-menu">
+            <div class="menu-content">
+                <h3 class="text-2xl font-bold mb-6 text-center">Menu</h3>
+                <a href="#" class="text-lg text-text mb-4">
+                    <i class="fa-solid fa-user-circle mr-2"></i>Profile
+                </a>
+                <a href="#" class="text-lg text-text mb-4">
+                    <i class="fa-solid fa-cog mr-2"></i>Settings
+                </a>
+                <a href="#" class="text-lg text-text mb-4">
+                    <i class="fa-solid fa-bell mr-2"></i>Notifications
+                </a>
+                <a href="#" class="text-lg text-text mb-4">
+                    <i class="fa-solid fa-info-circle mr-2"></i>About
+                </a>
+                <div class="mt-auto">
+                    <button id="sign-out-btn" class="w-full px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-red-500 text-white">
+                        <i class="fa-solid fa-sign-out-alt mr-2"></i>Sign Out
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -352,19 +481,12 @@
             </div>
         </div>
 
-        <div id="warning-modal" class="modal-overlay">
+        <!-- Single, dynamic message modal for all alerts -->
+        <div id="message-modal" class="modal-overlay">
             <div class="modal-content text-center">
-                <h3 class="text-xl font-bold mb-2">Limited Features</h3>
-                <p>Please note with your selected privacy options, this site will have limited features.</p>
-                <button class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4">OK</button>
-            </div>
-        </div>
-
-        <div id="crisis-modal" class="modal-overlay">
-            <div class="modal-content text-center">
-                <h3 class="text-xl font-bold mb-2">Crisis Mode Activated</h3>
-                <p>Finding the nearest safe location. Please stay calm.</p>
-                <button class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4" onclick="closeModal('crisis-modal')">Dismiss</button>
+                <h3 id="message-title" class="text-xl font-bold mb-2"></h3>
+                <p id="message-text" class="text-gray-600"></p>
+                <button id="message-button" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4">OK</button>
             </div>
         </div>
 
@@ -463,7 +585,7 @@
         const signupModal = document.getElementById('signup-modal');
         const submitModal = document.getElementById('submit-modal');
         const filterModal = document.getElementById('filter-modal');
-        const infoModal = document.getElementById('info-modal');
+        const messageModal = document.getElementById('message-modal');
 
         const signInBtn = document.getElementById('sign-in-btn');
         const signUpBtn = document.getElementById('sign-up-btn');
@@ -476,13 +598,21 @@
         const searchInput = document.getElementById('search-input');
         const searchBtn = document.getElementById('search-btn');
         const filterBtn = document.getElementById('filter-btn');
-        const crisisModeBtn = document.getElementById('crisis-mode-btn');
-
-        const allowLocationBtn = document.getElementById('allow-location-btn');
-        const skipLocationBtn = document.getElementById('skip-location-btn');
+        const crisisButton = document.getElementById('crisis-button');
+        const messageButton = document.getElementById('message-button');
+        const continueToAppBtn = document.getElementById('continue-to-app-btn');
 
         const anonymousBanner = document.getElementById('anonymous-banner');
-
+        const hamburgerMenuBtn = document.getElementById('hamburger-menu-btn');
+        const sideMenu = document.getElementById('side-menu');
+        const signOutBtn = document.getElementById('sign-out-btn');
+        
+        // Permission state variables
+        let locationPermission = true;
+        let notificationsPermission = true;
+        let contactsPermission = true;
+        
+        // Modal management
         function showScreen(screen) {
             const screens = document.querySelectorAll('.screen');
             screens.forEach(s => s.classList.remove('active'));
@@ -497,6 +627,16 @@
             document.getElementById(modalId).style.display = 'none';
         }
 
+        function showMessage(title, message) {
+            document.getElementById('message-title').textContent = title;
+            document.getElementById('message-text').textContent = message;
+            showModal(messageModal);
+        }
+
+        messageButton.addEventListener('click', () => {
+            closeModal('message-modal');
+        });
+
         // Handle splash screen button clicks
         signInBtn.addEventListener('click', () => showModal(loginModal));
         signUpBtn.addEventListener('click', () => showModal(signupModal));
@@ -506,13 +646,24 @@
         });
 
         // Handle user authentication
-        supabase.auth.onAuthStateChange((event, session) => {
+        supabase.auth.onAuthStateChange(async (event, session) => {
             if (session) {
-                console.log('User logged in:', session.user);
-                showScreen(permissionsScreen);
-                checkUserFeatures(session.user);
+                const user = session.user;
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('permissions_set')
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (profile && profile.permissions_set) {
+                    showScreen(mainScreen);
+                    initMap();
+                    anonymousBanner.classList.add('hidden');
+                } else {
+                    showScreen(permissionsScreen);
+                    anonymousBanner.classList.add('hidden');
+                }
             } else {
-                console.log('User logged out or not authenticated');
                 showScreen(splashScreen);
             }
         });
@@ -523,9 +674,9 @@
             const password = e.target['login-password'].value;
             const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) {
-                showMessage(`Error: ${error.message}`, 'error');
+                showMessage('Sign In Failed', `Error: ${error.message}`);
             } else {
-                showMessage('Signed in successfully!', 'success');
+                showMessage('Signed in successfully!', 'You have successfully logged in to your account.');
                 closeModal('login-modal');
             }
         }
@@ -537,15 +688,15 @@
             const confirmPassword = e.target['signup-confirm-password'].value;
 
             if (password !== confirmPassword) {
-                showMessage('Error: Passwords do not match.', 'error');
+                showMessage('Sign Up Failed', 'Error: Passwords do not match.');
                 return;
             }
 
             const { data, error } = await supabase.auth.signUp({ email, password });
             if (error) {
-                showMessage(`Error: ${error.message}`, 'error');
+                showMessage('Sign Up Failed', `Error: ${error.message}`);
             } else {
-                showMessage('Success! Check your email for a confirmation link to complete your sign-up.', 'success');
+                showMessage('Sign Up Successful!', 'Check your email for a confirmation link to complete your sign-up.');
                 closeModal('signup-modal');
             }
         }
@@ -553,43 +704,71 @@
         loginForm.addEventListener('submit', handleLogin);
         signupForm.addEventListener('submit', handleSignup);
 
-        // Handle location permissions
-        allowLocationBtn.addEventListener('click', () => {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    const pos = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
-                    initMap(pos);
-                    showScreen(mainScreen);
-                }, () => {
-                    initMap(); // Fallback to default map view
-                    showMessage('Permission denied. Limited features available.', 'warning');
-                    showScreen(mainScreen);
+        // Handle permission toggles
+        document.querySelectorAll('.permission-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const permissionType = e.target.dataset.permission;
+                const isAllowed = e.target.dataset.allow === 'true';
+                
+                // Update state
+                if (permissionType === 'location') locationPermission = isAllowed;
+                if (permissionType === 'notifications') notificationsPermission = isAllowed;
+                if (permissionType === 'contacts') contactsPermission = isAllowed;
+
+                // Update UI for the toggle group
+                const container = e.target.closest('.permission-toggle-container');
+                container.querySelectorAll('.permission-btn').forEach(btn => {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-gray-200', 'text-gray-800');
                 });
-            } else {
-                initMap(); // Fallback to default map view
-                showMessage('Geolocation is not supported by your browser.', 'warning');
-                showScreen(mainScreen);
-            }
+                e.target.classList.add('bg-primary', 'text-white');
+                e.target.classList.remove('bg-gray-200', 'text-gray-800');
+            });
         });
 
-        skipLocationBtn.addEventListener('click', () => {
-            initMap();
-            showMessage('Skipped location. Limited features available.', 'warning');
+        // Handle "Continue to App" button
+        continueToAppBtn.addEventListener('click', async () => {
+            const user = (await supabase.auth.getSession()).data.session?.user;
+            if (user) {
+                const { error } = await supabase.from('profiles').insert({
+                    user_id: user.id,
+                    permissions_set: true,
+                    location_permission: locationPermission,
+                    notifications_permission: notificationsPermission,
+                    contacts_permission: contactsPermission,
+                });
+                if (error) {
+                    showMessage('Error saving permissions', error.message);
+                }
+            }
+
+            if (!locationPermission) {
+                // If location is not allowed, show anonymous banner
+                anonymousBanner.classList.remove('hidden');
+                initMap();
+                showMessage('Location Services Limited', 'Location services have been limited. Some map features may not work as expected.');
+            } else {
+                // Otherwise, get location
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(position => {
+                        const pos = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        initMap(pos);
+                    }, () => {
+                        initMap(); // Fallback to default map view
+                        showMessage('Permission Denied', 'Location permission denied. Some features may be limited.');
+                        anonymousBanner.classList.remove('hidden');
+                    });
+                } else {
+                    initMap();
+                    showMessage('Geolocation Not Supported', 'Geolocation is not supported by your browser. Some features may be limited.');
+                    anonymousBanner.classList.remove('hidden');
+                }
+            }
             showScreen(mainScreen);
         });
-
-        function showMessage(message, type) {
-            const modal = document.getElementById('warning-modal');
-            const content = modal.querySelector('p');
-            content.textContent = message;
-            modal.style.display = 'flex';
-            setTimeout(() => {
-                modal.style.display = 'none';
-            }, 5000);
-        }
 
         // Map initialization and functionality
         window.initMap = async function () {
@@ -712,13 +891,13 @@
 
                     const { data, error } = await supabase.from('locations').insert([newLocation]);
                     if (error) {
-                        showMessage(`Error submitting location: ${error.message}`, 'error');
+                        showMessage('Submission Failed', `Error submitting location: ${error.message}`);
                     } else {
-                        showMessage('Location submitted successfully!', 'success');
+                        showMessage('Submission Successful!', 'Location submitted successfully!');
                         closeModal('submit-modal');
                     }
                 } else {
-                    showMessage('Geocode was not successful for the following reason: ' + status, 'error');
+                    showMessage('Geocode Failed', 'Geocode was not successful for the following reason: ' + status);
                 }
             });
         });
@@ -769,6 +948,32 @@
                 data.forEach(location => addMarker(location));
             }
             closeModal('filter-modal');
+        });
+
+        // "Crisis Mode" button
+        crisisButton.addEventListener('click', () => {
+            showMessage('Crisis Mode Activated', 'Finding the nearest safe location. Please stay calm.');
+        });
+
+        // Side menu functionality
+        hamburgerMenuBtn.addEventListener('click', () => {
+            sideMenu.classList.add('open');
+        });
+
+        sideMenu.addEventListener('click', (e) => {
+            if (e.target.id === 'side-menu') {
+                sideMenu.classList.remove('open');
+            }
+        });
+
+        signOutBtn.addEventListener('click', async () => {
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+                showMessage('Sign Out Failed', `Error: ${error.message}`);
+            } else {
+                showMessage('Signed Out', 'You have been signed out.');
+                sideMenu.classList.remove('open');
+            }
         });
 
     </script>
