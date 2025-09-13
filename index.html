@@ -20,7 +20,7 @@
                         text: '#1e293b',
                         white: '#ffffff',
                         red: '#ef4444',
-                        green: '#22c59e',
+                        green: '#22c55e',
                         yellow: '#facc15',
                         signin: '#FF6161',
                         signup: '#80FD91',
@@ -41,7 +41,7 @@
             --text: #1e293b;
             --white: #ffffff;
             --red: #ef4444;
-            --green: #22c59e;
+            --green: #22c55e;
             --yellow: #facc15;
         }
 
@@ -76,25 +76,20 @@
             background-color: var(--white);
             z-index: 10;
             transition: opacity 0.5s ease-in-out;
-            opacity: 0;
+            opacity: 1;
         }
 
         .screen.active {
             display: flex;
             flex-direction: column;
-            opacity: 1;
         }
 
         .rainbow-bg {
             background: linear-gradient(135deg, rgba(255, 105, 180, 0.3), rgba(255, 255, 0, 0.3), rgba(0, 255, 0, 0.3), rgba(0, 191, 255, 0.3), rgba(138, 43, 226, 0.3));
         }
 
-        #map-container {
-            flex-grow: 1;
-            width: 100%;
-        }
-
         #map {
+            flex-grow: 1;
             width: 100%;
             height: 100%;
         }
@@ -119,8 +114,6 @@
             width: 90%;
             max-width: 500px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            max-height: 90vh;
-            overflow-y: auto;
         }
 
         #fab {
@@ -145,6 +138,37 @@
             transform: scale(0.95);
         }
 
+        #crisis-button {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--red);
+            color: var(--white);
+            border-radius: 9999px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            z-index: 50;
+            transition: transform 0.2s ease-in-out;
+            font-weight: 600;
+        }
+
+        #crisis-button:active {
+            transform: scale(0.95);
+        }
+
+        #search-container {
+            position: absolute;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            width: 90%;
+            max-width: 500px;
+            display: flex;
+            gap: 0.5rem;
+        }
+
         .landing-logo {
             width: 200px;
             height: auto;
@@ -156,25 +180,6 @@
             max-width: 300px;
             height: auto;
             margin-bottom: 2rem;
-        }
-
-        /* Permission Toggle Button Styles */
-        .permission-toggle-btn {
-            transition: background-color 0.2s, color 0.2s, transform 0.2s;
-        }
-
-        .permission-toggle-btn.active-toggle {
-            background-color: var(--green) !important;
-            color: var(--white) !important;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .permission-toggle-btn.active-toggle[data-permission-status="deny"] {
-            background-color: var(--red) !important;
-        }
-
-        .permission-toggle-btn:hover {
-            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -188,64 +193,31 @@
             <h1 class="text-4xl md:text-5xl font-bold mt-4">QueerSafeSpace</h1>
             <p class="text-gray-500 text-lg mt-2">Because Safety Shouldn’t Be A Privilege</p>
             <div class="mt-8 w-full max-w-sm flex flex-col gap-4">
-                <button id="sign-in-btn"
-                    class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signin text-white w-full">Sign
-                    in</button>
-                <button id="sign-up-btn"
-                    class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signup text-white w-full">Sign
-                    up</button>
-                <button id="anon-btn"
-                    class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full">Continue
-                    anonymously</button>
+                <button id="sign-in-btn" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signin text-white w-full">Sign in</button>
+                <button id="sign-up-btn" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signup text-white w-full">Sign up</button>
+                <button id="anon-btn" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full">Continue anonymously</button>
                 <p class="text-sm text-gray-500 mt-2 text-center">The app is fully anonymous to protect all users. However, without an account, saved data is limited resulting in limited features.</p>
             </div>
         </div>
 
         <!-- Permissions Screen -->
-        <div id="permissions-screen" class="screen flex-col items-center pt-10 p-8 text-center rainbow-bg overflow-y-auto">
+        <div id="permissions-screen" class="screen justify-center items-center p-8 text-center rainbow-bg">
             <div class="flex flex-col items-center p-6 md:p-10 rounded-xl">
-                <h2 class="text-3xl font-bold mb-2">Your Privacy Matters.</h2>
-                <p class="text-gray-500 mb-8 max-w-sm">To provide the best safety insights, we need your help.</p>
-
-                <!-- Location Section -->
-                <div class="permission-section w-full max-w-sm mb-6 text-left">
-                    <h3 class="text-lg font-semibold text-text">Location</h3>
-                    <p class="text-sm text-gray-500 mb-2">This is <strong>critical</strong> for the Safety Map and additional features. It helps us show you nearby safe/unsafe spaces and resources. Your location is <strong>never</strong> shared publicly.</p>
-                    <div class="flex items-center gap-4 mt-2">
-                        <button class="permission-toggle-btn active-toggle bg-green text-white px-4 py-2 rounded-full font-semibold" data-permission-type="location" data-permission-status="allow">Allow</button>
-                        <button class="permission-toggle-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full font-semibold" data-permission-type="location" data-permission-status="deny">Limited Features</button>
-                    </div>
+                <img src="https://placehold.co/300x300/e2e8f0/64748b?text=Location" alt="Location Illustration"
+                    class="location-illustration">
+                <h2 class="text-3xl font-bold mb-2">Location is everything.</h2>
+                <p class="text-gray-500 mb-8 max-w-sm">Allowing location services is critical for us to show you nearby safe and unsafe spaces. We will never share your exact location.</p>
+                <div class="mt-8 flex flex-col gap-4 w-full max-w-sm">
+                    <button id="allow-location-btn" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Allow Location</button>
+                    <button id="skip-location-btn" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full">Skip for now</button>
                 </div>
-
-                <!-- Notifications Section -->
-                <div class="permission-section w-full max-w-sm mb-6 text-left">
-                    <h3 class="text-lg font-semibold text-text">Notifications</h3>
-                    <p class="text-sm text-gray-500 mb-2">Receive important safety alerts, community updates, or crisis mode reminders. You can always manage this later.</p>
-                    <div class="flex items-center gap-4 mt-2">
-                        <button class="permission-toggle-btn active-toggle bg-green text-white px-4 py-2 rounded-full font-semibold" data-permission-type="notifications" data-permission-status="allow">Allow</button>
-                        <button class="permission-toggle-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full font-semibold" data-permission-type="notifications" data-permission-status="deny">Limited Features</button>
-                    </div>
-                </div>
-
-                <!-- Contacts Section -->
-                <div class="permission-section w-full max-w-sm mb-6 text-left">
-                    <h3 class="text-lg font-semibold text-text">Contacts</h3>
-                    <p class="text-sm text-gray-500 mb-2">This allows you to automatically import selected contacts to designated your <strong>Trusted Contact(s)</strong>. If you decline, you can still manually add emergency contacts to use in crisis situations.</p>
-                    <div class="flex items-center gap-4 mt-2">
-                        <button class="permission-toggle-btn active-toggle bg-green text-white px-4 py-2 rounded-full font-semibold" data-permission-type="contacts" data-permission-status="allow">Allow</button>
-                        <button class="permission-toggle-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full font-semibold" data-permission-type="contacts" data-permission-status="deny">Limited Features</button>
-                    </div>
-                </div>
-
-                <button id="continue-to-app-btn" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full max-w-sm mt-4">Continue to App</button>
-                <p class="text-xs text-gray-400 mt-4 text-center">You can manage your permissions again in your account settings.</p>
             </div>
         </div>
 
         <!-- Main App Screen (Map) -->
-        <div id="main-screen" class="screen flex-col items-center p-4 md:p-6">
-            <div id="search-container" class="w-full max-w-xl flex gap-2">
-                <div class="relative flex-1 shadow-md rounded-full overflow-hidden">
+        <div id="main-screen" class="screen flex-col">
+            <div id="search-container">
+                <div class="relative w-full shadow-md rounded-full overflow-hidden">
                     <input id="search-input" type="text" placeholder="Search for places..."
                         class="w-full pl-5 pr-12 py-3 rounded-full text-gray-900 bg-white border-transparent focus:outline-none focus:ring-2 focus:ring-primary">
                     <button id="search-btn" class="absolute right-0 top-0 h-full w-12 flex items-center justify-center text-primary">
@@ -256,15 +228,12 @@
                     <i class="fa-solid fa-filter"></i>
                 </button>
             </div>
-            <div id="map-container" class="w-full max-w-3xl rounded-xl shadow-lg mt-4 h-80 md:h-96 overflow-hidden">
-                <div id="map"></div>
-            </div>
-            <div class="flex flex-col sm:flex-row gap-4 mt-4 w-full max-w-xl">
-                <button id="find-safe-space-btn" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-green text-white w-full">Find My Safe Space</button>
-                <button id="crisis-mode-btn" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-red text-white w-full">Crisis Mode</button>
-            </div>
+            <div id="map"></div>
             <button id="fab" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white">
                 <i class="fa-solid fa-plus text-2xl"></i>
+            </button>
+            <button id="crisis-button">
+                Crisis Mode
             </button>
             <div id="anonymous-banner" class="fixed bottom-0 left-0 right-0 text-center py-2 bg-yellow-400 text-gray-800 text-sm font-medium hidden">
                 You are in anonymous mode. Some features may be limited.
@@ -278,15 +247,15 @@
                 <form id="submission-form" class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium mb-1" for="place-name">Name of Place*</label>
-                        <input type="text" id="place-name" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition">
+                        <input type="text" id="place-name" required class="w-full p-2 border border-gray-300 rounded-lg">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1" for="place-address">Address*</label>
-                        <input type="text" id="place-address" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition">
+                        <input type="text" id="place-address" required class="w-full p-2 border border-gray-300 rounded-lg">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1" for="place-category">Category*</label>
-                        <select id="place-category" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition">
+                        <select id="place-category" required class="w-full p-2 border border-gray-300 rounded-lg">
                             <option value="">Select Category</option>
                             <option value="Bar/drinks">Bar/drinks</option>
                             <option value="Coffee">Coffee</option>
@@ -330,60 +299,18 @@
                                 <span class="ml-1 text-sm">Queer staff</span>
                             </label>
                         </div>
-                        <input type="text" id="custom-tags" placeholder="Add custom tags (comma-separated)" class="w-full p-2 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-1" for="felt-safe-as">Felt Safe Here as (Optional)</label>
-                        <input type="text" id="felt-safe-as" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition">
+                        <label class="block text-sm font-medium mb-1" for="felt-safe-as">Felt Safe Here as</label>
+                        <input type="text" id="felt-safe-as" class="w-full p-2 border border-gray-300 rounded-lg">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1" for="other-details">Other details</label>
-                        <textarea id="other-details" rows="3" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition"></textarea>
+                        <textarea id="other-details" rows="3" class="w-full p-2 border border-gray-300 rounded-lg"></textarea>
                     </div>
-                    <button type="submit"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Submit
-                        Location</button>
-                    <button type="button"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full mt-2"
-                        onclick="closeModal('submit-modal')">Cancel</button>
+                    <button type="submit" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Submit Location</button>
+                    <button type="button" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full mt-2" onclick="closeModal('submit-modal')">Cancel</button>
                 </form>
-            </div>
-        </div>
-        
-        <div id="filter-modal" class="modal-overlay">
-            <div class="modal-content text-center">
-                <h3 class="text-2xl font-bold mb-4">Filter Locations</h3>
-                <div id="filter-options" class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-                    <label class="flex items-center space-x-2 p-2 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
-                        <input type="checkbox" name="category-filter" value="Bar/drinks" class="form-checkbox text-primary rounded-md">
-                        <span class="text-sm">Bar/drinks</span>
-                    </label>
-                    <label class="flex items-center space-x-2 p-2 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
-                        <input type="checkbox" name="category-filter" value="Coffee" class="form-checkbox text-primary rounded-md">
-                        <span class="text-sm">Coffee</span>
-                    </label>
-                    <label class="flex items-center space-x-2 p-2 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
-                        <input type="checkbox" name="category-filter" value="Dining" class="form-checkbox text-primary rounded-md">
-                        <span class="text-sm">Dining</span>
-                    </label>
-                    <label class="flex items-center space-x-2 p-2 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
-                        <input type="checkbox" name="category-filter" value="Entertainment" class="form-checkbox text-primary rounded-md">
-                        <span class="text-sm">Entertainment</span>
-                    </label>
-                    <label class="flex items-center space-x-2 p-2 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
-                        <input type="checkbox" name="category-filter" value="Medical" class="form-checkbox text-primary rounded-md">
-                        <span class="text-sm">Medical</span>
-                    </label>
-                    <label class="flex items-center space-x-2 p-2 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
-                        <input type="checkbox" name="category-filter" value="Shopping" class="form-checkbox text-primary rounded-md">
-                        <span class="text-sm">Shopping</span>
-                    </label>
-                    <label class="flex items-center space-x-2 p-2 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
-                        <input type="checkbox" name="category-filter" value="Religious Institution" class="form-checkbox text-primary rounded-md">
-                        <span class="text-sm">Religious Institution</span>
-                    </label>
-                </div>
-                <button id="apply-filters-btn" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Apply Filters</button>
             </div>
         </div>
 
@@ -392,20 +319,15 @@
                 <h3 class="text-2xl font-bold mb-4">Sign in</h3>
                 <form id="login-form" class="space-y-4">
                     <div>
-                        <input type="email" id="login-email" placeholder="Email" required
-                            class="w-full p-2 border border-gray-300 rounded-lg">
+                        <input type="email" id="login-email" placeholder="Email" required class="w-full p-2 border border-gray-300 rounded-lg">
                     </div>
                     <div>
-                        <input type="password" id="login-password" placeholder="Password" required
-                            class="w-full p-2 border border-gray-300 rounded-lg">
+                        <input type="password" id="login-password" placeholder="Password" required class="w-full p-2 border border-gray-300 rounded-lg">
                     </div>
-                    <button type="submit"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Sign
-                        In</button>
+                    <button type="submit" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Sign In</button>
                 </form>
                 <div class="mt-4 text-sm text-gray-500 flex justify-between items-center">
-                    <button id="cancel-login" class="text-primary hover:underline"
-                        onclick="closeModal('login-modal')">Cancel</button>
+                    <button id="cancel-login" class="text-primary hover:underline" onclick="closeModal('login-modal')">Cancel</button>
                     <button id="forgot-password" class="text-primary hover:underline">Forgot password?</button>
                 </div>
             </div>
@@ -416,23 +338,16 @@
                 <h3 class="text-2xl font-bold mb-4">Create Account</h3>
                 <form id="signup-form" class="space-y-4">
                     <div>
-                        <input type="email" id="signup-email" placeholder="Email" required
-                            class="w-full p-2 border border-gray-300 rounded-lg">
+                        <input type="email" id="signup-email" placeholder="Email" required class="w-full p-2 border border-gray-300 rounded-lg">
                     </div>
                     <div>
-                        <input type="password" id="signup-password" placeholder="Password (min 6 characters)" required
-                            class="w-full p-2 border border-gray-300 rounded-lg">
+                        <input type="password" id="signup-password" placeholder="Password (min 6 characters)" required class="w-full p-2 border border-gray-300 rounded-lg">
                     </div>
                     <div>
-                        <input type="password" id="signup-confirm-password" placeholder="Confirm Password" required
-                            class="w-full p-2 border border-gray-300 rounded-lg">
+                        <input type="password" id="signup-confirm-password" placeholder="Confirm Password" required class="w-full p-2 border border-gray-300 rounded-lg">
                     </div>
-                    <button type="submit"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signup text-white w-full">Sign
-                        Up</button>
-                    <button type="button"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full mt-2"
-                        onclick="closeModal('signup-modal')">Cancel</button>
+                    <button type="submit" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signup text-white w-full">Sign Up</button>
+                    <button type="button" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full mt-2" onclick="closeModal('signup-modal')">Cancel</button>
                 </form>
             </div>
         </div>
@@ -444,401 +359,421 @@
                 <button class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4">OK</button>
             </div>
         </div>
+
+        <div id="crisis-modal" class="modal-overlay">
+            <div class="modal-content text-center">
+                <h3 class="text-xl font-bold mb-2">Crisis Mode Activated</h3>
+                <p>Finding the nearest safe location. Please stay calm.</p>
+                <button class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4" onclick="closeModal('crisis-modal')">Dismiss</button>
+            </div>
+        </div>
+
+        <div id="filter-modal" class="modal-overlay">
+            <div class="modal-content w-11/12 max-w-xl p-6 md:p-8 rounded-xl bg-white shadow-xl">
+                <h3 class="text-2xl font-bold mb-4 text-center">Filter Locations</h3>
+                <form id="filter-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Category</label>
+                        <div class="flex flex-wrap gap-2">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="filter-category" value="Bar/drinks" class="form-checkbox">
+                                <span class="ml-1 text-sm">Bar/drinks</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="filter-category" value="Coffee" class="form-checkbox">
+                                <span class="ml-1 text-sm">Coffee</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="filter-category" value="Dining" class="form-checkbox">
+                                <span class="ml-1 text-sm">Dining</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="filter-category" value="Entertainment" class="form-checkbox">
+                                <span class="ml-1 text-sm">Entertainment</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="filter-category" value="Medical" class="form-checkbox">
+                                <span class="ml-1 text-sm">Medical</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="filter-category" value="Shopping" class="form-checkbox">
+                                <span class="ml-1 text-sm">Shopping</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="filter-category" value="Religious Institution" class="form-checkbox">
+                                <span class="ml-1 text-sm">Religious Institution</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Safety Rating</label>
+                        <div class="flex flex-wrap gap-2">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="filter-safety" value="Safe" class="form-checkbox">
+                                <span class="ml-1 text-sm">Safe</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="filter-safety" value="Mixed" class="form-checkbox">
+                                <span class="ml-1 text-sm">Mixed</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="filter-safety" value="Not Safe" class="form-checkbox">
+                                <span class="ml-1 text-sm">Not Safe</span>
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Apply Filters</button>
+                    <button type="button" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full mt-2" onclick="closeModal('filter-modal')">Cancel</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="info-modal" class="modal-overlay">
+            <div class="modal-content w-11/12 max-w-xl p-6 md:p-8 rounded-xl bg-white shadow-xl">
+                <div id="info-content"></div>
+                <button class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4" onclick="closeModal('info-modal')">Close</button>
+            </div>
+        </div>
         
-        <div id="coming-soon-modal" class="modal-overlay">
-            <div class="modal-content text-center">
-                <h3 class="text-xl font-bold mb-2">Feature Coming Soon!</h3>
-                <p>Additional features are being developed to make this app even better. Stay tuned for more updates!</p>
-                <button class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4" onclick="closeModal('coming-soon-modal')">OK</button>
-            </div>
-        </div>
-
-        <div id="no-safe-places-modal" class="modal-overlay">
-            <div class="modal-content text-center">
-                <h3 class="text-xl font-bold mb-2">No Safe Places Found</h3>
-                <p>We could not find any safe locations nearby. Please stay aware of your surroundings.</p>
-                <button class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary mt-4"
-                    onclick="closeModal('no-safe-places-modal')">OK</button>
-            </div>
-        </div>
-
-        <div id="status-message-modal" class="modal-overlay">
-            <div class="modal-content text-center">
-                <h3 id="status-title" class="text-xl font-bold mb-2"></h3>
-                <p id="status-message-text"></p>
-                <button class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary mt-4"
-                    onclick="closeModal('status-message-modal')">OK</button>
-            </div>
-        </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        const SUPABASE_URL = "https://sgvxsyvqluhivohypkkg.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndnhzeXZxbHVoaXZvaHlwa2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MjYzNzIsImV4cCI6MjA3MzMwMjM3Mn0.igseAZIczG6fEdtPNuF3_xyXb3rFKh5nQxxO_YUyCEs";
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    <!-- Firebase -->
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+        // Supabase configuration
+        const SUPABASE_URL = 'https://sgvxsyvqluhivohypkkg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndnhzeXZxbHVoaXZvaHlwa2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MjYzNzIsImV4cCI6MjA3MzMwMjM3Mn0.igseAZIczG6fEdtPNuF3_xyXb3rFKh5nQxxO_YUyCEs';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Google Maps API
+        const GOOGLE_MAPS_API_KEY = 'AIzaSyD1CzCfikz8oJVPe50hrHLNz2VKnN4rjMc';
+
+        // Global variables for map and markers
         let map;
-        let allLocations = [];
         let markers = [];
-        let appState = {
-            currentView: 'splash-screen',
-            user: null,
-            permissions: {
-                location: true,
-                notifications: true,
-                contacts: true
-            }
-        };
+        let userMarker;
+        let infoWindow;
+        let geocoder;
 
-        const views = {
-            splash: document.getElementById('splash-screen'),
-            permissions: document.getElementById('permissions-screen'),
-            main: document.getElementById('main-screen')
-        };
+        const splashScreen = document.getElementById('splash-screen');
+        const permissionsScreen = document.getElementById('permissions-screen');
+        const mainScreen = document.getElementById('main-screen');
+        const loginModal = document.getElementById('login-modal');
+        const signupModal = document.getElementById('signup-modal');
+        const submitModal = document.getElementById('submit-modal');
+        const filterModal = document.getElementById('filter-modal');
+        const infoModal = document.getElementById('info-modal');
 
-        supabaseClient.auth.onAuthStateChange((event, session) => {
-            if (session && session.user) {
-                appState.user = session.user;
-                if (appState.currentView === 'splash-screen' || appState.currentView === 'login-modal') {
-                    showView('permissions');
-                }
-            } else {
-                appState.user = null;
-            }
-        });
+        const signInBtn = document.getElementById('sign-in-btn');
+        const signUpBtn = document.getElementById('sign-up-btn');
+        const anonBtn = document.getElementById('anon-btn');
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
 
-        function showView(viewName) {
-            Object.keys(views).forEach(key => {
-                views[key].classList.remove('active');
-            });
-            views[viewName].classList.add('active');
-            appState.currentView = viewName;
+        const fab = document.getElementById('fab');
+        const submitForm = document.getElementById('submission-form');
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-btn');
+        const filterBtn = document.getElementById('filter-btn');
+        const crisisModeBtn = document.getElementById('crisis-mode-btn');
 
-            const anonBanner = document.getElementById('anonymous-banner');
-            if (viewName === 'main' && !appState.user) {
-                anonBanner.classList.remove('hidden');
-            } else {
-                anonBanner.classList.add('hidden');
-            }
+        const allowLocationBtn = document.getElementById('allow-location-btn');
+        const skipLocationBtn = document.getElementById('skip-location-btn');
+
+        const anonymousBanner = document.getElementById('anonymous-banner');
+
+        function showScreen(screen) {
+            const screens = document.querySelectorAll('.screen');
+            screens.forEach(s => s.classList.remove('active'));
+            screen.classList.add('active');
         }
 
-        function openModal(modalId) {
-            document.getElementById(modalId).style.display = 'flex';
+        function showModal(modal) {
+            modal.style.display = 'flex';
         }
 
         function closeModal(modalId) {
             document.getElementById(modalId).style.display = 'none';
         }
 
-        function showMessage(title, message) {
-            const modal = document.getElementById('status-message-modal');
-            const modalTitle = document.getElementById('status-title');
-            const messageText = document.getElementById('status-message-text');
-            modalTitle.textContent = title;
-            messageText.textContent = message;
-            openModal('status-message-modal');
-        }
+        // Handle splash screen button clicks
+        signInBtn.addEventListener('click', () => showModal(loginModal));
+        signUpBtn.addEventListener('click', () => showModal(signupModal));
+        anonBtn.addEventListener('click', () => {
+            showScreen(permissionsScreen);
+            anonymousBanner.classList.remove('hidden');
+        });
 
-        function createMarker(location) {
-            const iconColor = {
-                'Safe': 'green',
-                'Mixed': 'yellow',
-                'Not Safe': 'red',
-                'Unknown': 'gray'
-            };
-            const marker = new google.maps.Marker({
-                position: {
-                    lat: location.latitude,
-                    lng: location.longitude
-                },
-                map: map,
-                icon: `http://maps.google.com/mapfiles/ms/icons/${iconColor[location.safety_rating]}-dot.png`,
-                title: location.name,
-                locationData: location
-            });
-            markers.push(marker);
+        // Handle user authentication
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                console.log('User logged in:', session.user);
+                showScreen(permissionsScreen);
+                checkUserFeatures(session.user);
+            } else {
+                console.log('User logged out or not authenticated');
+                showScreen(splashScreen);
+            }
+        });
 
-            const infoWindowContent = `
-                <div class="font-sans p-2">
-                    <h4 class="font-bold text-lg">${location.name}</h4>
-                    <p class="text-sm text-gray-700 mb-1">${location.address}</p>
-                    <p class="text-sm font-semibold mb-1">Safety: <span class="font-normal">${location.safety_rating}</span></p>
-                    <p class="text-sm font-semibold mb-1">Category: <span class="font-normal">${location.category}</span></p>
-                    <p class="text-sm font-semibold">Tags: <span class="font-normal">${location.tags.join(', ') || 'N/A'}</span></p>
-                    <p class="text-xs text-gray-500 mt-2">Added by: ${location.user_id ? 'Authenticated User' : 'Anonymous'}</p>
-                </div>
-            `;
-            const infoWindow = new google.maps.InfoWindow({
-                content: infoWindowContent
-            });
-
-            marker.addListener('click', () => {
-                infoWindow.open({
-                    anchor: marker,
-                    map,
-                    shouldFocus: false,
-                });
-            });
-        }
-
-        async function fetchLocations() {
-            const {
-                data,
-                error
-            } = await supabaseClient.from('locations').select('*');
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = e.target['login-email'].value;
+            const password = e.target['login-password'].value;
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) {
-                console.error('Error fetching locations:', error);
+                showMessage(`Error: ${error.message}`, 'error');
+            } else {
+                showMessage('Signed in successfully!', 'success');
+                closeModal('login-modal');
+            }
+        }
+
+        async function handleSignup(e) {
+            e.preventDefault();
+            const email = e.target['signup-email'].value;
+            const password = e.target['signup-password'].value;
+            const confirmPassword = e.target['signup-confirm-password'].value;
+
+            if (password !== confirmPassword) {
+                showMessage('Error: Passwords do not match.', 'error');
                 return;
             }
-            allLocations = data;
-            updateMarkers();
-        }
 
-        function updateMarkers(filteredLocations = allLocations) {
-            markers.forEach(marker => marker.setMap(null));
-            markers = [];
-            filteredLocations.forEach(createMarker);
-        }
-
-        function filterLocations() {
-            const selectedCategories = Array.from(document.querySelectorAll('input[name="category-filter"]:checked')).map(el => el.value);
-            let filteredLocations = allLocations;
-
-            if (selectedCategories.length > 0) {
-                filteredLocations = allLocations.filter(location => selectedCategories.includes(location.category));
+            const { data, error } = await supabase.auth.signUp({ email, password });
+            if (error) {
+                showMessage(`Error: ${error.message}`, 'error');
+            } else {
+                showMessage('Success! Check your email for a confirmation link to complete your sign-up.', 'success');
+                closeModal('signup-modal');
             }
+        }
 
-            updateMarkers(filteredLocations);
+        loginForm.addEventListener('submit', handleLogin);
+        signupForm.addEventListener('submit', handleSignup);
+
+        // Handle location permissions
+        allowLocationBtn.addEventListener('click', () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const pos = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    initMap(pos);
+                    showScreen(mainScreen);
+                }, () => {
+                    initMap(); // Fallback to default map view
+                    showMessage('Permission denied. Limited features available.', 'warning');
+                    showScreen(mainScreen);
+                });
+            } else {
+                initMap(); // Fallback to default map view
+                showMessage('Geolocation is not supported by your browser.', 'warning');
+                showScreen(mainScreen);
+            }
+        });
+
+        skipLocationBtn.addEventListener('click', () => {
+            initMap();
+            showMessage('Skipped location. Limited features available.', 'warning');
+            showScreen(mainScreen);
+        });
+
+        function showMessage(message, type) {
+            const modal = document.getElementById('warning-modal');
+            const content = modal.querySelector('p');
+            content.textContent = message;
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 5000);
+        }
+
+        // Map initialization and functionality
+        window.initMap = async function () {
+            // Default location
+            const defaultPos = { lat: 39.8283, lng: -98.5795 };
+            const { Map } = await google.maps.importLibrary("maps");
+            const { Geocoder } = await google.maps.importLibrary("geocoding");
+            
+            map = new Map(document.getElementById('map'), {
+                zoom: 4,
+                center: defaultPos,
+                mapId: 'DEMO_MAP_ID',
+                disableDefaultUI: true,
+            });
+
+            geocoder = new Geocoder();
+
+            fetchLocations();
+            setupRealtimeListener();
+
+            // Handle map clicks to close info window
+            map.addListener('click', () => {
+                if (infoWindow) {
+                    infoWindow.close();
+                }
+            });
+        };
+
+        function fetchLocations() {
+            supabase.from('locations')
+                .select('*')
+                .then(response => {
+                    if (response.error) throw response.error;
+                    clearMarkers();
+                    response.data.forEach(location => addMarker(location));
+                })
+                .catch(error => console.error('Error fetching locations:', error.message));
         }
 
         function setupRealtimeListener() {
-            supabaseClient.channel('public:locations')
-                .on('postgres_changes', {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'locations'
-                }, (payload) => {
-                    allLocations.push(payload.new);
-                    filterLocations();
+            supabase.channel('public:locations')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'locations' }, payload => {
+                    console.log('New location added:', payload.new);
+                    addMarker(payload.new);
                 })
                 .subscribe();
         }
 
-        function setupEventListeners() {
-            document.getElementById('sign-in-btn').addEventListener('click', () => {
-                openModal('login-modal');
+        function addMarker(location) {
+            const latLng = { lat: location.latitude, lng: location.longitude };
+            const marker = new google.maps.Marker({
+                position: latLng,
+                map: map,
+                icon: getMarkerIcon(location.safety_rating)
             });
 
-            document.getElementById('sign-up-btn').addEventListener('click', () => {
-                openModal('signup-modal');
+            marker.addListener('click', () => {
+                if (infoWindow) infoWindow.close();
+                const content = `
+                <div class="p-2 font-inter max-w-sm">
+                    <h4 class="font-bold text-lg mb-1">${location.name}</h4>
+                    <p class="text-sm text-gray-600 mb-2">${location.address}</p>
+                    <p class="text-xs font-semibold">Category: <span class="font-normal">${location.category}</span></p>
+                    <p class="text-xs font-semibold">Safety: <span class="font-normal">${location.safety_rating}</span></p>
+                    <p class="text-xs font-semibold">Details: <span class="font-normal">${location.details || 'No details provided.'}</span></p>
+                </div>
+                `;
+                infoWindow = new google.maps.InfoWindow({ content: content });
+                infoWindow.open(map, marker);
             });
-
-            document.getElementById('anon-btn').addEventListener('click', async () => {
-                const { data, error } = await supabaseClient.auth.signInAnonymously();
-                if (error) {
-                    showMessage('Error', 'Failed to sign in anonymously. Please try again.');
-                    console.error('Anonymous sign in failed:', error);
-                } else {
-                    showView('permissions');
-                }
-            });
-
-            document.querySelectorAll('.permission-toggle-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const permissionType = e.target.getAttribute('data-permission-type');
-                    const permissionStatus = e.target.getAttribute('data-permission-status');
-                    document.querySelectorAll(`.permission-toggle-btn[data-permission-type="${permissionType}"]`).forEach(btn => {
-                        btn.classList.remove('active-toggle', 'bg-green', 'bg-red', 'text-white');
-                        btn.classList.add('bg-gray-200', 'text-gray-700');
-                    });
-                    e.target.classList.add('active-toggle');
-                    e.target.classList.remove('bg-gray-200', 'text-gray-700');
-                    e.target.classList.add(permissionStatus === 'allow' ? 'bg-green' : 'bg-red');
-                    e.target.classList.add('text-white');
-                    appState.permissions[permissionType] = (permissionStatus === 'allow');
-                });
-            });
-
-            document.getElementById('continue-to-app-btn').addEventListener('click', () => {
-                if (appState.permissions.location) {
-                    if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(position => {
-                            const userLocation = {
-                                lat: position.coords.latitude,
-                                lng: position.coords.longitude
-                            };
-                            map.setCenter(userLocation);
-                            map.setZoom(14);
-                            showView('main');
-                        }, error => {
-                            console.error("Geolocation failed:", error);
-                            showMessage('Error', 'Geolocation is required for this feature.');
-                            showView('main');
-                        });
-                    } else {
-                        showMessage('Error', 'Geolocation is not supported by your browser.');
-                        showView('main');
-                    }
-                } else {
-                    showView('main');
-                    openModal('warning-modal');
-                }
-            });
-
-            document.getElementById('fab').addEventListener('click', () => {
-                openModal('submit-modal');
-            });
-
-            document.getElementById('filter-btn').addEventListener('click', () => {
-                openModal('filter-modal');
-            });
-            
-            document.getElementById('apply-filters-btn').addEventListener('click', () => {
-                filterLocations();
-                closeModal('filter-modal');
-            });
-
-            document.getElementById('find-safe-space-btn').addEventListener('click', () => {
-                openModal('coming-soon-modal');
-            });
-
-            document.getElementById('crisis-mode-btn').addEventListener('click', () => {
-                openModal('coming-soon-modal');
-            });
-
-            document.getElementById('submission-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const name = document.getElementById('place-name').value;
-                const address = document.getElementById('place-address').value;
-                const category = document.getElementById('place-category').value;
-                const safetyRating = document.querySelector('input[name="safety-rating"]:checked').value;
-                const feltSafeAs = document.getElementById('felt-safe-as').value;
-                const otherDetails = document.getElementById('other-details').value;
-                
-                const checkedTags = Array.from(document.querySelectorAll('input[name="tags"]:checked')).map(el => el.value);
-                const customTags = document.getElementById('custom-tags').value.split(',').map(tag => tag.trim()).filter(tag => tag !== "");
-                const allTags = [...new Set([...checkedTags, ...customTags])];
-
-                const geocoder = new google.maps.Geocoder();
-                geocoder.geocode({
-                    address
-                }, async (results, status) => {
-                    if (status === 'OK' && results[0]) {
-                        const lat = results[0].geometry.location.lat();
-                        const lng = results[0].geometry.location.lng();
-
-                        const {
-                            error
-                        } = await supabaseClient.from('locations').insert([{
-                            name,
-                            address,
-                            latitude: lat,
-                            longitude: lng,
-                            category,
-                            safety_rating: safetyRating,
-                            tags: allTags,
-                            felt_safe_as: feltSafeAs,
-                            details: otherDetails,
-                            user_id: appState.user ? appState.user.id : null
-                        }]);
-
-                        if (error) {
-                            console.error('Error submitting location:', error);
-                        } else {
-                            console.log('Location submitted successfully!');
-                            closeModal('submit-modal');
-                            document.getElementById('submission-form').reset();
-                        }
-                    } else {
-                        console.error('Geocode was not successful for the following reason:', status);
-                        showMessage('Error', 'Could not find a valid location for the address provided.');
-                    }
-                });
-            });
-
-            document.getElementById('login-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const email = document.getElementById('login-email').value;
-                const password = document.getElementById('login-password').value;
-                
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
-                    email,
-                    password
-                });
-                
-                if (error) {
-                    showMessage('Error', 'Login failed: ' + error.message);
-                    console.error('Login failed:', error);
-                } else {
-                    closeModal('login-modal');
-                    showView('permissions');
-                }
-            });
-
-            document.getElementById('signup-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const email = document.getElementById('signup-email').value;
-                const password = document.getElementById('signup-password').value;
-                const confirmPassword = document.getElementById('signup-confirm-password').value;
-                
-                if (password !== confirmPassword) {
-                    showMessage('Error', 'Passwords do not match. Please try again.');
-                    return;
-                }
-                
-                const { data, error } = await supabaseClient.auth.signUp({
-                    email,
-                    password
-                });
-                
-                if (error) {
-                    showMessage('Error', 'Sign up failed: ' + error.message);
-                    console.error('Sign up failed:', error);
-                } else {
-                    closeModal('signup-modal');
-                    showMessage('Success', 'Check your email for a confirmation link to complete your sign-up.');
-                }
-            });
+            markers.push(marker);
         }
 
-        function initMap() {
-            map = new google.maps.Map(document.getElementById("map"), {
-                center: {
-                    lat: 34.0522,
-                    lng: -118.2437
-                },
-                zoom: 12,
-                mapId: "DEMO_MAP_ID",
-                streetViewControl: false,
-                fullscreenControl: false,
-            });
-
-            const autocompleteInput = document.getElementById('search-input');
-            const autocomplete = new google.maps.places.Autocomplete(autocompleteInput);
-            autocomplete.bindTo('bounds', map);
-            autocomplete.addListener('place_changed', () => {
-                const place = autocomplete.getPlace();
-                if (!place.geometry || !place.geometry.location) {
-                    console.error("No geometry for the place.");
-                    return;
-                }
-                if (place.geometry.viewport) {
-                    map.fitBounds(place.geometry.viewport);
-                } else {
-                    map.setCenter(place.geometry.location);
-                    map.setZoom(17);
-                }
-            });
-            fetchLocations();
-            setupRealtimeListener();
+        function getMarkerIcon(rating) {
+            let color;
+            switch (rating) {
+                case 'Safe':
+                    color = 'green';
+                    break;
+                case 'Mixed':
+                    color = 'yellow';
+                    break;
+                case 'Not Safe':
+                    color = 'red';
+                    break;
+                default:
+                    color = 'blue';
+            }
+            return `http://maps.google.com/mapfiles/ms/icons/${color}-dot.png`;
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            setupEventListeners();
+        function clearMarkers() {
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+        }
+
+        // Form submission for new locations
+        fab.addEventListener('click', () => showModal(submitModal));
+
+        submitForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const address = e.target['place-address'].value;
+            geocoder.geocode({ 'address': address }, async (results, status) => {
+                if (status === 'OK') {
+                    const lat = results[0].geometry.location.lat();
+                    const lng = results[0].geometry.location.lng();
+
+                    const newLocation = {
+                        name: e.target['place-name'].value,
+                        address: address,
+                        latitude: lat,
+                        longitude: lng,
+                        category: e.target['place-category'].value,
+                        safety_rating: e.target['safety-rating'].value,
+                        tags: Array.from(e.target.querySelectorAll('input[name="tags"]:checked')).map(el => el.value),
+                        felt_safe_as: e.target['felt-safe-as'].value,
+                        details: e.target['other-details'].value,
+                    };
+
+                    const { data, error } = await supabase.from('locations').insert([newLocation]);
+                    if (error) {
+                        showMessage(`Error submitting location: ${error.message}`, 'error');
+                    } else {
+                        showMessage('Location submitted successfully!', 'success');
+                        closeModal('submit-modal');
+                    }
+                } else {
+                    showMessage('Geocode was not successful for the following reason: ' + status, 'error');
+                }
+            });
         });
+
+        // Search and Filter functionality
+        let currentFilter = { category: [], safety: [] };
+
+        searchBtn.addEventListener('click', async () => {
+            const query = searchInput.value;
+            if (query) {
+                const { data, error } = await supabase
+                    .from('locations')
+                    .select('*')
+                    .ilike('name', `%${query}%`);
+
+                if (error) {
+                    console.error('Error searching:', error.message);
+                } else {
+                    clearMarkers();
+                    data.forEach(location => addMarker(location));
+                }
+            } else {
+                fetchLocations();
+            }
+        });
+
+        filterBtn.addEventListener('click', () => showModal(filterModal));
+
+        document.getElementById('filter-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const selectedCategories = Array.from(e.target.querySelectorAll('input[name="filter-category"]:checked')).map(el => el.value);
+            const selectedSafety = Array.from(e.target.querySelectorAll('input[name="filter-safety"]:checked')).map(el => el.value);
+
+            let query = supabase.from('locations').select('*');
+
+            if (selectedCategories.length > 0) {
+                query = query.in('category', selectedCategories);
+            }
+            if (selectedSafety.length > 0) {
+                query = query.in('safety_rating', selectedSafety);
+            }
+
+            const { data, error } = await query;
+            if (error) {
+                console.error('Error filtering:', error.message);
+            } else {
+                clearMarkers();
+                data.forEach(location => addMarker(location));
+            }
+            closeModal('filter-modal');
+        });
+
     </script>
-    <script
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD1CzCfikz8oJVPe50hrHLNz2VKnN4rjMc&libraries=places,geometry&callback=initMap">
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,geometry&callback=initMap">
     </script>
 </body>
 
