@@ -536,6 +536,22 @@
             </div>
         </div>
 
+        <!-- New password reset modal -->
+        <div id="password-reset-modal" class="modal-overlay">
+            <div class="modal-content text-center">
+                <h3 class="text-2xl font-bold mb-4">Reset Your Password</h3>
+                <form id="password-reset-form" class="space-y-4">
+                    <div>
+                        <input type="password" id="new-password" placeholder="New Password" required class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <input type="password" id="confirm-new-password" placeholder="Confirm New Password" required class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <button type="submit" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Update Password</button>
+                </form>
+            </div>
+        </div>
+
         <!-- Single, dynamic message modal for all alerts -->
         <div id="message-modal" class="modal-overlay">
             <div class="modal-content text-center">
@@ -649,11 +665,11 @@
         
     </div>
 
-    <!-- Firebase -->
+    <!-- Supabase -->
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-        // Supabase configuration
+        // NOTE: Please replace these with your actual Supabase project keys.
         const SUPABASE_URL = 'https://sgvxsyvqluhivohypkkg.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndnhzeXZxbHVoaXZvaHlwa2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MjYzNzIsImV4cCI6MjA3MzMwMjM3Mn0.igseAZIczG6fEdtPNuF3_xyXb3rFKh5nQxxO_YUyCEs';
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -679,12 +695,15 @@
         const accountModal = document.getElementById('account-modal');
         const crisisSettingsModal = document.getElementById('crisis-settings-modal');
         const contactUsModal = document.getElementById('contact-us-modal');
+        const passwordResetModal = document.getElementById('password-reset-modal');
 
         const signInBtn = document.getElementById('sign-in-btn');
         const signUpBtn = document.getElementById('sign-up-btn');
         const anonBtn = document.getElementById('anon-btn');
         const loginForm = document.getElementById('login-form');
         const signupForm = document.getElementById('signup-form');
+        const passwordResetForm = document.getElementById('password-reset-form');
+        const forgotPasswordBtn = document.getElementById('forgot-password');
 
         const fab = document.getElementById('fab');
         const submitForm = document.getElementById('submission-form');
@@ -806,8 +825,63 @@
             }
         }
 
+        // FIX: The event handler was trying to get the email from the button instead of the input field.
+        // We now directly get the value from the input field using its ID.
+        async function handleForgotPassword(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value; // Corrected line
+            if (!email) {
+                showMessage('Forgot Password Failed', 'Please enter your email address first.');
+                return;
+            }
+
+            // Dynamically create the redirect URL based on the current domain
+            const redirectToUrl = `${window.location.origin}/reset-password`;
+            const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectToUrl });
+
+            if (error) {
+                showMessage('Forgot Password Failed', `Error: ${error.message}`);
+            } else {
+                showMessage('Password Reset Email Sent', 'If an account exists for that email, a password reset link has been sent to it.');
+                closeModal('login-modal');
+            }
+        }
+        
+        async function handlePasswordReset(e) {
+            e.preventDefault();
+            const newPassword = e.target['new-password'].value;
+            const confirmNewPassword = e.target['confirm-new-password'].value;
+
+            if (newPassword !== confirmNewPassword) {
+                showMessage('Password Reset Failed', 'Passwords do not match. Please try again.');
+                return;
+            }
+
+            // Supabase automatically handles the user session from the URL hash
+            const { error } = await supabase.auth.updateUser({ password: newPassword });
+            if (error) {
+                showMessage('Password Reset Failed', `Error: ${error.message}`);
+            } else {
+                showMessage('Success!', 'Your password has been updated. You can now sign in with your new password.');
+                closeModal('password-reset-modal');
+                showModal(loginModal);
+            }
+        }
+
+
         loginForm.addEventListener('submit', handleLogin);
         signupForm.addEventListener('submit', handleSignup);
+        forgotPasswordBtn.addEventListener('click', handleForgotPassword);
+        passwordResetForm.addEventListener('submit', handlePasswordReset);
+
+        // Check for password recovery link in URL hash on page load
+        window.addEventListener('load', () => {
+            const params = new URLSearchParams(window.location.hash.substring(1));
+            const type = params.get('type');
+            if (type === 'recovery') {
+                showModal(passwordResetModal);
+            }
+        });
 
         // Handle permission toggles
         document.querySelectorAll('.permission-btn').forEach(button => {
