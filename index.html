@@ -508,7 +508,7 @@
                     <div>
                         <input type="password" id="login-password" placeholder="Password" required class="w-full p-2 border border-gray-300 rounded-lg">
                     </div>
-                    <button type="submit" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Sign In</button>
+                    <button type="submit" id="login-button" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Sign In</button>
                 </form>
                 <div class="mt-4 text-sm text-gray-500 flex justify-between items-center">
                     <button id="cancel-login" class="text-primary hover:underline" onclick="closeModal('login-modal')">Cancel</button>
@@ -701,6 +701,7 @@
         const signUpBtn = document.getElementById('sign-up-btn');
         const anonBtn = document.getElementById('anon-btn');
         const loginForm = document.getElementById('login-form');
+        const loginButton = document.getElementById('login-button');
         const signupForm = document.getElementById('signup-form');
         const passwordResetForm = document.getElementById('password-reset-form');
         const forgotPasswordBtn = document.getElementById('forgot-password');
@@ -792,10 +793,10 @@
             }
         });
 
-        async function handleLogin(e) {
-            e.preventDefault();
-            const email = e.target['login-email'].value;
-            const password = e.target['login-password'].value;
+        // This function now gets values directly from the input fields, making it more robust
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
             const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) {
                 showMessage('Sign In Failed', `Error: ${error.message}`);
@@ -804,6 +805,18 @@
                 closeModal('login-modal');
             }
         }
+        
+        // Add a click listener directly to the button for better mobile compatibility
+        loginButton.addEventListener('click', (e) => {
+            e.preventDefault(); // Prevent form submission
+            handleLogin();
+        });
+
+        // Keep the form listener in case the user presses Enter
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleLogin();
+        });
 
         async function handleSignup(e) {
             e.preventDefault();
@@ -825,8 +838,6 @@
             }
         }
 
-        // FIX: The event handler was trying to get the email from the button instead of the input field.
-        // We now directly get the value from the input field using its ID.
         async function handleForgotPassword(e) {
             e.preventDefault();
             const email = document.getElementById('login-email').value; // Corrected line
@@ -835,7 +846,6 @@
                 return;
             }
 
-            // Dynamically create the redirect URL based on the current domain
             const redirectToUrl = `${window.location.origin}/reset-password`;
             const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectToUrl });
 
@@ -857,7 +867,6 @@
                 return;
             }
 
-            // Supabase automatically handles the user session from the URL hash
             const { error } = await supabase.auth.updateUser({ password: newPassword });
             if (error) {
                 showMessage('Password Reset Failed', `Error: ${error.message}`);
@@ -869,7 +878,6 @@
         }
 
 
-        loginForm.addEventListener('submit', handleLogin);
         signupForm.addEventListener('submit', handleSignup);
         forgotPasswordBtn.addEventListener('click', handleForgotPassword);
         passwordResetForm.addEventListener('submit', handlePasswordReset);
