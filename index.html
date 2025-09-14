@@ -34,6 +34,7 @@
         xintegrity="sha512-iecdLp/Xq/C7xP5Kj8T6hE3p78+kC/K7p+g1k6Qf6d2G9w9a7a9g5tS5K3X/9z7aG6wD9wG8wF2e6y"
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
+        /* Global CSS Variables */
         :root {
             --primary: #6366f1;
             --secondary: #94a3b8;
@@ -45,6 +46,7 @@
             --yellow: #facc15;
         }
 
+        /* Base Body and Container Styles */
         body {
             font-family: 'Inter', sans-serif;
             color: var(--text);
@@ -63,6 +65,7 @@
             position: relative;
         }
 
+        /* Screen Transitions and Layouts */
         .screen {
             display: none;
             flex-grow: 1;
@@ -94,6 +97,7 @@
             height: 100%;
         }
 
+        /* Modal Styles */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -116,6 +120,7 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
+        /* Floating Action Buttons */
         #fab {
             position: fixed;
             bottom: 2rem;
@@ -157,6 +162,7 @@
             transform: scale(0.95);
         }
 
+        /* Map Search and Filter */
         #search-container {
             position: absolute;
             top: 1rem;
@@ -169,29 +175,24 @@
             gap: 0.5rem;
         }
 
+        /* Landing Page Specifics */
         .landing-logo {
             width: 200px;
             height: auto;
             margin-bottom: 2rem;
         }
 
-        .location-illustration {
-            width: 80%;
-            max-width: 300px;
-            height: auto;
-            margin-bottom: 2rem;
-        }
-
+        /* Permissions Screen */
         .permission-toggle-container {
             display: flex;
             gap: 0.5rem;
-            flex-direction: column; /* Stack buttons on smaller screens */
+            flex-direction: column;
             width: 100%;
         }
 
         @media (min-width: 640px) {
             .permission-toggle-container {
-                flex-direction: row; /* Go back to row on larger screens */
+                flex-direction: row;
             }
         }
 
@@ -204,6 +205,7 @@
             color: var(--white);
         }
 
+        /* Side Menu and Toggle */
         #hamburger-menu-btn {
             position: absolute;
             top: 1rem;
@@ -230,7 +232,7 @@
         #side-menu.open {
             transform: translateX(0);
         }
-        
+
         #side-menu .menu-content {
             width: 75%;
             max-width: 300px;
@@ -251,6 +253,8 @@
         #side-menu a:hover {
             background-color: var(--background);
         }
+
+        /* Custom Toggle Switch */
         .toggle-switch {
             position: relative;
             display: inline-block;
@@ -288,11 +292,11 @@
             border-radius: 50%;
         }
 
-        input:checked + .slider {
+        input:checked+.slider {
             background-color: #2196F3;
         }
 
-        input:checked + .slider:before {
+        input:checked+.slider:before {
             transform: translateX(22px);
         }
     </style>
@@ -302,149 +306,196 @@
     <div id="app-container">
         <!-- Splash Screen -->
         <div id="splash-screen" class="screen active p-8 rainbow-bg flex flex-col items-center justify-start pt-20">
-            <img src="https://raw.githubusercontent.com/Aram814/QueerSafeSpace/refs/heads/main/IMG_9650.PNG" alt="QueerSafeSpace Logo"
-                class="landing-logo">
+            <img src="https://raw.githubusercontent.com/Aram814/QueerSafeSpace/refs/heads/main/IMG_9650.PNG"
+                alt="QueerSafeSpace Logo" class="landing-logo">
             <h1 class="text-4xl md:text-5xl font-bold mt-4">QueerSafeSpace</h1>
             <p class="text-gray-500 text-lg mt-2">Because Safety Shouldn’t Be A Privilege</p>
             <div class="mt-8 w-full max-w-sm flex flex-col gap-4">
-                <button id="sign-in-btn" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signin text-white w-full">Sign in</button>
-                <button id="sign-up-btn" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signup text-white w-full">Sign up</button>
-                <button id="anon-btn" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full">Continue anonymously</button>
-                <p class="text-sm text-gray-500 mt-2 text-center">The app is fully anonymous to protect all users. However, without an account, saved data is limited resulting in limited features.</p>
+                <button id="sign-in-btn"
+                    class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signin text-white w-full">Sign
+                    in</button>
+                <button id="sign-up-btn"
+                    class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signup text-white w-full">Sign
+                    up</button>
+                <button id="anon-btn"
+                    class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full">Continue
+                    anonymously</button>
+                <p class="text-sm text-gray-500 mt-2 text-center">The app is fully anonymous to protect all users.
+                    However, without an account, saved data is limited resulting in limited features.</p>
             </div>
         </div>
 
-        <!-- Permissions Screen (New Design) -->
+        <!-- Permissions Screen -->
         <div id="permissions-screen" class="screen justify-center items-center p-4 sm:p-8 text-center rainbow-bg">
             <div class="flex flex-col items-center p-6 md:p-10 rounded-xl bg-white shadow-xl w-full max-w-xl">
                 <h2 class="text-2xl sm:text-3xl font-bold mb-2">Your Privacy Matters.</h2>
-                <p class="text-gray-500 mb-8 text-sm sm:text-base">To provide the best safety insights, we need your help.</p>
+                <p class="text-gray-500 mb-8 text-sm sm:text-base">To provide the best safety insights, we need your
+                    help.</p>
 
                 <!-- Location Permission -->
                 <div class="w-full mb-6 text-left">
-                    <h4 class="font-bold text-lg">Location</h4>
+                    <h3 class="font-bold text-lg">Location</h3>
                     <p class="text-sm text-gray-500 mt-1">
-                        This is <strong>critical</strong> for the Safety Map and additional features. It helps us show you nearby safe/unsafe spaces and resources. Your location is <strong>never</strong> shared publicly.
+                        This is <strong>critical</strong> for the Safety Map and additional features. It helps us show
+                        you nearby safe/unsafe spaces and resources. Your location is <strong>never</strong> shared
+                        publicly.
                     </p>
-                    <div class="permission-toggle-container mt-2">
-                        <button class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white" data-permission="location" data-allow="true">Allow</button>
-                        <button class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800" data-permission="location" data-allow="false">Don't Allow (Limited Features)</button>
+                    <div class="permission-toggle-container mt-2" role="group" aria-labelledby="location-heading">
+                        <h4 id="location-heading" class="sr-only">Location Permission Options</h4>
+                        <button
+                            class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white"
+                            data-permission="location" data-allow="true" aria-pressed="true">Allow</button>
+                        <button
+                            class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800"
+                            data-permission="location" data-allow="false" aria-pressed="false">Don't Allow (Limited Features)</button>
                     </div>
                 </div>
 
                 <!-- Notifications Permission -->
                 <div class="w-full mb-6 text-left">
-                    <h4 class="font-bold text-lg">Notifications</h4>
+                    <h3 class="font-bold text-lg">Notifications</h3>
                     <p class="text-sm text-gray-500 mt-1">
-                        Receive important safety alters, community updates, or crisis mode reminders. You can always manage this later.
+                        Receive important safety alters, community updates, or crisis mode reminders. You can always
+                        manage this later.
                     </p>
-                    <div class="permission-toggle-container mt-2">
-                        <button class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white" data-permission="notifications" data-allow="true">Allow</button>
-                        <button class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800" data-permission="notifications" data-allow="false">Don't Allow (Limited Features)</button>
+                    <div class="permission-toggle-container mt-2" role="group" aria-labelledby="notifications-heading">
+                        <h4 id="notifications-heading" class="sr-only">Notifications Permission Options</h4>
+                        <button
+                            class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white"
+                            data-permission="notifications" data-allow="true" aria-pressed="true">Allow</button>
+                        <button
+                            class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800"
+                            data-permission="notifications" data-allow="false" aria-pressed="false">Don't Allow (Limited Features)</button>
                     </div>
                 </div>
 
                 <!-- Contacts Permission -->
                 <div class="w-full mb-6 text-left">
-                    <h4 class="font-bold text-lg">Contacts</h4>
+                    <h3 class="font-bold text-lg">Contacts</h3>
                     <p class="text-sm text-gray-500 mt-1">
-                        This allows you to automatically import selected contacts to designated your <strong>Trusted Contact(s)</strong>. If you decline, you can still manually add emergency contacts to use in crisis situations.
+                        This allows you to automatically import selected contacts to designated your
+                        <strong>Trusted Contact(s)</strong>. If you decline, you can still manually add emergency
+                        contacts to use in crisis situations.
                     </p>
-                    <div class="permission-toggle-container mt-2">
-                        <button class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white" data-permission="contacts" data-allow="true">Allow</button>
-                        <button class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800" data-permission="contacts" data-allow="false">Don't Allow (Limited Features)</button>
+                    <div class="permission-toggle-container mt-2" role="group" aria-labelledby="contacts-heading">
+                        <h4 id="contacts-heading" class="sr-only">Contacts Permission Options</h4>
+                        <button
+                            class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white"
+                            data-permission="contacts" data-allow="true" aria-pressed="true">Allow</button>
+                        <button
+                            class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800"
+                            data-permission="contacts" data-allow="false" aria-pressed="false">Don't Allow (Limited Features)</button>
                     </div>
                 </div>
-                
-                <button id="continue-to-app-btn" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full mt-4">Continue to App</button>
-                <p class="text-xs text-gray-400 mt-4">You can manage your permissions again in your account settings.</p>
+
+                <button id="continue-to-app-btn"
+                    class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full mt-4">Continue
+                    to App</button>
+                <p class="text-xs text-gray-400 mt-4">You can manage your permissions again in your account settings.
+                </p>
             </div>
         </div>
 
         <!-- Main App Screen (Map) -->
         <div id="main-screen" class="screen flex-col">
-            <button id="hamburger-menu-btn" class="text-primary text-xl">
+            <button id="hamburger-menu-btn" class="text-primary text-xl" aria-label="Open side menu">
                 <i class="fa-solid fa-bars"></i>
             </button>
-            <div id="search-container">
+            <div id="search-container" role="search">
                 <div class="relative w-full shadow-md rounded-full overflow-hidden">
+                    <label for="search-input" class="sr-only">Search for places</label>
                     <input id="search-input" type="text" placeholder="Search for places..."
                         class="w-full pl-5 pr-12 py-3 rounded-full text-gray-900 bg-white border-transparent focus:outline-none focus:ring-2 focus:ring-primary">
-                    <button id="search-btn" class="absolute right-0 top-0 h-full w-12 flex items-center justify-center text-primary">
-                        <i class="fa-solid fa-search"></i>
+                    <button id="search-btn" type="button" aria-label="Search"
+                        class="absolute right-0 top-0 h-full w-12 flex items-center justify-center text-primary">
+                        <i class="fa-solid fa-search" aria-hidden="true"></i>
                     </button>
                 </div>
-                <button id="filter-btn" class="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-md text-primary">
-                    <i class="fa-solid fa-filter"></i>
+                <button id="filter-btn" type="button" aria-label="Open filter options"
+                    class="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-md text-primary">
+                    <i class="fa-solid fa-filter" aria-hidden="true"></i>
                 </button>
             </div>
-            <div id="map"></div>
-            <button id="fab" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white">
-                <i class="fa-solid fa-plus text-2xl"></i>
+            <div id="map" role="application" aria-label="QueerSafeSpace Map"></div>
+            <button id="fab" type="button"
+                class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white"
+                aria-label="Submit a new location">
+                <i class="fa-solid fa-plus text-2xl" aria-hidden="true"></i>
             </button>
-            <button id="crisis-button">
+            <button id="crisis-button" type="button" aria-label="Activate Crisis Mode">
                 Crisis Mode
             </button>
-            <div id="anonymous-banner" class="fixed bottom-0 left-0 right-0 text-center py-2 bg-yellow-400 text-gray-800 text-sm font-medium hidden">
+            <div id="anonymous-banner" role="status" aria-live="polite"
+                class="fixed bottom-0 left-0 right-0 text-center py-2 bg-yellow-400 text-gray-800 text-sm font-medium hidden">
                 You are in anonymous mode. Some features may be limited.
             </div>
         </div>
 
         <!-- Side Menu -->
-        <div id="side-menu" class="fixed top-0 left-0 h-full w-full bg-black bg-opacity-50 transition-transform duration-300 transform -translate-x-full z-[900]">
-            <div class="menu-content w-75 sm:w-1/2 md:w-1/3 lg:w-1/4 max-w-sm h-full bg-white p-6 shadow-2xl flex flex-col space-y-4">
+        <div id="side-menu"
+            class="fixed top-0 left-0 h-full w-full bg-black bg-opacity-50 transition-transform duration-300 transform -translate-x-full z-[900]"
+            aria-hidden="true">
+            <div
+                class="menu-content w-75 sm:w-1/2 md:w-1/3 lg:w-1/4 max-w-sm h-full bg-white p-6 shadow-2xl flex flex-col space-y-4">
                 <div class="flex items-center space-x-4 mb-4">
-                    <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-xl text-gray-500">
-                        <i class="fas fa-user-circle"></i>
+                    <div
+                        class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-xl text-gray-500">
+                        <i class="fas fa-user-circle" aria-hidden="true"></i>
                     </div>
                     <span id="user-email" class="font-semibold text-lg text-gray-800">Guest</span>
                 </div>
-                <a href="#" id="account-link" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-user-cog text-gray-500"></i>
+                <a href="javascript:void(0)" id="account-link"
+                    class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-user-cog text-gray-500" aria-hidden="true"></i>
                     <span class="font-medium text-gray-800">Account</span>
                 </a>
                 <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition-colors">
                     <span class="font-medium text-gray-800">Location Permissions</span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="location-toggle">
+                    <label class="toggle-switch" for="location-toggle">
+                        <input type="checkbox" id="location-toggle" role="switch" aria-checked="false">
                         <span class="slider"></span>
                     </label>
                 </div>
                 <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition-colors">
                     <span class="font-medium text-gray-800">Notifications</span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="notifications-toggle">
+                    <label class="toggle-switch" for="notifications-toggle">
+                        <input type="checkbox" id="notifications-toggle" role="switch" aria-checked="false">
                         <span class="slider"></span>
                     </label>
                 </div>
-                <a href="#" id="crisis-settings-link" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-exclamation-triangle text-gray-500"></i>
+                <a href="javascript:void(0)" id="crisis-settings-link"
+                    class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-exclamation-triangle text-gray-500" aria-hidden="true"></i>
                     <span class="font-medium text-gray-800">Crisis Mode Settings</span>
                 </a>
-                <a href="#" id="contact-us-link" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-envelope text-gray-500"></i>
+                <a href="javascript:void(0)" id="contact-us-link"
+                    class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-envelope text-gray-500" aria-hidden="true"></i>
                     <span class="font-medium text-gray-800">Contact Us!</span>
                 </a>
-                <a href="#" id="privacy-policy-link" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-shield-alt text-gray-500"></i>
+                <a href="javascript:void(0)" id="privacy-policy-link"
+                    class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-shield-alt text-gray-500" aria-hidden="true"></i>
                     <span class="font-medium text-gray-800">Privacy Policy</span>
                 </a>
-                <a href="#" id="terms-link" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-file-alt text-gray-500"></i>
+                <a href="javascript:void(0)" id="terms-link"
+                    class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-file-alt text-gray-500" aria-hidden="true"></i>
                     <span class="font-medium text-gray-800">Terms and Conditions</span>
                 </a>
                 <div class="mt-auto">
-                    <button id="sign-out-btn" class="w-full px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-red-500 text-white">
-                        <i class="fa-solid fa-sign-out-alt mr-2"></i>Sign Out
+                    <button id="sign-out-btn" type="button"
+                        class="w-full px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-red-500 text-white">
+                        <i class="fa-solid fa-sign-out-alt mr-2" aria-hidden="true"></i>Sign Out
                     </button>
                 </div>
             </div>
         </div>
 
         <!-- Modals -->
-        <div id="submit-modal" class="modal-overlay">
+        <div id="submit-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="submit-modal-title" tabindex="-1">
             <div class="modal-content w-11/12 max-w-xl p-6 md:p-8 rounded-xl bg-white shadow-xl">
-                <h3 class="text-2xl font-bold mb-4 text-center">Submit a New Location</h3>
+                <h3 id="submit-modal-title" class="text-2xl font-bold mb-4 text-center">Submit a New Location</h3>
                 <form id="submission-form" class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium mb-1" for="place-name">Name of Place*</label>
@@ -467,8 +518,8 @@
                             <option value="Religious Institution">Religious Institution</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Safety Rating*</label>
+                    <fieldset>
+                        <legend class="block text-sm font-medium mb-1">Safety Rating*</legend>
                         <div class="flex gap-4">
                             <label class="inline-flex items-center">
                                 <input type="radio" name="safety-rating" value="Safe" required class="form-radio text-green-500">
@@ -483,7 +534,7 @@
                                 <span class="ml-2">Not Safe</span>
                             </label>
                         </div>
-                    </div>
+                    </fieldset>
                     <div>
                         <label class="block text-sm font-medium mb-1" for="felt-safe-as">Felt Safe Here as</label>
                         <input type="text" id="felt-safe-as" class="w-full p-2 border border-gray-300 rounded-lg">
@@ -492,81 +543,97 @@
                         <label class="block text-sm font-medium mb-1" for="other-details">Other details</label>
                         <textarea id="other-details" rows="3" class="w-full p-2 border border-gray-300 rounded-lg"></textarea>
                     </div>
-                    <button type="submit" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Submit Location</button>
-                    <button type="button" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full mt-2" onclick="closeModal('submit-modal')">Cancel</button>
+                    <button type="submit"
+                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Submit Location</button>
+                    <button type="button"
+                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full mt-2"
+                        onclick="closeModal('submit-modal')">Cancel</button>
                 </form>
             </div>
         </div>
 
-        <div id="login-modal" class="modal-overlay">
+        <div id="login-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="login-modal-title" tabindex="-1">
             <div class="modal-content text-center">
-                <h3 class="text-2xl font-bold mb-4">Sign in</h3>
+                <h3 id="login-modal-title" class="text-2xl font-bold mb-4">Sign in</h3>
                 <form id="login-form" class="space-y-4">
                     <div>
+                        <label for="login-email" class="sr-only">Email</label>
                         <input type="email" id="login-email" placeholder="Email" required class="w-full p-2 border border-gray-300 rounded-lg">
                     </div>
                     <div>
+                        <label for="login-password" class="sr-only">Password</label>
                         <input type="password" id="login-password" placeholder="Password" required class="w-full p-2 border border-gray-300 rounded-lg">
                     </div>
                     <button type="submit" id="login-button" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Sign In</button>
                 </form>
                 <div class="mt-4 text-sm text-gray-500 flex justify-between items-center">
-                    <button id="cancel-login" class="text-primary hover:underline" onclick="closeModal('login-modal')">Cancel</button>
-                    <button id="forgot-password" class="text-primary hover:underline">Forgot password?</button>
+                    <button id="cancel-login" type="button" class="text-primary hover:underline" onclick="closeModal('login-modal')">Cancel</button>
+                    <button id="forgot-password" type="button" class="text-primary hover:underline">Forgot password?</button>
                 </div>
             </div>
         </div>
 
-        <div id="signup-modal" class="modal-overlay">
+        <div id="signup-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="signup-modal-title" tabindex="-1">
             <div class="modal-content text-center">
-                <h3 class="text-2xl font-bold mb-4">Create Account</h3>
+                <h3 id="signup-modal-title" class="text-2xl font-bold mb-4">Create Account</h3>
                 <form id="signup-form" class="space-y-4">
                     <div>
+                        <label for="signup-email" class="sr-only">Email</label>
                         <input type="email" id="signup-email" placeholder="Email" required class="w-full p-2 border border-gray-300 rounded-lg">
                     </div>
                     <div>
+                        <label for="signup-password" class="sr-only">Password (min 6 characters)</label>
                         <input type="password" id="signup-password" placeholder="Password (min 6 characters)" required class="w-full p-2 border border-gray-300 rounded-lg">
                     </div>
                     <div>
+                        <label for="signup-confirm-password" class="sr-only">Confirm Password</label>
                         <input type="password" id="signup-confirm-password" placeholder="Confirm Password" required class="w-full p-2 border border-gray-300 rounded-lg">
                     </div>
-                    <button type="submit" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signup text-white w-full">Sign Up</button>
-                    <button type="button" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full mt-2" onclick="closeModal('signup-modal')">Cancel</button>
+                    <button type="submit"
+                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signup text-white w-full">Sign Up</button>
+                    <button type="button"
+                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full mt-2"
+                        onclick="closeModal('signup-modal')">Cancel</button>
                 </form>
             </div>
         </div>
 
         <!-- New password reset modal -->
-        <div id="password-reset-modal" class="modal-overlay">
+        <div id="password-reset-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="password-reset-modal-title" tabindex="-1">
             <div class="modal-content text-center">
-                <h3 class="text-2xl font-bold mb-4">Reset Your Password</h3>
+                <h3 id="password-reset-modal-title" class="text-2xl font-bold mb-4">Reset Your Password</h3>
                 <form id="password-reset-form" class="space-y-4">
                     <div>
+                        <label for="new-password" class="sr-only">New Password</label>
                         <input type="password" id="new-password" placeholder="New Password" required class="w-full p-2 border border-gray-300 rounded-lg">
                     </div>
                     <div>
+                        <label for="confirm-new-password" class="sr-only">Confirm New Password</label>
                         <input type="password" id="confirm-new-password" placeholder="Confirm New Password" required class="w-full p-2 border border-gray-300 rounded-lg">
                     </div>
-                    <button type="submit" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Update Password</button>
+                    <button type="submit"
+                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Update
+                        Password</button>
                 </form>
             </div>
         </div>
 
         <!-- Single, dynamic message modal for all alerts -->
-        <div id="message-modal" class="modal-overlay">
+        <div id="message-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="message-title" tabindex="-1">
             <div class="modal-content text-center">
                 <h3 id="message-title" class="text-xl font-bold mb-2"></h3>
                 <p id="message-text" class="text-gray-600"></p>
-                <button id="message-button" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4">OK</button>
+                <button id="message-button" type="button"
+                    class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4">OK</button>
             </div>
         </div>
 
-        <div id="filter-modal" class="modal-overlay">
+        <div id="filter-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="filter-modal-title" tabindex="-1">
             <div class="modal-content w-11/12 max-w-xl p-6 md:p-8 rounded-xl bg-white shadow-xl">
-                <h3 class="text-2xl font-bold mb-4 text-center">Filter Locations</h3>
+                <h3 id="filter-modal-title" class="text-2xl font-bold mb-4 text-center">Filter Locations</h3>
                 <form id="filter-form" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Category</label>
+                    <fieldset>
+                        <legend class="block text-sm font-medium mb-1">Category</legend>
                         <div class="flex flex-wrap gap-2">
                             <label class="inline-flex items-center">
                                 <input type="checkbox" name="filter-category" value="Bar/drinks" class="form-checkbox">
@@ -597,9 +664,9 @@
                                 <span class="ml-1 text-sm">Religious Institution</span>
                             </label>
                         </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Safety Rating</label>
+                    </fieldset>
+                    <fieldset>
+                        <legend class="block text-sm font-medium mb-1">Safety Rating</legend>
                         <div class="flex flex-wrap gap-2">
                             <label class="inline-flex items-center">
                                 <input type="checkbox" name="filter-safety" value="Safe" class="form-checkbox">
@@ -614,43 +681,51 @@
                                 <span class="ml-1 text-sm">Not Safe</span>
                             </label>
                         </div>
-                    </div>
-                    <button type="submit" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Apply Filters</button>
-                    <button type="button" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full mt-2" onclick="closeModal('filter-modal')">Cancel</button>
+                    </fieldset>
+                    <button type="submit"
+                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Apply Filters</button>
+                    <button type="button"
+                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full mt-2"
+                        onclick="closeModal('filter-modal')">Cancel</button>
                 </form>
             </div>
         </div>
 
-        <div id="info-modal" class="modal-overlay">
+        <div id="info-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="info-modal-title" tabindex="-1">
             <div class="modal-content w-11/12 max-w-xl p-6 md:p-8 rounded-xl bg-white shadow-xl">
+                <h3 id="info-modal-title" class="sr-only">Location Information</h3>
                 <div id="info-content"></div>
-                <button class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4" onclick="closeModal('info-modal')">Close</button>
+                <button type="button" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4" onclick="closeModal('info-modal')">Close</button>
             </div>
         </div>
 
-        <div id="account-modal" class="modal-overlay">
+        <div id="account-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="account-modal-title" tabindex="-1">
             <div class="modal-content w-11/12 max-w-xl p-6 md:p-8 rounded-xl bg-white shadow-xl">
-                <h3 class="text-2xl font-bold mb-4 text-center">Account Settings</h3>
+                <h3 id="account-modal-title" class="text-2xl font-bold mb-4 text-center">Account Settings</h3>
                 <p>Edit your account information here.</p>
                 <div class="mt-6 flex justify-end">
-                    <button class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4" onclick="closeModal('account-modal')">Close</button>
+                    <button type="button"
+                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4"
+                        onclick="closeModal('account-modal')">Close</button>
                 </div>
             </div>
         </div>
 
-        <div id="crisis-settings-modal" class="modal-overlay">
+        <div id="crisis-settings-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="crisis-settings-modal-title" tabindex="-1">
             <div class="modal-content w-11/12 max-w-xl p-6 md:p-8 rounded-xl bg-white shadow-xl">
-                <h3 class="text-2xl font-bold mb-4 text-center">Crisis Mode Settings</h3>
+                <h3 id="crisis-settings-modal-title" class="text-2xl font-bold mb-4 text-center">Crisis Mode Settings</h3>
                 <p>Manage your trusted contacts and crisis preferences.</p>
                 <div class="mt-6 flex justify-end">
-                    <button class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4" onclick="closeModal('crisis-settings-modal')">Close</button>
+                    <button type="button"
+                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4"
+                        onclick="closeModal('crisis-settings-modal')">Close</button>
                 </div>
             </div>
         </div>
-        
-        <div id="contact-us-modal" class="modal-overlay">
+
+        <div id="contact-us-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="contact-us-modal-title" tabindex="-1">
             <div class="modal-content w-11/12 max-w-xl p-6 md:p-8 rounded-xl bg-white shadow-xl">
-                <h3 class="text-2xl font-bold mb-4 text-center">Contact Us</h3>
+                <h3 id="contact-us-modal-title" class="text-2xl font-bold mb-4 text-center">Contact Us</h3>
                 <div class="space-y-4">
                     <p>Feel free to reach out to us with any questions or feedback:</p>
                     <p><strong>Email:</strong> support@queersafespace.com</p>
@@ -658,14 +733,16 @@
                     <p><strong>Threads:</strong> @queersafespace_app</p>
                 </div>
                 <div class="mt-6 flex justify-end">
-                    <button class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4" onclick="closeModal('contact-us-modal')">Close</button>
+                    <button type="button"
+                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4"
+                        onclick="closeModal('contact-us-modal')">Close</button>
                 </div>
             </div>
         </div>
-        
+
     </div>
 
-    <!-- Supabase -->
+    <!-- Main JavaScript Logic -->
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
@@ -683,20 +760,29 @@
         let userMarker;
         let infoWindow;
         let geocoder;
+        let lastFocusedElement; // For restoring focus after modal closes
 
+        // --- DOM Element Variables ---
+        // Screens
         const splashScreen = document.getElementById('splash-screen');
         const permissionsScreen = document.getElementById('permissions-screen');
         const mainScreen = document.getElementById('main-screen');
+
+        // Modals
         const loginModal = document.getElementById('login-modal');
         const signupModal = document.getElementById('signup-modal');
         const submitModal = document.getElementById('submit-modal');
         const filterModal = document.getElementById('filter-modal');
         const messageModal = document.getElementById('message-modal');
+        const infoModal = document.getElementById('info-modal');
         const accountModal = document.getElementById('account-modal');
         const crisisSettingsModal = document.getElementById('crisis-settings-modal');
         const contactUsModal = document.getElementById('contact-us-modal');
         const passwordResetModal = document.getElementById('password-reset-modal');
 
+        const allModals = [loginModal, signupModal, submitModal, filterModal, messageModal, infoModal, accountModal, crisisSettingsModal, contactUsModal, passwordResetModal];
+
+        // Buttons and Forms
         const signInBtn = document.getElementById('sign-in-btn');
         const signUpBtn = document.getElementById('sign-up-btn');
         const anonBtn = document.getElementById('anon-btn');
@@ -705,7 +791,6 @@
         const signupForm = document.getElementById('signup-form');
         const passwordResetForm = document.getElementById('password-reset-form');
         const forgotPasswordBtn = document.getElementById('forgot-password');
-
         const fab = document.getElementById('fab');
         const submitForm = document.getElementById('submission-form');
         const searchInput = document.getElementById('search-input');
@@ -715,24 +800,24 @@
         const messageButton = document.getElementById('message-button');
         const continueToAppBtn = document.getElementById('continue-to-app-btn');
 
+        // UI elements
         const anonymousBanner = document.getElementById('anonymous-banner');
         const hamburgerMenuBtn = document.getElementById('hamburger-menu-btn');
         const sideMenu = document.getElementById('side-menu');
         const signOutBtn = document.getElementById('sign-out-btn');
-
         const locationToggle = document.getElementById('location-toggle');
         const notificationsToggle = document.getElementById('notifications-toggle');
         const userEmailSpan = document.getElementById('user-email');
         const accountLink = document.getElementById('account-link');
         const crisisSettingsLink = document.getElementById('crisis-settings-link');
         const contactUsLink = document.getElementById('contact-us-link');
-        
+
         // Permission state variables
         let locationPermission = true;
         let notificationsPermission = true;
         let contactsPermission = true;
-        
-        // Modal management
+
+        // --- Modal & Screen Management Functions ---
         function showScreen(screen) {
             const screens = document.querySelectorAll('.screen');
             screens.forEach(s => s.classList.remove('active'));
@@ -740,11 +825,22 @@
         }
 
         function showModal(modal) {
+            lastFocusedElement = document.activeElement;
             modal.style.display = 'flex';
+            modal.setAttribute('aria-hidden', 'false');
+            // Find and focus on the first interactive element in the modal
+            const focusableElements = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            focusableElements[0]?.focus();
         }
 
         function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
+            const modal = document.getElementById(modalId);
+            modal.style.display = 'none';
+            modal.setAttribute('aria-hidden', 'true');
+            // Return focus to the element that opened the modal
+            if (lastFocusedElement) {
+                lastFocusedElement.focus();
+            }
         }
 
         function showMessage(title, message) {
@@ -757,7 +853,7 @@
             closeModal('message-modal');
         });
 
-        // Handle splash screen button clicks
+        // --- Event Listeners for Splash Screen and Authentication ---
         signInBtn.addEventListener('click', () => showModal(loginModal));
         signUpBtn.addEventListener('click', () => showModal(signupModal));
         anonBtn.addEventListener('click', () => {
@@ -765,7 +861,6 @@
             anonymousBanner.classList.remove('hidden');
         });
 
-        // Handle user authentication
         supabase.auth.onAuthStateChange(async (event, session) => {
             if (session) {
                 const user = session.user;
@@ -793,7 +888,7 @@
             }
         });
 
-        // This function now gets values directly from the input fields, making it more robust
+        // Handle login with robust click event listener for mobile
         async function handleLogin() {
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
@@ -805,14 +900,13 @@
                 closeModal('login-modal');
             }
         }
-        
-        // Add a click listener directly to the button for better mobile compatibility
+
         loginButton.addEventListener('click', (e) => {
-            e.preventDefault(); // Prevent form submission
+            e.preventDefault();
             handleLogin();
         });
 
-        // Keep the form listener in case the user presses Enter
+        // Fallback for desktop users pressing Enter
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             handleLogin();
@@ -840,7 +934,7 @@
 
         async function handleForgotPassword(e) {
             e.preventDefault();
-            const email = document.getElementById('login-email').value; // Corrected line
+            const email = document.getElementById('login-email').value;
             if (!email) {
                 showMessage('Forgot Password Failed', 'Please enter your email address first.');
                 return;
@@ -856,7 +950,7 @@
                 closeModal('login-modal');
             }
         }
-        
+
         async function handlePasswordReset(e) {
             e.preventDefault();
             const newPassword = e.target['new-password'].value;
@@ -877,7 +971,6 @@
             }
         }
 
-
         signupForm.addEventListener('submit', handleSignup);
         forgotPasswordBtn.addEventListener('click', handleForgotPassword);
         passwordResetForm.addEventListener('submit', handlePasswordReset);
@@ -891,12 +984,12 @@
             }
         });
 
-        // Handle permission toggles
+        // --- Permissions Screen Logic ---
         document.querySelectorAll('.permission-btn').forEach(button => {
             button.addEventListener('click', (e) => {
                 const permissionType = e.target.dataset.permission;
                 const isAllowed = e.target.dataset.allow === 'true';
-                
+
                 // Update state
                 if (permissionType === 'location') locationPermission = isAllowed;
                 if (permissionType === 'notifications') notificationsPermission = isAllowed;
@@ -907,13 +1000,14 @@
                 container.querySelectorAll('.permission-btn').forEach(btn => {
                     btn.classList.remove('bg-primary', 'text-white');
                     btn.classList.add('bg-gray-200', 'text-gray-800');
+                    btn.setAttribute('aria-pressed', 'false');
                 });
                 e.target.classList.add('bg-primary', 'text-white');
                 e.target.classList.remove('bg-gray-200', 'text-gray-800');
+                e.target.setAttribute('aria-pressed', 'true');
             });
         });
 
-        // Handle "Continue to App" button
         continueToAppBtn.addEventListener('click', async () => {
             const user = (await supabase.auth.getSession()).data.session?.user;
             if (user) {
@@ -957,13 +1051,13 @@
             showScreen(mainScreen);
         });
 
-        // Map initialization and functionality
+        // --- Map Initialization and Functionality ---
         window.initMap = async function () {
             // Default location
             const defaultPos = { lat: 39.8283, lng: -98.5795 };
             const { Map } = await google.maps.importLibrary("maps");
             const { Geocoder } = await google.maps.importLibrary("geocoding");
-            
+
             map = new Map(document.getElementById('map'), {
                 zoom: 4,
                 center: defaultPos,
@@ -1052,7 +1146,8 @@
             markers = [];
         }
 
-        // Form submission for new locations
+        // --- Main App Feature Event Listeners ---
+        // Submission Form
         fab.addEventListener('click', () => showModal(submitModal));
 
         submitForm.addEventListener('submit', async (e) => {
@@ -1089,7 +1184,7 @@
             });
         });
 
-        // Search and Filter functionality
+        // Search and Filter
         let currentFilter = { category: [], safety: [] };
 
         searchBtn.addEventListener('click', async () => {
@@ -1142,16 +1237,26 @@
             showMessage('Crisis Mode Activated', 'Finding the nearest safe location. Please stay calm.');
         });
 
-        // Side menu functionality
+        // --- Side Menu Logic ---
         hamburgerMenuBtn.addEventListener('click', () => {
             sideMenu.classList.toggle('-translate-x-full');
             sideMenu.classList.toggle('translate-x-0');
+            const isOpen = sideMenu.classList.contains('translate-x-0');
+            sideMenu.setAttribute('aria-hidden', !isOpen);
+            if(isOpen) {
+                const firstLink = sideMenu.querySelector('a, button, input');
+                if (firstLink) firstLink.focus();
+            } else {
+                hamburgerMenuBtn.focus();
+            }
         });
 
         sideMenu.addEventListener('click', (e) => {
             if (e.target.id === 'side-menu') {
                 sideMenu.classList.remove('translate-x-0');
                 sideMenu.classList.add('-translate-x-full');
+                sideMenu.setAttribute('aria-hidden', 'true');
+                hamburgerMenuBtn.focus();
             }
         });
 
@@ -1169,14 +1274,16 @@
         locationToggle.addEventListener('change', async (e) => {
             const user = (await supabase.auth.getSession()).data.session?.user;
             if (!user) {
-                e.target.checked = !e.target.checked; // Revert state for anonymous users
+                e.target.checked = !e.target.checked;
                 showMessage('Action Denied', 'You must be logged in to change this setting.');
                 return;
             }
             const isChecked = e.target.checked;
+            e.target.setAttribute('aria-checked', isChecked);
             const { error } = await supabase.from('profiles').update({ location_permission: isChecked }).eq('user_id', user.id);
             if (error) {
-                e.target.checked = !e.target.checked; // Revert UI on error
+                e.target.checked = !e.target.checked;
+                e.target.setAttribute('aria-checked', !isChecked);
                 showMessage('Update Failed', error.message);
             } else {
                 showMessage('Location Permission Updated', `Location permissions have been turned ${isChecked ? 'on' : 'off'}.`);
@@ -1186,14 +1293,16 @@
         notificationsToggle.addEventListener('change', async (e) => {
             const user = (await supabase.auth.getSession()).data.session?.user;
             if (!user) {
-                e.target.checked = !e.target.checked; // Revert state for anonymous users
+                e.target.checked = !e.target.checked;
                 showMessage('Action Denied', 'You must be logged in to change this setting.');
                 return;
             }
             const isChecked = e.target.checked;
+            e.target.setAttribute('aria-checked', isChecked);
             const { error } = await supabase.from('profiles').update({ notifications_permission: isChecked }).eq('user_id', user.id);
             if (error) {
-                e.target.checked = !e.target.checked; // Revert UI on error
+                e.target.checked = !e.target.checked;
+                e.target.setAttribute('aria-checked', !isChecked);
                 showMessage('Update Failed', error.message);
             } else {
                 showMessage('Notification Permission Updated', `Notification permissions have been turned ${isChecked ? 'on' : 'off'}.`);
@@ -1203,23 +1312,32 @@
         // Open sub-modals from side menu
         accountLink.addEventListener('click', (e) => {
             e.preventDefault();
-            sideMenu.classList.remove('translate-x-0');
-            sideMenu.classList.add('-translate-x-full');
+            closeModal('side-menu');
             showModal(accountModal);
         });
-        
+
         crisisSettingsLink.addEventListener('click', (e) => {
             e.preventDefault();
-            sideMenu.classList.remove('translate-x-0');
-            sideMenu.classList.add('-translate-x-full');
+            closeModal('side-menu');
             showModal(crisisSettingsModal);
         });
-        
+
         contactUsLink.addEventListener('click', (e) => {
             e.preventDefault();
-            sideMenu.classList.remove('translate-x-0');
-            sideMenu.classList.add('-translate-x-full');
+            closeModal('side-menu');
             showModal(contactUsModal);
+        });
+
+        // Close modal on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                for (const modal of allModals) {
+                    if (modal.style.display === 'flex') {
+                        closeModal(modal.id);
+                        break;
+                    }
+                }
+            }
         });
 
     </script>
