@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE-html>
 <html lang="en">
 
 <head>
@@ -20,7 +20,7 @@
                         text: '#1e293b',
                         white: '#ffffff',
                         red: '#ef4444',
-                        green: '#22c55e',
+                        green: '#22c5e',
                         yellow: '#facc15',
                         signin: '#FF6161',
                         signup: '#80FD91',
@@ -42,8 +42,9 @@
             --text: #1e293b;
             --white: #ffffff;
             --red: #ef4444;
-            --green: #22c55e;
+            --green: #22c5e;
             --yellow: #facc15;
+            --find-space-blue: #1272EF; /* Added new color variable */
         }
 
         /* Base Body and Container Styles */
@@ -92,7 +93,6 @@
         }
 
         #map {
-            flex-grow: 1;
             width: 100%;
             height: 100%;
         }
@@ -122,9 +122,9 @@
 
         /* Floating Action Buttons */
         #fab {
-            position: fixed;
+            position: absolute;
             bottom: 2rem;
-            right: 2rem;
+            left: 2rem;
             width: 60px;
             height: 60px;
             background-color: rgb(138, 63, 252);
@@ -144,16 +144,12 @@
         }
 
         #crisis-button {
-            position: fixed;
-            bottom: 2rem;
-            left: 2rem;
             padding: 0.75rem 1.5rem;
             background-color: var(--red);
             color: var(--white);
             border-radius: 9999px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             cursor: pointer;
-            z-index: 50;
             transition: transform 0.2s ease-in-out;
             font-weight: 600;
         }
@@ -161,20 +157,7 @@
         #crisis-button:active {
             transform: scale(0.95);
         }
-
-        /* Map Search and Filter */
-        #search-container {
-            position: absolute;
-            top: 1rem;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 20;
-            width: 90%;
-            max-width: 500px;
-            display: flex;
-            gap: 0.5rem;
-        }
-
+        
         /* Landing Page Specifics */
         .landing-logo {
             width: 200px;
@@ -243,6 +226,11 @@
             display: flex;
             flex-direction: column;
         }
+        
+        /* Transparent rainbow background for menu content */
+        .menu-content.rainbow-bg {
+            background: linear-gradient(135deg, rgba(255, 105, 180, 0.05), rgba(255, 255, 0, 0.05), rgba(0, 255, 0, 0.05), rgba(0, 191, 255, 0.05), rgba(138, 43, 226, 0.05));
+        }
 
         #side-menu a {
             padding: 1rem;
@@ -293,11 +281,68 @@
         }
 
         input:checked+.slider {
-            background-color: #2196F3;
+            background-color: #80FD91;
         }
 
         input:checked+.slider:before {
             transform: translateX(22px);
+        }
+
+        #map-container {
+            flex-grow: 1;
+            position: relative; /* Added to make #fab position relative to this container */
+            padding: 4px;
+        }
+
+        /* Map key styling */
+        .map-key-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: #6b7280;
+            text-align: center;
+        }
+
+        .map-key-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .color-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        /* Content pages styling */
+        .content-container {
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: left;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .content-container h2 {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        .content-container h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .content-container p, .content-container ul {
+            margin-bottom: 1rem;
+            color: #4b5563;
+        }
+        .content-container strong {
+            font-weight: bold;
         }
     </style>
 </head>
@@ -310,6 +355,7 @@
                 alt="QueerSafeSpace Logo" class="landing-logo">
             <h1 class="text-4xl md:text-5xl font-bold mt-4">QueerSafeSpace</h1>
             <p class="text-gray-500 text-lg mt-2">Because Safety Shouldn’t Be A Privilege</p>
+            <p class="text-sm text-center text-gray-700 mt-4 max-w-sm">QueerSafeSpace is a community-driven app for the LGBTQ+ community to find and share safe, inclusive spaces. This is not a dating or social networking app. Your contributions are anonymous, fostering a truly safe and supportive environment.</p>
             <div class="mt-8 w-full max-w-sm flex flex-col gap-4">
                 <button id="sign-in-btn"
                     class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signin text-white w-full">Sign
@@ -397,952 +443,690 @@
         </div>
 
         <!-- Main App Screen (Map) -->
-        <div id="main-screen" class="screen flex-col">
+        <div id="main-screen" class="screen flex-col bg-white">
             <button id="hamburger-menu-btn" class="text-primary text-xl" aria-label="Open side menu">
                 <i class="fa-solid fa-bars"></i>
             </button>
-            <div id="search-container" role="search">
-                <div class="relative w-full shadow-md rounded-full overflow-hidden">
-                    <label for="search-input" class="sr-only">Search for places</label>
-                    <input id="search-input" type="text" placeholder="Search for places..."
-                        class="w-full pl-5 pr-12 py-3 rounded-full text-gray-900 bg-white border-transparent focus:outline-none focus:ring-2 focus:ring-primary">
-                    <button id="search-btn" type="button" aria-label="Search"
-                        class="absolute right-0 top-0 h-full w-12 flex items-center justify-center text-primary">
-                        <i class="fa-solid fa-search" aria-hidden="true"></i>
-                    </button>
+            <!-- Logo and App Name -->
+            <div class="flex items-center justify-center p-4">
+                <img src="https://raw.githubusercontent.com/Aram814/QueerSafeSpace/refs/heads/main/IMG_9650.PNG"
+                    alt="QueerSafeSpace Logo" class="h-10 w-10 mr-2">
+                <h1 class="text-2xl font-bold">QueerSafeSpace</h1>
+            </div>
+
+            <!-- Search and Filter Container -->
+            <div class="flex w-full px-4 max-w-xl mx-auto space-x-2">
+                <div id="search-container" class="relative flex-grow shadow-md rounded-full overflow-hidden">
+                    <label for="search-input" class="sr-only">Search</label>
+                    <input type="text" id="search-input" placeholder="Search for safe spaces..."
+                        class="w-full px-6 py-3 rounded-full border-2 border-transparent focus:outline-none focus:border-primary transition-colors">
+                    <i class="fas fa-search absolute right-6 top-1/2 -translate-y-1/2 text-gray-400"></i>
                 </div>
-                <button id="filter-btn" type="button" aria-label="Open filter options"
-                    class="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-md text-primary">
-                    <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                <button id="filter-btn" class="p-3 rounded-full bg-white shadow-md text-primary">
+                    <i class="fa-solid fa-filter"></i>
                 </button>
             </div>
-            <div id="map" role="application" aria-label="QueerSafeSpace Map"></div>
-            <button id="fab" type="button"
-                class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white"
-                aria-label="Submit a new location">
-                <i class="fa-solid fa-plus text-2xl" aria-hidden="true"></i>
-            </button>
-            <button id="crisis-button" type="button" aria-label="Activate Crisis Mode">
-                Crisis Mode
-            </button>
-            <div id="anonymous-banner" role="status" aria-live="polite"
-                class="fixed bottom-0 left-0 right-0 text-center py-2 bg-yellow-400 text-gray-800 text-sm font-medium hidden">
-                You are in anonymous mode. Some features may be limited.
+
+            <!-- Map Container -->
+            <div id="map-container" class="flex-grow p-4">
+                <div id="map" class="w-full h-full rounded-xl shadow-lg border-2 border-gray-200"></div>
+                <button id="fab" aria-label="Add a new safe space">
+                    <i class="fa-solid fa-plus text-2xl"></i>
+                </button>
+            </div>
+
+            <!-- Map Key -->
+            <div class="w-full py-2 map-key-container">
+                <div class="map-key-item">
+                    <div class="color-dot" style="background-color: #19CA2E;"></div>
+                    <span>Safe</span>
+                </div>
+                <div class="map-key-item">
+                    <div class="color-dot" style="background-color: #F3F318;"></div>
+                    <span>Mixed</span>
+                </div>
+                <div class="map-key-item">
+                    <div class="color-dot" style="background-color: #FF0000;"></div>
+                    <span>Not Safe</span>
+                </div>
+                <div class="map-key-item">
+                    <div class="color-dot" style="background-color: #D9D9D9;"></div>
+                    <span>Unknown</span>
+                </div>
+            </div>
+
+            <!-- Action Buttons below map -->
+            <div class="flex justify-between w-full p-4">
+                <button id="find-safe-space-btn" class="px-6 py-3 rounded-full font-semibold text-white transition-all duration-300 transform hover:scale-105" style="background-color: #1272EF;">
+                    Find My Safe Space
+                </button>
+                <button id="crisis-button" class="px-6 py-3 rounded-full font-semibold text-white transition-all duration-300 transform hover:scale-105 bg-red">
+                    Crisis Button
+                </button>
             </div>
         </div>
 
-        <!-- Side Menu -->
-        <div id="side-menu"
-            class="fixed top-0 left-0 h-full w-full bg-black bg-opacity-50 transition-transform duration-300 transform -translate-x-full z-[900]"
-            aria-hidden="true">
-            <div
-                class="menu-content w-75 sm:w-1/2 md:w-1/3 lg:w-1/4 max-w-sm h-full bg-white p-6 shadow-2xl flex flex-col space-y-4">
-                <div class="flex items-center space-x-4 mb-4">
-                    <div
-                        class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-xl text-gray-500">
-                        <i class="fas fa-user-circle" aria-hidden="true"></i>
+        <!-- Account Settings Screen (Placeholder) -->
+        <div id="account-settings-screen" class="screen justify-center items-center p-8 bg-white">
+            <div class="flex flex-col items-center p-6 md:p-10 rounded-xl bg-white shadow-xl w-full max-w-xl text-center">
+                <h2 class="text-2xl font-bold mb-4">Account Settings</h2>
+                <p class="text-gray-600 mb-4">Manage your username, email, and password here.</p>
+                <p class="text-gray-400 italic">This screen is currently under development.</p>
+                <button class="mt-8 px-6 py-3 rounded-full font-semibold bg-primary text-white" onclick="showScreen('main-screen')">Back to Map</button>
+            </div>
+        </div>
+
+        <!-- Contact Us Screen (Placeholder) -->
+        <div id="contact-us-screen" class="screen justify-center items-center p-8 bg-white">
+            <div class="flex flex-col items-center p-6 md:p-10 rounded-xl bg-white shadow-xl w-full max-w-xl text-center">
+                <h2 class="text-2xl font-bold mb-4">Contact Us</h2>
+                <p class="text-gray-600 mb-4">
+                    QueerSafeSpace is a community-driven project dedicated to providing a safer environment for LGBTQ+ individuals. We believe everyone deserves to feel secure and have access to supportive resources.
+                </p>
+                <div class="flex flex-col items-center space-y-2 mt-4">
+                    <a href="mailto:queersafespace.lgbt@gmail.com" class="text-primary hover:underline"><i class="fa-solid fa-envelope mr-2"></i> QueerSafeSpace.lgbt@gmail.com</a>
+                    <a href="https://www.instagram.com/queersafespace.lgbt?igsh=OHkxbzkxaWdxOGRu" class="text-primary hover:underline"><i class="fa-brands fa-instagram mr-2"></i> @QueerSafeSpace.LGBT</a>
+                    <a href="https://www.threads.com/@queersafespace.lgbt?igshid=NTc4MTIwNjQ2YQ==" class="text-primary hover:underline"><i class="fa-brands fa-x-threads mr-2"></i> @QueerSafeSpace.LGBT</a>
+                </div>
+                <button class="mt-8 px-6 py-3 rounded-full font-semibold bg-primary text-white" onclick="showScreen('main-screen')">Close</button>
+            </div>
+        </div>
+
+        <!-- Privacy Policy Screen -->
+        <div id="privacy-policy-screen" class="screen flex-col items-center p-8 bg-white">
+            <div class="content-container bg-white rounded-xl shadow-xl w-full">
+                <h2 class="text-center">Privacy Policy</h2>
+                <div class="prose max-w-none text-gray-600 leading-relaxed">
+                    <h3 class="text-2xl font-bold text-gray-800">Privacy Policy – QueerSafeSpace</h3>
+                    <p class="text-sm text-gray-500 mt-0">Effective Date: September 13, 2025</p>
+
+                    <p>QueerSafeSpace (“we,” “our,” “us”) respects your privacy and is committed to protecting it. This Privacy Policy explains how we collect, use, and safeguard your information when you use our website, mobile app, and related services (the “Services”).</p>
+
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">1. Information We Collect</h4>
+                    <p>We may collect the following types of information:</p>
+                    <ul class="list-disc list-inside ml-4 space-y-2">
+                        <li><strong>Account Information:</strong> Email address (when you create an account).</li>
+                        <li><strong>Location Data:</strong> If you choose to enable location sharing, we may collect your approximate or precise location to show safe spaces near you.</li>
+                        <li><strong>Usage Data:</strong> Basic information about how you interact with our Services.</li>
+                    </ul>
+
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">2. Optional Data Sharing</h4>
+                    <p>You may opt out of providing your location or email and still use limited features of the Services.</p>
+                    <p>Location data is only used to display map features and is not shared publicly with your personal information.</p>
+
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">3. How We Use Your Information</h4>
+                    <p>We use your information to:</p>
+                    <ul class="list-disc list-inside ml-4 space-y-2">
+                        <li>Provide and improve the Services.</li>
+                        <li>Personalize your experience (e.g., show nearby safe spaces).</li>
+                        <li>Communicate with you about updates or support.</li>
+                        <li>Maintain security and prevent misuse.</li>
+                    </ul>
+
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">4. Third-Party Services</h4>
+                    <p>We may use trusted third-party providers, including:</p>
+                    <ul class="list-disc list-inside ml-4 space-y-2">
+                        <li><strong>Supabase</strong> – for secure data storage and authentication.</li>
+                        <li><strong>Google Maps API</strong> – for map functionality.</li>
+                        <li><strong>GitHub</strong> - various types of Data as specified in the privacy policy of the service.</li>
+                    </ul>
+                    <p>These services may collect data as governed by their own privacy policies.</p>
+
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">5. Data Protection</h4>
+                    <p>We use reasonable security measures to protect your data. However, no system is completely secure, and we cannot guarantee absolute protection.</p>
+
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">6. Children’s Privacy</h4>
+                    <p>QueerSafeSpace is not intended for children under 13. We do not knowingly collect information from children.</p>
+
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">7. Future Monetization</h4>
+                    <p>Currently, QueerSafeSpace is free to use. In the future, we may introduce subscription-based features. This Privacy Policy will be updated to reflect any changes.</p>
+
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">8. Your Rights</h4>
+                    <p>Depending on your location, you may have rights to access, correct, or delete your personal information. Contact us at <a href="mailto:QueerSafeSpace.lgbt@gmail.com" class="text-indigo-600 hover:underline">QueerSafeSpace.lgbt@gmail.com</a> to make a request.</p>
+
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">9. Changes to this Policy</h4>
+                    <p>We may update this Privacy Policy as our Services evolve. Updates will be posted here with a new “Effective Date.”</p>
+
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">10. Contact Us</h4>
+                    <p>If you have any questions or concerns, email us at: <a href="mailto:QueerSafeSpace.lgbt@gmail.com" class="text-indigo-600 hover:underline">QueerSafeSpace.lgbt@gmail.com</a></p>
+                    <p class="text-center text-sm text-gray-500 mt-8">&copy; 2025 QueerSafeSpace. All rights reserved.</p>
+                </div>
+                <div class="text-center mt-8">
+                    <button class="px-6 py-3 rounded-full font-semibold bg-primary text-white" id="close-privacy-btn">Close</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Terms and Conditions Screen -->
+        <div id="terms-conditions-screen" class="screen flex-col items-center p-8 bg-white">
+            <div class="content-container bg-white rounded-xl shadow-xl w-full">
+                <h2 class="text-center">Terms & Conditions – QueerSafeSpace</h2>
+                <p class="text-sm text-gray-500 text-center mb-6">Effective Date: September 13, 2025</p>
+                
+                <p>Welcome to QueerSafeSpace! These Terms & Conditions (“Terms”) govern your use of our website, mobile app, and related services (the “Services”). By using QueerSafeSpace, you agree to these Terms.</p>
+                
+                <h3>1. Eligibility</h3>
+                <p>You must be at least 13 years old to use our Services.</p>
+                
+                <h3>2. Purpose of the App</h3>
+                <p>QueerSafeSpace is a community-driven platform designed to provide a safer environment for LGBTQ+ individuals by allowing users to find and share information about inclusive spaces. This app is <strong>not</strong> a dating or social networking platform. Its sole purpose is to enhance safety and community awareness.</p>
+                
+                <h3>3. Account Responsibility</h3>
+                <p>You are responsible for keeping your account information (including your email and password) secure. You agree not to share false or misleading information when using our Services.</p>
+                
+                <h3>4. User Conduct</h3>
+                <p>You agree to use the app in a respectful and responsible manner. You will not:</p>
+                <ul>
+                    <li>Post or submit any content that is hateful, discriminatory, harassing, or threatening.</li>
+                    <li>Misrepresent your identity or the purpose of your contributions.</li>
+                    <li>Share any personally identifiable information about yourself or others in public sections of the app.</li>
+                    <li>Use the app for any illegal activities or to violate any laws.</li>
+                </ul>
+                <p>We reserve the right to remove content that violates our community guidelines.</p>
+                
+                <h3>5. Anonymity and Content</h3>
+                <p>All user contributions, including ratings, reviews, and comments, are completely anonymous. By submitting content, you grant QueerSafeSpace a non-exclusive, royalty-free, worldwide license to use, reproduce, and display your anonymous contributions to improve the app.</p>
+                
+                <h3>6. Location Services</h3>
+                <p>Location features are optional. If you enable location, the app may use it to display nearby safe spaces. Disabling location may limit some features.</p>
+                
+                <h3>7. Intellectual Property</h3>
+                <p>All content, logos, and features of QueerSafeSpace are owned by us unless otherwise noted. You may not copy, distribute, or modify them without permission.</p>
+                
+                <h3>8. Third-Party Services</h3>
+                <p>Our Services may use third-party tools (e.g., Google Maps, Supabase, Github). Your use of these services is also subject to their terms.</p>
+                
+                <h3>9. Disclaimer of Liability</h3>
+                <p>QueerSafeSpace is community-driven. We cannot guarantee the accuracy, safety, or reliability of user-submitted locations or reviews. Use the Services at your own discretion and judgment. QueerSafeSpace is not liable for any damages or harm arising from your use of the app or reliance on user-generated content.</p>
+                
+                <h3>10. Future Paid Features</h3>
+                <p>Currently, QueerSafeSpace is free. In the future, we may offer subscription-based or premium features. Details will be provided in updated Terms.</p>
+                
+                <h3>11. Account Termination</h3>
+                <p>We may suspend or terminate accounts that violate these Terms or harm the community.</p>
+                
+                <h3>12. Changes to Terms</h3>
+                <p>We may modify these terms at any time. If we make changes, we will post the updated terms on this page. Your continued use of the app after any changes constitutes your acceptance of the new terms.</p>
+                
+                <h3>13. Governing Law</h3>
+                <p>These Terms are governed by the laws of the State of Florida, United States.</p>
+                
+                <h3>14. Contact Us</h3>
+                <p>For questions about these Terms, contact us at: QueerSafeSpace.lgbt@gmail.com</p>
+
+                <p class="text-center text-sm text-gray-500 mt-8">&copy; 2025 QueerSafeSpace. All rights reserved.</p>
+
+                <div class="text-center mt-8">
+                    <button class="px-6 py-3 rounded-full font-semibold bg-primary text-white" id="close-terms-btn">Close</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Modals -->
+        <div id="auth-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h2 id="auth-title" class="text-2xl font-bold mb-4"></h2>
+                <form id="auth-form" class="space-y-4">
+                    <div>
+                        <label for="auth-email" class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" id="auth-email"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                            placeholder="you@example.com">
                     </div>
-                    <span id="user-email" class="font-semibold text-lg text-gray-800">Guest</span>
+                    <!-- Password and Confirm Password Fields -->
+                    <div id="password-fields">
+                        <div>
+                            <label for="auth-password" class="block text-sm font-medium text-gray-700">Password</label>
+                            <input type="password" id="auth-password"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+                            <p id="password-requirements-text" class="text-xs text-gray-500 mt-1 hidden">Password must be a minimum of 8 characters.</p>
+                        </div>
+                        <div id="confirm-password-container" class="mt-4 hidden">
+                            <label for="auth-confirm-password" class="block text-sm font-medium text-gray-700">Confirm
+                                Password</label>
+                            <input type="password" id="auth-confirm-password"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+                        </div>
+                    </div>
+                    <!-- Agreements for Sign Up -->
+                    <div id="agreements-container" class="space-y-2 text-sm text-gray-400 hidden">
+                        <div class="flex items-start">
+                            <input type="checkbox" id="terms" name="terms"
+                                class="mr-2 mt-1 rounded text-purple-600 focus:ring-purple-500">
+                            <label for="terms" class="text-gray-700">I agree to the <a href="#" class="text-primary hover:underline" id="terms-link">Terms and Conditions</a></label>
+                        </div>
+                        <div class="flex items-start">
+                            <input type="checkbox" id="privacy" name="privacy"
+                                class="mr-2 mt-1 rounded text-purple-600 focus:ring-purple-500">
+                            <label for="privacy" class="text-gray-700">I agree to the <a href="#" class="text-primary hover:underline" id="privacy-link">Privacy Policy</a></label>
+                        </div>
+                    </div>
+                    <a href="#" id="forgot-password-link" class="text-sm text-primary hover:underline hidden">Forgot password?</a>
+                    <button id="submit-auth-btn" type="submit"
+                        class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                        <span id="auth-button-text"></span>
+                    </button>
+                </form>
+                <div id="auth-message" class="mt-4 text-center"></div>
+                <button id="close-auth-modal"
+                    class="mt-4 w-full text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Sidebar Menu -->
+        <div id="side-menu">
+            <div class="menu-content flex flex-col p-8 rainbow-bg">
+                <button id="close-menu-btn" class="self-end text-2xl text-gray-500">&times;</button>
+                <div class="flex items-center space-x-2 mb-6">
+                    <i class="fa-solid fa-user-circle text-4xl text-gray-500"></i>
+                    <h3 id="user-name" class="text-2xl font-bold">User Name</h3>
                 </div>
-                <a href="javascript:void(0)" id="account-link"
-                    class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-user-cog text-gray-500" aria-hidden="true"></i>
-                    <span class="font-medium text-gray-800">Account</span>
+                <a href="#" class="mb-2 text-gray-700 font-semibold" data-screen="account-settings-screen">
+                    <i class="fa-solid fa-user-cog mr-2"></i> Account Settings
                 </a>
-                <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                    <span class="font-medium text-gray-800">Location Permissions</span>
-                    <label class="toggle-switch" for="location-toggle">
-                        <input type="checkbox" id="location-toggle" role="switch" aria-checked="false">
+                <div class="flex items-center justify-between mb-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
+                    <span class="text-gray-700 font-semibold">
+                        <i class="fa-solid fa-location-dot mr-2"></i> Location
+                    </span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="location-toggle">
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                    <span class="font-medium text-gray-800">Notifications</span>
-                    <label class="toggle-switch" for="notifications-toggle">
-                        <input type="checkbox" id="notifications-toggle" role="switch" aria-checked="false">
+                <div class="flex items-center justify-between mb-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
+                    <span class="text-gray-700 font-semibold">
+                        <i class="fa-solid fa-bell mr-2"></i> Notifications
+                    </span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="notifications-toggle">
                         <span class="slider"></span>
                     </label>
                 </div>
-                <a href="javascript:void(0)" id="crisis-settings-link"
-                    class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-exclamation-triangle text-gray-500" aria-hidden="true"></i>
-                    <span class="font-medium text-gray-800">Crisis Mode Settings</span>
+                <div class="flex items-center justify-between mb-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
+                    <span class="text-gray-700 font-semibold">
+                        <i class="fa-solid fa-shield-alt mr-2"></i> Crisis Mode Settings
+                    </span>
+                    <span class="text-xs text-gray-400 italic">Coming Soon</span>
+                </div>
+                <hr class="border-t border-gray-200 my-2">
+                <a href="#" class="mb-2 text-gray-700 font-semibold" data-screen="contact-us-screen">
+                    <i class="fa-solid fa-headset mr-2"></i> Contact Us!
                 </a>
-                <a href="javascript:void(0)" id="contact-us-link"
-                    class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-envelope text-gray-500" aria-hidden="true"></i>
-                    <span class="font-medium text-gray-800">Contact Us!</span>
+                <a href="#" class="mb-2 text-gray-700 font-semibold" data-screen="privacy-policy-screen">
+                    <i class="fa-solid fa-lock mr-2"></i> Privacy Policy
                 </a>
-                <a href="javascript:void(0)" id="privacy-policy-link"
-                    class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-shield-alt text-gray-500" aria-hidden="true"></i>
-                    <span class="font-medium text-gray-800">Privacy Policy</span>
-                </a>
-                <a href="javascript:void(0)" id="terms-link"
-                    class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-file-alt text-gray-500" aria-hidden="true"></i>
-                    <span class="font-medium text-gray-800">Terms and Conditions</span>
+                <a href="#" class="mb-2 text-gray-700 font-semibold" data-screen="terms-conditions-screen">
+                    <i class="fa-solid fa-file-contract mr-2"></i> Terms and Conditions
                 </a>
                 <div class="mt-auto">
-                    <button id="sign-out-btn" type="button"
-                        class="w-full px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-red-500 text-white">
-                        <i class="fa-solid fa-sign-out-alt mr-2" aria-hidden="true"></i>Sign Out
+                    <hr class="border-t-2 border-gray-200 my-4">
+                    <button id="sign-out-btn" class="w-full text-left py-2 px-4 rounded-md text-gray-700 font-semibold">
+                        <i class="fa-solid fa-right-from-bracket mr-2"></i> Log out
                     </button>
                 </div>
             </div>
         </div>
-
-        <!-- Modals -->
-        <div id="submit-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="submit-modal-title" tabindex="-1">
-            <div class="modal-content w-11/12 max-w-xl p-6 md:p-8 rounded-xl bg-white shadow-xl">
-                <h3 id="submit-modal-title" class="text-2xl font-bold mb-4 text-center">Submit a New Location</h3>
-                <form id="submission-form" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-1" for="place-name">Name of Place*</label>
-                        <input type="text" id="place-name" required class="w-full p-2 border border-gray-300 rounded-lg">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1" for="place-address">Address*</label>
-                        <input type="text" id="place-address" required class="w-full p-2 border border-gray-300 rounded-lg">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1" for="place-category">Category*</label>
-                        <select id="place-category" required class="w-full p-2 border border-gray-300 rounded-lg">
-                            <option value="">Select Category</option>
-                            <option value="Bar/drinks">Bar/drinks</option>
-                            <option value="Coffee">Coffee</option>
-                            <option value="Dining">Dining</option>
-                            <option value="Entertainment">Entertainment</option>
-                            <option value="Medical">Medical</option>
-                            <option value="Shopping">Shopping</option>
-                            <option value="Religious Institution">Religious Institution</option>
-                        </select>
-                    </div>
-                    <fieldset>
-                        <legend class="block text-sm font-medium mb-1">Safety Rating*</legend>
-                        <div class="flex gap-4">
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="safety-rating" value="Safe" required class="form-radio text-green-500">
-                                <span class="ml-2">Safe</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="safety-rating" value="Mixed" class="form-radio text-yellow-500">
-                                <span class="ml-2">Mixed</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="safety-rating" value="Not Safe" class="form-radio text-red-500">
-                                <span class="ml-2">Not Safe</span>
-                            </label>
-                        </div>
-                    </fieldset>
-                    <div>
-                        <label class="block text-sm font-medium mb-1" for="felt-safe-as">Felt Safe Here as</label>
-                        <input type="text" id="felt-safe-as" class="w-full p-2 border border-gray-300 rounded-lg">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1" for="other-details">Other details</label>
-                        <textarea id="other-details" rows="3" class="w-full p-2 border border-gray-300 rounded-lg"></textarea>
-                    </div>
-                    <button type="submit"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Submit Location</button>
-                    <button type="button"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full mt-2"
-                        onclick="closeModal('submit-modal')">Cancel</button>
-                </form>
-            </div>
-        </div>
-
-        <div id="login-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="login-modal-title" tabindex="-1">
-            <div class="modal-content text-center">
-                <h3 id="login-modal-title" class="text-2xl font-bold mb-4">Sign in</h3>
-                <form id="login-form" class="space-y-4">
-                    <div>
-                        <label for="login-email" class="sr-only">Email</label>
-                        <input type="email" id="login-email" placeholder="Email" required class="w-full p-2 border border-gray-300 rounded-lg">
-                    </div>
-                    <div>
-                        <label for="login-password" class="sr-only">Password</label>
-                        <input type="password" id="login-password" placeholder="Password" required class="w-full p-2 border border-gray-300 rounded-lg">
-                    </div>
-                    <button type="submit" id="login-button" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Sign In</button>
-                </form>
-                <div class="mt-4 text-sm text-gray-500 flex justify-between items-center">
-                    <button id="cancel-login" type="button" class="text-primary hover:underline" onclick="closeModal('login-modal')">Cancel</button>
-                    <button id="forgot-password" type="button" class="text-primary hover:underline">Forgot password?</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="signup-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="signup-modal-title" tabindex="-1">
-            <div class="modal-content text-center">
-                <h3 id="signup-modal-title" class="text-2xl font-bold mb-4">Create Account</h3>
-                <form id="signup-form" class="space-y-4">
-                    <div>
-                        <label for="signup-email" class="sr-only">Email</label>
-                        <input type="email" id="signup-email" placeholder="Email" required class="w-full p-2 border border-gray-300 rounded-lg">
-                    </div>
-                    <div>
-                        <label for="signup-password" class="sr-only">Password (min 6 characters)</label>
-                        <input type="password" id="signup-password" placeholder="Password (min 6 characters)" required class="w-full p-2 border border-gray-300 rounded-lg">
-                    </div>
-                    <div>
-                        <label for="signup-confirm-password" class="sr-only">Confirm Password</label>
-                        <input type="password" id="signup-confirm-password" placeholder="Confirm Password" required class="w-full p-2 border border-gray-300 rounded-lg">
-                    </div>
-                    <button type="submit"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signup text-white w-full">Sign Up</button>
-                    <button type="button"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full mt-2"
-                        onclick="closeModal('signup-modal')">Cancel</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- New password reset modal -->
-        <div id="password-reset-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="password-reset-modal-title" tabindex="-1">
-            <div class="modal-content text-center">
-                <h3 id="password-reset-modal-title" class="text-2xl font-bold mb-4">Reset Your Password</h3>
-                <form id="password-reset-form" class="space-y-4">
-                    <div>
-                        <label for="new-password" class="sr-only">New Password</label>
-                        <input type="password" id="new-password" placeholder="New Password" required class="w-full p-2 border border-gray-300 rounded-lg">
-                    </div>
-                    <div>
-                        <label for="confirm-new-password" class="sr-only">Confirm New Password</label>
-                        <input type="password" id="confirm-new-password" placeholder="Confirm New Password" required class="w-full p-2 border border-gray-300 rounded-lg">
-                    </div>
-                    <button type="submit"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Update
-                        Password</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Single, dynamic message modal for all alerts -->
-        <div id="message-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="message-title" tabindex="-1">
-            <div class="modal-content text-center">
-                <h3 id="message-title" class="text-xl font-bold mb-2"></h3>
-                <p id="message-text" class="text-gray-600"></p>
-                <button id="message-button" type="button"
-                    class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4">OK</button>
-            </div>
-        </div>
-
-        <div id="filter-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="filter-modal-title" tabindex="-1">
-            <div class="modal-content w-11/12 max-w-xl p-6 md:p-8 rounded-xl bg-white shadow-xl">
-                <h3 id="filter-modal-title" class="text-2xl font-bold mb-4 text-center">Filter Locations</h3>
-                <form id="filter-form" class="space-y-4">
-                    <fieldset>
-                        <legend class="block text-sm font-medium mb-1">Category</legend>
-                        <div class="flex flex-wrap gap-2">
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="filter-category" value="Bar/drinks" class="form-checkbox">
-                                <span class="ml-1 text-sm">Bar/drinks</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="filter-category" value="Coffee" class="form-checkbox">
-                                <span class="ml-1 text-sm">Coffee</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="filter-category" value="Dining" class="form-checkbox">
-                                <span class="ml-1 text-sm">Dining</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="filter-category" value="Entertainment" class="form-checkbox">
-                                <span class="ml-1 text-sm">Entertainment</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="filter-category" value="Medical" class="form-checkbox">
-                                <span class="ml-1 text-sm">Medical</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="filter-category" value="Shopping" class="form-checkbox">
-                                <span class="ml-1 text-sm">Shopping</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="filter-category" value="Religious Institution" class="form-checkbox">
-                                <span class="ml-1 text-sm">Religious Institution</span>
-                            </label>
-                        </div>
-                    </fieldset>
-                    <fieldset>
-                        <legend class="block text-sm font-medium mb-1">Safety Rating</legend>
-                        <div class="flex flex-wrap gap-2">
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="filter-safety" value="Safe" class="form-checkbox">
-                                <span class="ml-1 text-sm">Safe</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="filter-safety" value="Mixed" class="form-checkbox">
-                                <span class="ml-1 text-sm">Mixed</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="filter-safety" value="Not Safe" class="form-checkbox">
-                                <span class="ml-1 text-sm">Not Safe</span>
-                            </label>
-                        </div>
-                    </fieldset>
-                    <button type="submit"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full">Apply Filters</button>
-                    <button type="button"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full mt-2"
-                        onclick="closeModal('filter-modal')">Cancel</button>
-                </form>
-            </div>
-        </div>
-
-        <div id="info-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="info-modal-title" tabindex="-1">
-            <div class="modal-content w-11/12 max-w-xl p-6 md:p-8 rounded-xl bg-white shadow-xl">
-                <h3 id="info-modal-title" class="sr-only">Location Information</h3>
-                <div id="info-content"></div>
-                <button type="button" class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4" onclick="closeModal('info-modal')">Close</button>
-            </div>
-        </div>
-
-        <div id="account-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="account-modal-title" tabindex="-1">
-            <div class="modal-content w-11/12 max-w-xl p-6 md:p-8 rounded-xl bg-white shadow-xl">
-                <h3 id="account-modal-title" class="text-2xl font-bold mb-4 text-center">Account Settings</h3>
-                <p>Edit your account information here.</p>
-                <div class="mt-6 flex justify-end">
-                    <button type="button"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4"
-                        onclick="closeModal('account-modal')">Close</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="crisis-settings-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="crisis-settings-modal-title" tabindex="-1">
-            <div class="modal-content w-11/12 max-w-xl p-6 md:p-8 rounded-xl bg-white shadow-xl">
-                <h3 id="crisis-settings-modal-title" class="text-2xl font-bold mb-4 text-center">Crisis Mode Settings</h3>
-                <p>Manage your trusted contacts and crisis preferences.</p>
-                <div class="mt-6 flex justify-end">
-                    <button type="button"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4"
-                        onclick="closeModal('crisis-settings-modal')">Close</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="contact-us-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="contact-us-modal-title" tabindex="-1">
-            <div class="modal-content w-11/12 max-w-xl p-6 md:p-8 rounded-xl bg-white shadow-xl">
-                <h3 id="contact-us-modal-title" class="text-2xl font-bold mb-4 text-center">Contact Us</h3>
-                <div class="space-y-4">
-                    <p>Feel free to reach out to us with any questions or feedback:</p>
-                    <p><strong>Email:</strong> support@queersafespace.com</p>
-                    <p><strong>Instagram:</strong> @queersafespace_app</p>
-                    <p><strong>Threads:</strong> @queersafespace_app</p>
-                </div>
-                <div class="mt-6 flex justify-end">
-                    <button type="button"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4"
-                        onclick="closeModal('contact-us-modal')">Close</button>
-                </div>
-            </div>
-        </div>
-
     </div>
 
-    <!-- Main JavaScript Logic -->
+    <!-- The main application script using type="module" -->
     <script type="module">
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.2/+esm';
 
-        // NOTE: Please replace these with your actual Supabase project keys.
-        const SUPABASE_URL = 'https://sgvxsyvqluhivohypkkg.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndnhzeXZxbHVoaXZvaHlwa2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MjYzNzIsImV4cCI6MjA3MzMwMjM3Mn0.igseAZIczG6fEdtPNuF3_xyXb3rFKh5nQxxO_YUyCEs';
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // --- Supabase Configuration & Initialization ---
+        const supabaseUrl = 'https://sgvxsyvqluhivohypkkg.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndnhzeXZxbHVoaXZvaHlwa2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MjYzNzIsImV4cCI6MjA3MzMwMjM3Mn0.igseAZIczG6fEdtPNuF3_xyXb3rFKh5nQxxO_YUyCEs';
 
-        // Google Maps API
-        const GOOGLE_MAPS_API_KEY = 'AIzaSyD1CzCfikz8oJVPe50hrHLNz2VKnN4rjMc';
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        console.log("Supabase client created successfully.");
 
-        // Global variables for map and markers
-        let map;
-        let markers = [];
-        let userMarker;
-        let infoWindow;
-        let geocoder;
-        let lastFocusedElement; // For restoring focus after modal closes
-
-        // --- DOM Element Variables ---
-        // Screens
+        // --- DOM Elements ---
         const splashScreen = document.getElementById('splash-screen');
         const permissionsScreen = document.getElementById('permissions-screen');
         const mainScreen = document.getElementById('main-screen');
-
-        // Modals
-        const loginModal = document.getElementById('login-modal');
-        const signupModal = document.getElementById('signup-modal');
-        const submitModal = document.getElementById('submit-modal');
-        const filterModal = document.getElementById('filter-modal');
-        const messageModal = document.getElementById('message-modal');
-        const infoModal = document.getElementById('info-modal');
-        const accountModal = document.getElementById('account-modal');
-        const crisisSettingsModal = document.getElementById('crisis-settings-modal');
-        const contactUsModal = document.getElementById('contact-us-modal');
-        const passwordResetModal = document.getElementById('password-reset-modal');
-
-        const allModals = [loginModal, signupModal, submitModal, filterModal, messageModal, infoModal, accountModal, crisisSettingsModal, contactUsModal, passwordResetModal];
-
-        // Buttons and Forms
+        const accountSettingsScreen = document.getElementById('account-settings-screen');
+        const contactUsScreen = document.getElementById('contact-us-screen');
+        const privacyPolicyScreen = document.getElementById('privacy-policy-screen');
+        const termsConditionsScreen = document.getElementById('terms-conditions-screen');
         const signInBtn = document.getElementById('sign-in-btn');
         const signUpBtn = document.getElementById('sign-up-btn');
         const anonBtn = document.getElementById('anon-btn');
-        const loginForm = document.getElementById('login-form');
-        const loginButton = document.getElementById('login-button');
-        const signupForm = document.getElementById('signup-form');
-        const passwordResetForm = document.getElementById('password-reset-form');
-        const forgotPasswordBtn = document.getElementById('forgot-password');
-        const fab = document.getElementById('fab');
-        const submitForm = document.getElementById('submission-form');
-        const searchInput = document.getElementById('search-input');
-        const searchBtn = document.getElementById('search-btn');
-        const filterBtn = document.getElementById('filter-btn');
-        const crisisButton = document.getElementById('crisis-button');
-        const messageButton = document.getElementById('message-button');
         const continueToAppBtn = document.getElementById('continue-to-app-btn');
-
-        // UI elements
-        const anonymousBanner = document.getElementById('anonymous-banner');
+        const authModal = document.getElementById('auth-modal');
+        const authForm = document.getElementById('auth-form');
+        const authTitle = document.getElementById('auth-title');
+        const authEmail = document.getElementById('auth-email');
+        const authPassword = document.getElementById('auth-password');
+        const authConfirmPassword = document.getElementById('auth-confirm-password');
+        const authButtonText = document.getElementById('auth-button-text');
+        const authMessage = document.getElementById('auth-message');
+        const closeAuthModal = document.getElementById('close-auth-modal');
+        const forgotPasswordLink = document.getElementById('forgot-password-link');
+        const confirmPasswordContainer = document.getElementById('confirm-password-container');
+        const passwordFields = document.getElementById('password-fields');
+        const passwordRequirementsText = document.getElementById('password-requirements-text');
+        const agreementsContainer = document.getElementById('agreements-container');
+        
+        // --- DOM Elements for Menu ---
         const hamburgerMenuBtn = document.getElementById('hamburger-menu-btn');
         const sideMenu = document.getElementById('side-menu');
+        const closeMenuBtn = document.getElementById('close-menu-btn');
+        const menuLinks = sideMenu.querySelectorAll('a');
         const signOutBtn = document.getElementById('sign-out-btn');
+        const userNameElement = document.getElementById('user-name');
         const locationToggle = document.getElementById('location-toggle');
         const notificationsToggle = document.getElementById('notifications-toggle');
-        const userEmailSpan = document.getElementById('user-email');
-        const accountLink = document.getElementById('account-link');
-        const crisisSettingsLink = document.getElementById('crisis-settings-link');
-        const contactUsLink = document.getElementById('contact-us-link');
+        const termsCheckbox = document.getElementById('terms');
+        const privacyCheckbox = document.getElementById('privacy');
+        // New elements for modal navigation
+        const termsLink = document.getElementById('terms-link');
+        const privacyLink = document.getElementById('privacy-link');
+        const closePrivacyBtn = document.getElementById('close-privacy-btn');
+        const closeTermsBtn = document.getElementById('close-terms-btn');
 
-        // Permission state variables
-        let locationPermission = true;
-        let notificationsPermission = true;
-        let contactsPermission = true;
 
-        // --- Modal & Screen Management Functions ---
-        function showScreen(screen) {
+        let modalMode = 'signin';
+        let previousScreenId = 'splash-screen'; // Track the previous screen for the close buttons
+
+        // --- Utility Functions ---
+        function showScreen(screenId) {
+            // Save the current active screen before changing it
+            const currentActiveScreen = document.querySelector('.screen.active');
+            if (currentActiveScreen) {
+                previousScreenId = currentActiveScreen.id;
+            }
+
             const screens = document.querySelectorAll('.screen');
-            screens.forEach(s => s.classList.remove('active'));
-            screen.classList.add('active');
+            screens.forEach(screen => screen.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
         }
 
-        function showModal(modal) {
-            lastFocusedElement = document.activeElement;
-            modal.style.display = 'flex';
-            modal.setAttribute('aria-hidden', 'false');
-            // Find and focus on the first interactive element in the modal
-            const focusableElements = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-            focusableElements[0]?.focus();
+        function showMessage(message, type = 'info') {
+            let color = 'text-gray-500';
+            if (type === 'success') color = 'text-green-500';
+            if (type === 'error') color = 'text-red-500';
+            authMessage.className = `mt-4 text-center ${color}`;
+            authMessage.textContent = message;
         }
 
-        function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            modal.style.display = 'none';
-            modal.setAttribute('aria-hidden', 'true');
-            // Return focus to the element that opened the modal
-            if (lastFocusedElement) {
-                lastFocusedElement.focus();
+        function setModalMode(mode) {
+            modalMode = mode;
+            authForm.reset();
+            showMessage('');
+            passwordFields.classList.remove('hidden');
+            forgotPasswordLink.classList.add('hidden');
+            confirmPasswordContainer.classList.add('hidden');
+            passwordRequirementsText.classList.add('hidden');
+            agreementsContainer.classList.add('hidden');
+            authEmail.disabled = false;
+            authPassword.disabled = false;
+
+            switch (mode) {
+                case 'signin':
+                    authTitle.textContent = 'Sign In';
+                    authButtonText.textContent = 'Sign In';
+                    forgotPasswordLink.classList.remove('hidden');
+                    break;
+                case 'signup':
+                    authTitle.textContent = 'Sign Up';
+                    authButtonText.textContent = 'Sign Up';
+                    confirmPasswordContainer.classList.remove('hidden');
+                    passwordRequirementsText.classList.remove('hidden');
+                    agreementsContainer.classList.remove('hidden');
+                    break;
+                case 'forgotPassword':
+                    authTitle.textContent = 'Reset Password';
+                    authButtonText.textContent = 'Send Reset Link';
+                    passwordFields.classList.add('hidden');
+                    forgotPasswordLink.classList.add('hidden');
+                    break;
             }
         }
 
-        function showMessage(title, message) {
-            document.getElementById('message-title').textContent = title;
-            document.getElementById('message-text').textContent = message;
-            showModal(messageModal);
-        }
-
-        messageButton.addEventListener('click', () => {
-            closeModal('message-modal');
-        });
-
-        // --- Event Listeners for Splash Screen and Authentication ---
-        signInBtn.addEventListener('click', () => showModal(loginModal));
-        signUpBtn.addEventListener('click', () => showModal(signupModal));
-        anonBtn.addEventListener('click', () => {
-            showScreen(permissionsScreen);
-            anonymousBanner.classList.remove('hidden');
-        });
-
-        supabase.auth.onAuthStateChange(async (event, session) => {
-            if (session) {
-                const user = session.user;
-                userEmailSpan.textContent = user.email;
-
-                const { data: profile, error } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .single();
-
-                if (profile) {
-                    locationToggle.checked = profile.location_permission;
-                    notificationsToggle.checked = profile.notifications_permission;
-                    showScreen(mainScreen);
-                    initMap();
-                    anonymousBanner.classList.add('hidden');
-                } else {
-                    showScreen(permissionsScreen);
-                    anonymousBanner.classList.add('hidden');
-                }
-            } else {
-                showScreen(splashScreen);
-                userEmailSpan.textContent = "Guest";
+        // --- Supabase Auth Functions ---
+        async function handleSignUp(email, password, confirmPassword) {
+            // Check for agreements
+            if (!termsCheckbox.checked || !privacyCheckbox.checked) {
+                showMessage('You must agree to both the Terms and Conditions and the Privacy Policy.', 'error');
+                return;
             }
-        });
-
-        // Handle login with robust click event listener for mobile
-        async function handleLogin() {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) {
-                showMessage('Sign In Failed', `Error: ${error.message}`);
-            } else {
-                showMessage('Signed in successfully!', 'You have successfully logged in to your account.');
-                closeModal('login-modal');
-            }
-        }
-
-        loginButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            handleLogin();
-        });
-
-        // Fallback for desktop users pressing Enter
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            handleLogin();
-        });
-
-        async function handleSignup(e) {
-            e.preventDefault();
-            const email = e.target['signup-email'].value;
-            const password = e.target['signup-password'].value;
-            const confirmPassword = e.target['signup-confirm-password'].value;
 
             if (password !== confirmPassword) {
-                showMessage('Sign Up Failed', 'Error: Passwords do not match.');
+                showMessage('Passwords do not match. Please try again.', 'error');
                 return;
             }
 
-            const { data, error } = await supabase.auth.signUp({ email, password });
-            if (error) {
-                showMessage('Sign Up Failed', `Error: ${error.message}`);
-            } else {
-                showMessage('Sign Up Successful!', 'Check your email for a confirmation link to complete your sign-up.');
-                closeModal('signup-modal');
-            }
-        }
-
-        async function handleForgotPassword(e) {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            if (!email) {
-                showMessage('Forgot Password Failed', 'Please enter your email address first.');
+            if (password.length < 8) {
+                showMessage('Password must be a minimum of 8 characters.', 'error');
                 return;
             }
 
-            const redirectToUrl = `${window.location.origin}/reset-password`;
-            const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectToUrl });
-
-            if (error) {
-                showMessage('Forgot Password Failed', `Error: ${error.message}`);
-            } else {
-                showMessage('Password Reset Email Sent', 'If an account exists for that email, a password reset link has been sent to it.');
-                closeModal('login-modal');
-            }
-        }
-
-        async function handlePasswordReset(e) {
-            e.preventDefault();
-            const newPassword = e.target['new-password'].value;
-            const confirmNewPassword = e.target['confirm-new-password'].value;
-
-            if (newPassword !== confirmNewPassword) {
-                showMessage('Password Reset Failed', 'Passwords do not match. Please try again.');
-                return;
-            }
-
-            const { error } = await supabase.auth.updateUser({ password: newPassword });
-            if (error) {
-                showMessage('Password Reset Failed', `Error: ${error.message}`);
-            } else {
-                showMessage('Success!', 'Your password has been updated. You can now sign in with your new password.');
-                closeModal('password-reset-modal');
-                showModal(loginModal);
-            }
-        }
-
-        signupForm.addEventListener('submit', handleSignup);
-        forgotPasswordBtn.addEventListener('click', handleForgotPassword);
-        passwordResetForm.addEventListener('submit', handlePasswordReset);
-
-        // Check for password recovery link in URL hash on page load
-        window.addEventListener('load', () => {
-            const params = new URLSearchParams(window.location.hash.substring(1));
-            const type = params.get('type');
-            if (type === 'recovery') {
-                showModal(passwordResetModal);
-            }
-        });
-
-        // --- Permissions Screen Logic ---
-        document.querySelectorAll('.permission-btn').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const permissionType = e.target.dataset.permission;
-                const isAllowed = e.target.dataset.allow === 'true';
-
-                // Update state
-                if (permissionType === 'location') locationPermission = isAllowed;
-                if (permissionType === 'notifications') notificationsPermission = isAllowed;
-                if (permissionType === 'contacts') contactsPermission = isAllowed;
-
-                // Update UI for the toggle group
-                const container = e.target.closest('.permission-toggle-container');
-                container.querySelectorAll('.permission-btn').forEach(btn => {
-                    btn.classList.remove('bg-primary', 'text-white');
-                    btn.classList.add('bg-gray-200', 'text-gray-800');
-                    btn.setAttribute('aria-pressed', 'false');
+            showMessage('Signing up...');
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
                 });
-                e.target.classList.add('bg-primary', 'text-white');
-                e.target.classList.remove('bg-gray-200', 'text-gray-800');
-                e.target.setAttribute('aria-pressed', 'true');
-            });
-        });
-
-        continueToAppBtn.addEventListener('click', async () => {
-            const user = (await supabase.auth.getSession()).data.session?.user;
-            if (user) {
-                const { error } = await supabase.from('profiles').insert({
-                    user_id: user.id,
-                    permissions_set: true,
-                    location_permission: locationPermission,
-                    notifications_permission: notificationsPermission,
-                    contacts_permission: contactsPermission,
-                });
-                if (error) {
-                    showMessage('Error saving permissions', error.message);
-                }
-            }
-
-            if (!locationPermission) {
-                // If location is not allowed, show anonymous banner
-                anonymousBanner.classList.remove('hidden');
-                initMap();
-                showMessage('Location Services Limited', 'Location services have been limited. Some map features may not work as expected.');
-            } else {
-                // Otherwise, get location
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(position => {
-                        const pos = {
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude
-                        };
-                        initMap(pos);
-                    }, () => {
-                        initMap(); // Fallback to default map view
-                        showMessage('Permission Denied', 'Location permission denied. Some features may be limited.');
-                        anonymousBanner.classList.remove('hidden');
-                    });
-                } else {
-                    initMap();
-                    showMessage('Geolocation Not Supported', 'Geolocation is not supported by your browser. Some features may be limited.');
-                    anonymousBanner.classList.remove('hidden');
-                }
-            }
-            showScreen(mainScreen);
-        });
-
-        // --- Map Initialization and Functionality ---
-        window.initMap = async function () {
-            // Default location
-            const defaultPos = { lat: 39.8283, lng: -98.5795 };
-            const { Map } = await google.maps.importLibrary("maps");
-            const { Geocoder } = await google.maps.importLibrary("geocoding");
-
-            map = new Map(document.getElementById('map'), {
-                zoom: 4,
-                center: defaultPos,
-                mapId: 'DEMO_MAP_ID',
-                disableDefaultUI: true,
-            });
-
-            geocoder = new Geocoder();
-
-            fetchLocations();
-            setupRealtimeListener();
-
-            // Handle map clicks to close info window
-            map.addListener('click', () => {
-                if (infoWindow) {
-                    infoWindow.close();
-                }
-            });
-        };
-
-        function fetchLocations() {
-            supabase.from('locations')
-                .select('*')
-                .then(response => {
-                    if (response.error) throw response.error;
-                    clearMarkers();
-                    response.data.forEach(location => addMarker(location));
-                })
-                .catch(error => console.error('Error fetching locations:', error.message));
-        }
-
-        function setupRealtimeListener() {
-            supabase.channel('public:locations')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'locations' }, payload => {
-                    console.log('New location added:', payload.new);
-                    addMarker(payload.new);
-                })
-                .subscribe();
-        }
-
-        function addMarker(location) {
-            const latLng = { lat: location.latitude, lng: location.longitude };
-            const marker = new google.maps.Marker({
-                position: latLng,
-                map: map,
-                icon: getMarkerIcon(location.safety_rating)
-            });
-
-            marker.addListener('click', () => {
-                if (infoWindow) infoWindow.close();
-                const content = `
-                <div class="p-2 font-inter max-w-sm">
-                    <h4 class="font-bold text-lg mb-1">${location.name}</h4>
-                    <p class="text-sm text-gray-600 mb-2">${location.address}</p>
-                    <p class="text-xs font-semibold">Category: <span class="font-normal">${location.category}</span></p>
-                    <p class="text-xs font-semibold">Safety: <span class="font-normal">${location.safety_rating}</span></p>
-                    <p class="text-xs font-semibold">Details: <span class="font-normal">${location.details || 'No details provided.'}</span></p>
-                </div>
-                `;
-                infoWindow = new google.maps.InfoWindow({ content: content });
-                infoWindow.open(map, marker);
-            });
-            markers.push(marker);
-        }
-
-        function getMarkerIcon(rating) {
-            let color;
-            switch (rating) {
-                case 'Safe':
-                    color = 'green';
-                    break;
-                case 'Mixed':
-                    color = 'yellow';
-                    break;
-                case 'Not Safe':
-                    color = 'red';
-                    break;
-                default:
-                    color = 'blue';
-            }
-            return `http://maps.google.com/mapfiles/ms/icons/${color}-dot.png`;
-        }
-
-        function clearMarkers() {
-            markers.forEach(marker => marker.setMap(null));
-            markers = [];
-        }
-
-        // --- Main App Feature Event Listeners ---
-        // Submission Form
-        fab.addEventListener('click', () => showModal(submitModal));
-
-        submitForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const address = e.target['place-address'].value;
-            geocoder.geocode({ 'address': address }, async (results, status) => {
-                if (status === 'OK') {
-                    const lat = results[0].geometry.location.lat();
-                    const lng = results[0].geometry.location.lng();
-
-                    const newLocation = {
-                        name: e.target['place-name'].value,
-                        address: address,
-                        latitude: lat,
-                        longitude: lng,
-                        category: e.target['place-category'].value,
-                        safety_rating: e.target['safety-rating'].value,
-                        tags: Array.from(e.target.querySelectorAll('input[name="tags"]:checked')).map(el => el.value),
-                        felt_safe_as: e.target['felt-safe-as'].value,
-                        details: e.target['other-details'].value,
-                    };
-
-                    const { data, error } = await supabase.from('locations').insert([newLocation]);
-                    if (error) {
-                        showMessage('Submission Failed', `Error submitting location: ${error.message}`);
-                    } else {
-                        showMessage('Submission Successful!', 'Location submitted successfully!');
-                        closeModal('submit-modal');
-                    }
-                } else {
-                    showMessage('Geocode Failed', 'Geocode was not successful for the following reason: ' + status);
-                }
-            });
-        });
-
-        // Search and Filter
-        let currentFilter = { category: [], safety: [] };
-
-        searchBtn.addEventListener('click', async () => {
-            const query = searchInput.value;
-            if (query) {
-                const { data, error } = await supabase
-                    .from('locations')
-                    .select('*')
-                    .ilike('name', `%${query}%`);
 
                 if (error) {
-                    console.error('Error searching:', error.message);
+                    throw error;
+                }
+
+                console.log("Sign up successful:", data);
+                showMessage('Sign up successful! Please check your email to confirm.', 'success');
+
+            } catch (error) {
+                showMessage(`Sign up failed: ${error.message}`, 'error');
+                console.error("Supabase Sign Up Error:", error.message);
+            }
+        }
+
+        async function handleSignIn(email, password) {
+            showMessage('Signing in...');
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
+
+                if (error) {
+                    throw error;
+                }
+
+                console.log("Sign in successful:", data);
+                showMessage('Signed in successfully!', 'success');
+                authModal.style.display = 'none';
+                
+                // Check if user has seen permissions screen before
+                const hasSeenPermissions = localStorage.getItem('permissionsShown');
+                if (hasSeenPermissions) {
+                    showScreen('main-screen');
                 } else {
-                    clearMarkers();
-                    data.forEach(location => addMarker(location));
+                    showScreen('permissions-screen');
                 }
+
+            } catch (error) {
+                showMessage(`Sign in failed: ${error.message}`, 'error');
+                console.error("Supabase Sign In Error:", error.message);
+            }
+        }
+
+        async function handleForgotPassword(email) {
+            showMessage('Sending password reset link...');
+            try {
+                const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+                if (error) {
+                    throw error;
+                }
+
+                showMessage('Password reset link sent! Check your email.', 'success');
+                // Disable the email input to prevent resubmitting
+                authEmail.disabled = true;
+
+            } catch (error) {
+                showMessage(`Failed to send reset link: ${error.message}`, 'error');
+                console.error("Supabase Reset Password Error:", error.message);
+            }
+        }
+
+        async function handleSignOut() {
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) throw error;
+                console.log("Signed out successfully.");
+                showScreen('splash-screen');
+            } catch (error) {
+                console.error("Supabase Sign Out Error:", error.message);
+            }
+        }
+
+        // --- Event Listeners ---
+        window.addEventListener('DOMContentLoaded', () => {
+            // Check if permissions have been set on first load
+            const hasSeenPermissions = localStorage.getItem('permissionsShown');
+            if (hasSeenPermissions) {
+                showScreen('main-screen');
             } else {
-                fetchLocations();
-            }
-        });
-
-        filterBtn.addEventListener('click', () => showModal(filterModal));
-
-        document.getElementById('filter-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const selectedCategories = Array.from(e.target.querySelectorAll('input[name="filter-category"]:checked')).map(el => el.value);
-            const selectedSafety = Array.from(e.target.querySelectorAll('input[name="filter-safety"]:checked')).map(el => el.value);
-
-            let query = supabase.from('locations').select('*');
-
-            if (selectedCategories.length > 0) {
-                query = query.in('category', selectedCategories);
-            }
-            if (selectedSafety.length > 0) {
-                query = query.in('safety_rating', selectedSafety);
+                showScreen('splash-screen');
             }
 
-            const { data, error } = await query;
-            if (error) {
-                console.error('Error filtering:', error.message);
-            } else {
-                clearMarkers();
-                data.forEach(location => addMarker(location));
-            }
-            closeModal('filter-modal');
-        });
+            // Set initial toggle states based on local storage
+            const savedLocationPermission = localStorage.getItem('locationPermission') === 'true';
+            const savedNotificationsPermission = localStorage.getItem('notificationsPermission') === 'true';
+            locationToggle.checked = savedLocationPermission;
+            notificationsToggle.checked = savedNotificationsPermission;
 
-        // "Crisis Mode" button
-        crisisButton.addEventListener('click', () => {
-            showMessage('Crisis Mode Activated', 'Finding the nearest safe location. Please stay calm.');
-        });
+            // Handle user auth actions
+            signInBtn.addEventListener('click', () => {
+                setModalMode('signin');
+                authModal.style.display = 'flex';
+            });
 
-        // --- Side Menu Logic ---
-        hamburgerMenuBtn.addEventListener('click', () => {
-            sideMenu.classList.toggle('-translate-x-full');
-            sideMenu.classList.toggle('translate-x-0');
-            const isOpen = sideMenu.classList.contains('translate-x-0');
-            sideMenu.setAttribute('aria-hidden', !isOpen);
-            if(isOpen) {
-                const firstLink = sideMenu.querySelector('a, button, input');
-                if (firstLink) firstLink.focus();
-            } else {
-                hamburgerMenuBtn.focus();
-            }
-        });
+            signUpBtn.addEventListener('click', () => {
+                setModalMode('signup');
+                authModal.style.display = 'flex';
+            });
 
-        sideMenu.addEventListener('click', (e) => {
-            if (e.target.id === 'side-menu') {
-                sideMenu.classList.remove('translate-x-0');
-                sideMenu.classList.add('-translate-x-full');
-                sideMenu.setAttribute('aria-hidden', 'true');
-                hamburgerMenuBtn.focus();
-            }
-        });
+            anonBtn.addEventListener('click', () => {
+                // Show permissions screen if it hasn't been seen
+                if (!localStorage.getItem('permissionsShown')) {
+                    showScreen('permissions-screen');
+                } else {
+                    showScreen('main-screen');
+                }
+            });
 
-        signOutBtn.addEventListener('click', async () => {
-            const { error } = await supabase.auth.signOut();
-            if (error) {
-                showMessage('Sign Out Failed', `Error: ${error.message}`);
-            } else {
-                showMessage('Signed Out', 'You have been signed out.');
-                sideMenu.classList.remove('translate-x-0');
-                sideMenu.classList.add('-translate-x-full');
-            }
-        });
+            continueToAppBtn.addEventListener('click', () => {
+                // Get the state of the permission buttons
+                const locationAllowed = document.querySelector('.permission-btn[data-permission="location"].bg-primary').dataset.allow === 'true';
+                const notificationsAllowed = document.querySelector('.permission-btn[data-permission="notifications"].bg-primary').dataset.allow === 'true';
 
-        locationToggle.addEventListener('change', async (e) => {
-            const user = (await supabase.auth.getSession()).data.session?.user;
-            if (!user) {
-                e.target.checked = !e.target.checked;
-                showMessage('Action Denied', 'You must be logged in to change this setting.');
-                return;
-            }
-            const isChecked = e.target.checked;
-            e.target.setAttribute('aria-checked', isChecked);
-            const { error } = await supabase.from('profiles').update({ location_permission: isChecked }).eq('user_id', user.id);
-            if (error) {
-                e.target.checked = !e.target.checked;
-                e.target.setAttribute('aria-checked', !isChecked);
-                showMessage('Update Failed', error.message);
-            } else {
-                showMessage('Location Permission Updated', `Location permissions have been turned ${isChecked ? 'on' : 'off'}.`);
-            }
-        });
+                // Save permissions to local storage
+                localStorage.setItem('locationPermission', locationAllowed);
+                localStorage.setItem('notificationsPermission', notificationsAllowed);
+                localStorage.setItem('permissionsShown', 'true');
 
-        notificationsToggle.addEventListener('change', async (e) => {
-            const user = (await supabase.auth.getSession()).data.session?.user;
-            if (!user) {
-                e.target.checked = !e.target.checked;
-                showMessage('Action Denied', 'You must be logged in to change this setting.');
-                return;
-            }
-            const isChecked = e.target.checked;
-            e.target.setAttribute('aria-checked', isChecked);
-            const { error } = await supabase.from('profiles').update({ notifications_permission: isChecked }).eq('user_id', user.id);
-            if (error) {
-                e.target.checked = !e.target.checked;
-                e.target.setAttribute('aria-checked', !isChecked);
-                showMessage('Update Failed', error.message);
-            } else {
-                showMessage('Notification Permission Updated', `Notification permissions have been turned ${isChecked ? 'on' : 'off'}.`);
-            }
-        });
+                showScreen('main-screen');
+            });
 
-        // Open sub-modals from side menu
-        accountLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            closeModal('side-menu');
-            showModal(accountModal);
-        });
+            closeAuthModal.addEventListener('click', () => {
+                authModal.style.display = 'none';
+                setModalMode('signin');
+            });
 
-        crisisSettingsLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            closeModal('side-menu');
-            showModal(crisisSettingsModal);
-        });
+            forgotPasswordLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                setModalMode('forgotPassword');
+            });
 
-        contactUsLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            closeModal('side-menu');
-            showModal(contactUsModal);
-        });
+            authForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const email = authEmail.value;
+                const password = authPassword.value;
+                const confirmPassword = authConfirmPassword.value;
 
-        // Close modal on escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                for (const modal of allModals) {
-                    if (modal.style.display === 'flex') {
-                        closeModal(modal.id);
-                        break;
+                if (modalMode === 'signin') {
+                    handleSignIn(email, password);
+                } else if (modalMode === 'signup') {
+                    handleSignUp(email, password, confirmPassword);
+                } else if (modalMode === 'forgotPassword') {
+                    handleForgotPassword(email);
+                }
+            });
+
+            // Event listener for hamburger menu button
+            hamburgerMenuBtn.addEventListener('click', () => {
+                sideMenu.classList.add('open');
+            });
+
+            // Event listener for close menu button
+            closeMenuBtn.addEventListener('click', () => {
+                sideMenu.classList.remove('open');
+            });
+
+            // Event listeners for menu links to navigate screens
+            menuLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetScreenId = link.dataset.screen;
+                    if (targetScreenId) {
+                        showScreen(targetScreenId);
                     }
-                }
-            }
-        });
+                    sideMenu.classList.remove('open');
+                });
+            });
 
-    </script>
-    <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,geometry&callback=initMap">
+            // Event listener for sign out button
+            signOutBtn.addEventListener('click', () => {
+                handleSignOut();
+            });
+
+            // Placeholder toggle event listeners
+            locationToggle.addEventListener('change', (event) => {
+                console.log(`Location toggle is now ${event.target.checked ? 'ON' : 'OFF'}`);
+            });
+
+            notificationsToggle.addEventListener('change', (event) => {
+                console.log(`Notifications toggle is now ${event.target.checked ? 'ON' : 'OFF'}`);
+            });
+
+            // Event listeners for links inside the sign-up modal
+            termsLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                authModal.style.display = 'none';
+                showScreen('terms-conditions-screen');
+            });
+
+            privacyLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                authModal.style.display = 'none';
+                showScreen('privacy-policy-screen');
+            });
+
+            // Event listeners for back buttons on policy screens to go back to previous screen
+            closePrivacyBtn.addEventListener('click', () => {
+                showScreen(previousScreenId);
+            });
+
+            closeTermsBtn.addEventListener('click', () => {
+                showScreen(previousScreenId);
+            });
+
+
+            // Supabase session listener
+            supabase.auth.onAuthStateChange((event, session) => {
+                console.log("Auth state change event:", event, "Session:", session);
+                if (session) {
+                    // For now, set a placeholder username
+                    userNameElement.textContent = "User Name";
+                } else {
+                    // User is logged out, show splash screen
+                    showScreen('splash-screen');
+                }
+            });
+        });
     </script>
 </body>
 
