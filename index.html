@@ -512,7 +512,7 @@
                 <h2 class="text-2xl font-bold mb-4">Account Settings</h2>
                 <p class="text-gray-600 mb-4">Manage your username, email, and password here.</p>
                 <p class="text-gray-400 italic">This screen is currently under development.</p>
-                <button class="mt-8 px-6 py-3 rounded-full font-semibold bg-primary text-white" onclick="showScreen('main-screen')">Back to Map</button>
+                <button id="back-to-map-btn" class="mt-8 px-6 py-3 rounded-full font-semibold bg-primary text-white">Back to Map</button>
             </div>
         </div>
 
@@ -528,7 +528,7 @@
                     <a href="https://www.instagram.com/queersafespace.lgbt?igsh=OHkxbzkxaWdxOGRu" class="text-primary hover:underline"><i class="fa-brands fa-instagram mr-2"></i> @QueerSafeSpace.LGBT</a>
                     <a href="https://www.threads.com/@queersafespace.lgbt?igshid=NTc4MTIwNjQ2YQ==" class="text-primary hover:underline"><i class="fa-brands fa-x-threads mr-2"></i> @QueerSafeSpace.LGBT</a>
                 </div>
-                <button class="mt-8 px-6 py-3 rounded-full font-semibold bg-primary text-white" onclick="showScreen('main-screen')">Close</button>
+                <button id="close-contact-btn" class="mt-8 px-6 py-3 rounded-full font-semibold bg-primary text-white">Close</button>
             </div>
         </div>
 
@@ -824,6 +824,9 @@
         const privacyLink = document.getElementById('privacy-link');
         const closePrivacyBtn = document.getElementById('close-privacy-btn');
         const closeTermsBtn = document.getElementById('close-terms-btn');
+        // New elements for fixing the ReferenceError
+        const backToMapBtn = document.getElementById('back-to-map-btn');
+        const closeContactBtn = document.getElementById('close-contact-btn');
 
 
         let modalMode = 'signin';
@@ -1112,6 +1115,15 @@
 
             closeTermsBtn.addEventListener('click', () => {
                 showScreen(previousScreenId);
+            });
+            
+            // New event listeners to fix the showScreen ReferenceError
+            backToMapBtn.addEventListener('click', () => {
+                showScreen('main-screen');
+            });
+
+            closeContactBtn.addEventListener('click', () => {
+                showScreen('main-screen');
             });
 
 
