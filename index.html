@@ -185,7 +185,14 @@
         .permission-toggle-container {
             display: flex;
             gap: 0.5rem;
+            flex-direction: column; /* Stack buttons on smaller screens */
             width: 100%;
+        }
+
+        @media (min-width: 640px) {
+            .permission-toggle-container {
+                flex-direction: row; /* Go back to row on larger screens */
+            }
         }
 
         .permission-toggle-container button {
@@ -244,6 +251,50 @@
         #side-menu a:hover {
             background-color: var(--background);
         }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 28px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
     </style>
 </head>
 
@@ -264,50 +315,44 @@
         </div>
 
         <!-- Permissions Screen (New Design) -->
-        <div id="permissions-screen" class="screen justify-center items-center p-8 text-center rainbow-bg">
-            <div class="flex flex-col items-center p-6 md:p-10 rounded-xl bg-white shadow-xl max-w-lg">
-                <h2 class="text-3xl font-bold mb-2">Your Privacy Matters.</h2>
-                <p class="text-gray-500 mb-8">To provide the best safety insights, we need your help.</p>
+        <div id="permissions-screen" class="screen justify-center items-center p-4 sm:p-8 text-center rainbow-bg">
+            <div class="flex flex-col items-center p-6 md:p-10 rounded-xl bg-white shadow-xl w-full max-w-xl">
+                <h2 class="text-2xl sm:text-3xl font-bold mb-2">Your Privacy Matters.</h2>
+                <p class="text-gray-500 mb-8 text-sm sm:text-base">To provide the best safety insights, we need your help.</p>
 
                 <!-- Location Permission -->
-                <div class="w-full mb-6">
-                    <div class="text-left mb-2">
-                        <h4 class="font-bold text-lg">Location</h4>
-                        <p class="text-sm text-gray-500 mt-1">
-                            This is **critical** for the Safety Map and additional features. It helps us show you nearby safe/unsafe spaces and resources. Your location is <strong>never</strong> shared publicly.
-                        </p>
-                    </div>
-                    <div class="permission-toggle-container">
-                        <button class="permission-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white" data-permission="location" data-allow="true">Allow</button>
-                        <button class="permission-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800" data-permission="location" data-allow="false">Don't Allow (Limited Features)</button>
+                <div class="w-full mb-6 text-left">
+                    <h4 class="font-bold text-lg">Location</h4>
+                    <p class="text-sm text-gray-500 mt-1">
+                        This is <strong>critical</strong> for the Safety Map and additional features. It helps us show you nearby safe/unsafe spaces and resources. Your location is <strong>never</strong> shared publicly.
+                    </p>
+                    <div class="permission-toggle-container mt-2">
+                        <button class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white" data-permission="location" data-allow="true">Allow</button>
+                        <button class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800" data-permission="location" data-allow="false">Don't Allow (Limited Features)</button>
                     </div>
                 </div>
 
                 <!-- Notifications Permission -->
-                <div class="w-full mb-6">
-                    <div class="text-left mb-2">
-                        <h4 class="font-bold text-lg">Notifications</h4>
-                        <p class="text-sm text-gray-500 mt-1">
-                            Receive important safety alters, community updates, or crisis mode reminders. You can always manage this later.
-                        </p>
-                    </div>
-                    <div class="permission-toggle-container">
-                        <button class="permission-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white" data-permission="notifications" data-allow="true">Allow</button>
-                        <button class="permission-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800" data-permission="notifications" data-allow="false">Don't Allow (Limited Features)</button>
+                <div class="w-full mb-6 text-left">
+                    <h4 class="font-bold text-lg">Notifications</h4>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Receive important safety alters, community updates, or crisis mode reminders. You can always manage this later.
+                    </p>
+                    <div class="permission-toggle-container mt-2">
+                        <button class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white" data-permission="notifications" data-allow="true">Allow</button>
+                        <button class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800" data-permission="notifications" data-allow="false">Don't Allow (Limited Features)</button>
                     </div>
                 </div>
 
                 <!-- Contacts Permission -->
-                <div class="w-full mb-6">
-                    <div class="text-left mb-2">
-                        <h4 class="font-bold text-lg">Contacts</h4>
-                        <p class="text-sm text-gray-500 mt-1">
-                            This allows you to automatically import selected contacts to designated your <strong>Trusted Contact(s)</strong>. If you decline, you can still manually add emergency contacts to use in crisis situations.
-                        </p>
-                    </div>
-                    <div class="permission-toggle-container">
-                        <button class="permission-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white" data-permission="contacts" data-allow="true">Allow</button>
-                        <button class="permission-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800" data-permission="contacts" data-allow="false">Don't Allow (Limited Features)</button>
+                <div class="w-full mb-6 text-left">
+                    <h4 class="font-bold text-lg">Contacts</h4>
+                    <p class="text-sm text-gray-500 mt-1">
+                        This allows you to automatically import selected contacts to designated your <strong>Trusted Contact(s)</strong>. If you decline, you can still manually add emergency contacts to use in crisis situations.
+                    </p>
+                    <div class="permission-toggle-container mt-2">
+                        <button class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white" data-permission="contacts" data-allow="true">Allow</button>
+                        <button class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800" data-permission="contacts" data-allow="false">Don't Allow (Limited Features)</button>
                     </div>
                 </div>
                 
@@ -346,20 +391,47 @@
         </div>
 
         <!-- Side Menu -->
-        <div id="side-menu">
-            <div class="menu-content">
-                <h3 class="text-2xl font-bold mb-6 text-center">Menu</h3>
-                <a href="#" class="text-lg text-text mb-4">
-                    <i class="fa-solid fa-user-circle mr-2"></i>Profile
+        <div id="side-menu" class="fixed top-0 left-0 h-full w-full bg-black bg-opacity-50 transition-transform duration-300 transform -translate-x-full z-[900]">
+            <div class="menu-content w-75 sm:w-1/2 md:w-1/3 lg:w-1/4 max-w-sm h-full bg-white p-6 shadow-2xl flex flex-col space-y-4">
+                <div class="flex items-center space-x-4 mb-4">
+                    <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-xl text-gray-500">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <span id="user-email" class="font-semibold text-lg text-gray-800">Guest</span>
+                </div>
+                <a href="#" id="account-link" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-user-cog text-gray-500"></i>
+                    <span class="font-medium text-gray-800">Account</span>
                 </a>
-                <a href="#" class="text-lg text-text mb-4">
-                    <i class="fa-solid fa-cog mr-2"></i>Settings
+                <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                    <span class="font-medium text-gray-800">Location Permissions</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="location-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                    <span class="font-medium text-gray-800">Notifications</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="notifications-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <a href="#" id="crisis-settings-link" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-exclamation-triangle text-gray-500"></i>
+                    <span class="font-medium text-gray-800">Crisis Mode Settings</span>
                 </a>
-                <a href="#" class="text-lg text-text mb-4">
-                    <i class="fa-solid fa-bell mr-2"></i>Notifications
+                <a href="#" id="contact-us-link" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-envelope text-gray-500"></i>
+                    <span class="font-medium text-gray-800">Contact Us!</span>
                 </a>
-                <a href="#" class="text-lg text-text mb-4">
-                    <i class="fa-solid fa-info-circle mr-2"></i>About
+                <a href="#" id="privacy-policy-link" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-shield-alt text-gray-500"></i>
+                    <span class="font-medium text-gray-800">Privacy Policy</span>
+                </a>
+                <a href="#" id="terms-link" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-file-alt text-gray-500"></i>
+                    <span class="font-medium text-gray-800">Terms and Conditions</span>
                 </a>
                 <div class="mt-auto">
                     <button id="sign-out-btn" class="w-full px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-red-500 text-white">
@@ -409,23 +481,6 @@
                             <label class="inline-flex items-center">
                                 <input type="radio" name="safety-rating" value="Not Safe" class="form-radio text-red-500">
                                 <span class="ml-2">Not Safe</span>
-                            </label>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Tags</label>
-                        <div class="flex flex-wrap gap-2">
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="tags" value="Gender neutral bathrooms" class="form-checkbox">
-                                <span class="ml-1 text-sm">Gender neutral bathrooms</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="tags" value="Pet friendly" class="form-checkbox">
-                                <span class="ml-1 text-sm">Pet friendly</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="tags" value="Queer staff" class="form-checkbox">
-                                <span class="ml-1 text-sm">Queer staff</span>
                             </label>
                         </div>
                     </div>
@@ -556,6 +611,41 @@
                 <button class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4" onclick="closeModal('info-modal')">Close</button>
             </div>
         </div>
+
+        <div id="account-modal" class="modal-overlay">
+            <div class="modal-content w-11/12 max-w-xl p-6 md:p-8 rounded-xl bg-white shadow-xl">
+                <h3 class="text-2xl font-bold mb-4 text-center">Account Settings</h3>
+                <p>Edit your account information here.</p>
+                <div class="mt-6 flex justify-end">
+                    <button class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4" onclick="closeModal('account-modal')">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="crisis-settings-modal" class="modal-overlay">
+            <div class="modal-content w-11/12 max-w-xl p-6 md:p-8 rounded-xl bg-white shadow-xl">
+                <h3 class="text-2xl font-bold mb-4 text-center">Crisis Mode Settings</h3>
+                <p>Manage your trusted contacts and crisis preferences.</p>
+                <div class="mt-6 flex justify-end">
+                    <button class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4" onclick="closeModal('crisis-settings-modal')">Close</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="contact-us-modal" class="modal-overlay">
+            <div class="modal-content w-11/12 max-w-xl p-6 md:p-8 rounded-xl bg-white shadow-xl">
+                <h3 class="text-2xl font-bold mb-4 text-center">Contact Us</h3>
+                <div class="space-y-4">
+                    <p>Feel free to reach out to us with any questions or feedback:</p>
+                    <p><strong>Email:</strong> support@queersafespace.com</p>
+                    <p><strong>Instagram:</strong> @queersafespace_app</p>
+                    <p><strong>Threads:</strong> @queersafespace_app</p>
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <button class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white mt-4" onclick="closeModal('contact-us-modal')">Close</button>
+                </div>
+            </div>
+        </div>
         
     </div>
 
@@ -586,6 +676,9 @@
         const submitModal = document.getElementById('submit-modal');
         const filterModal = document.getElementById('filter-modal');
         const messageModal = document.getElementById('message-modal');
+        const accountModal = document.getElementById('account-modal');
+        const crisisSettingsModal = document.getElementById('crisis-settings-modal');
+        const contactUsModal = document.getElementById('contact-us-modal');
 
         const signInBtn = document.getElementById('sign-in-btn');
         const signUpBtn = document.getElementById('sign-up-btn');
@@ -606,6 +699,13 @@
         const hamburgerMenuBtn = document.getElementById('hamburger-menu-btn');
         const sideMenu = document.getElementById('side-menu');
         const signOutBtn = document.getElementById('sign-out-btn');
+
+        const locationToggle = document.getElementById('location-toggle');
+        const notificationsToggle = document.getElementById('notifications-toggle');
+        const userEmailSpan = document.getElementById('user-email');
+        const accountLink = document.getElementById('account-link');
+        const crisisSettingsLink = document.getElementById('crisis-settings-link');
+        const contactUsLink = document.getElementById('contact-us-link');
         
         // Permission state variables
         let locationPermission = true;
@@ -649,13 +749,17 @@
         supabase.auth.onAuthStateChange(async (event, session) => {
             if (session) {
                 const user = session.user;
+                userEmailSpan.textContent = user.email;
+
                 const { data: profile, error } = await supabase
                     .from('profiles')
-                    .select('permissions_set')
+                    .select('*')
                     .eq('user_id', user.id)
                     .single();
 
-                if (profile && profile.permissions_set) {
+                if (profile) {
+                    locationToggle.checked = profile.location_permission;
+                    notificationsToggle.checked = profile.notifications_permission;
                     showScreen(mainScreen);
                     initMap();
                     anonymousBanner.classList.add('hidden');
@@ -665,6 +769,7 @@
                 }
             } else {
                 showScreen(splashScreen);
+                userEmailSpan.textContent = "Guest";
             }
         });
 
@@ -957,12 +1062,14 @@
 
         // Side menu functionality
         hamburgerMenuBtn.addEventListener('click', () => {
-            sideMenu.classList.add('open');
+            sideMenu.classList.toggle('-translate-x-full');
+            sideMenu.classList.toggle('translate-x-0');
         });
 
         sideMenu.addEventListener('click', (e) => {
             if (e.target.id === 'side-menu') {
-                sideMenu.classList.remove('open');
+                sideMenu.classList.remove('translate-x-0');
+                sideMenu.classList.add('-translate-x-full');
             }
         });
 
@@ -972,8 +1079,65 @@
                 showMessage('Sign Out Failed', `Error: ${error.message}`);
             } else {
                 showMessage('Signed Out', 'You have been signed out.');
-                sideMenu.classList.remove('open');
+                sideMenu.classList.remove('translate-x-0');
+                sideMenu.classList.add('-translate-x-full');
             }
+        });
+
+        locationToggle.addEventListener('change', async (e) => {
+            const user = (await supabase.auth.getSession()).data.session?.user;
+            if (!user) {
+                e.target.checked = !e.target.checked; // Revert state for anonymous users
+                showMessage('Action Denied', 'You must be logged in to change this setting.');
+                return;
+            }
+            const isChecked = e.target.checked;
+            const { error } = await supabase.from('profiles').update({ location_permission: isChecked }).eq('user_id', user.id);
+            if (error) {
+                e.target.checked = !e.target.checked; // Revert UI on error
+                showMessage('Update Failed', error.message);
+            } else {
+                showMessage('Location Permission Updated', `Location permissions have been turned ${isChecked ? 'on' : 'off'}.`);
+            }
+        });
+
+        notificationsToggle.addEventListener('change', async (e) => {
+            const user = (await supabase.auth.getSession()).data.session?.user;
+            if (!user) {
+                e.target.checked = !e.target.checked; // Revert state for anonymous users
+                showMessage('Action Denied', 'You must be logged in to change this setting.');
+                return;
+            }
+            const isChecked = e.target.checked;
+            const { error } = await supabase.from('profiles').update({ notifications_permission: isChecked }).eq('user_id', user.id);
+            if (error) {
+                e.target.checked = !e.target.checked; // Revert UI on error
+                showMessage('Update Failed', error.message);
+            } else {
+                showMessage('Notification Permission Updated', `Notification permissions have been turned ${isChecked ? 'on' : 'off'}.`);
+            }
+        });
+
+        // Open sub-modals from side menu
+        accountLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            sideMenu.classList.remove('translate-x-0');
+            sideMenu.classList.add('-translate-x-full');
+            showModal(accountModal);
+        });
+        
+        crisisSettingsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            sideMenu.classList.remove('translate-x-0');
+            sideMenu.classList.add('-translate-x-full');
+            showModal(crisisSettingsModal);
+        });
+        
+        contactUsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            sideMenu.classList.remove('translate-x-0');
+            sideMenu.classList.add('-translate-x-full');
+            showModal(contactUsModal);
         });
 
     </script>
