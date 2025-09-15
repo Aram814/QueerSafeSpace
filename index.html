@@ -53,48 +53,69 @@
             color: var(--text);
             margin: 0;
             padding: 0;
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #app-container {
-            flex-grow: 1;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             position: relative;
+            background: linear-gradient(
+                to right,
+                rgba(255, 0, 0, 0.55),
+                rgba(255, 144, 7, 0.55),
+                rgba(251, 255, 0, 0.55),
+                rgba(0, 250, 0, 0.55),
+                rgba(0, 255, 238, 0.55),
+                rgba(21, 0, 255, 0.55),
+                rgba(106, 0, 255, 0.55),
+                rgba(255, 0, 183, 0.55)
+            );
         }
 
         /* Screen Transitions and Layouts */
         .screen {
             display: none;
-            flex-grow: 1;
-            overflow: auto;
-            animation: fadeIn 0.5s ease-in-out;
-            position: absolute;
+            position: absolute; /* Changed to absolute to stack them */
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
-            background-color: var(--white);
+            min-height: 100vh;
+            overflow-y: auto;
+            animation: fadeIn 0.5s ease-in-out;
             z-index: 10;
-            transition: opacity 0.5s ease-in-out;
-            opacity: 1;
         }
 
         .screen.active {
             display: flex;
             flex-direction: column;
         }
-
-        .rainbow-bg {
-            background: linear-gradient(135deg, rgba(255, 105, 180, 0.3), rgba(255, 255, 0, 0.3), rgba(0, 255, 0, 0.3), rgba(0, 191, 255, 0.3), rgba(138, 43, 226, 0.3));
+        
+        /* Unique Backgrounds for Each Page */
+        .screen::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.55;
+            z-index: 1; /* Ensure background is behind content */
         }
-
+        
         #map {
             width: 100%;
             height: 100%;
+        }
+
+        /* Frosted Glass Card Effect */
+        .content-card {
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            width: 90%;
+            max-width: 500px;
+            z-index: 2; /* Ensure card content is above background */
         }
 
         /* Modal Styles */
@@ -112,14 +133,26 @@
         }
 
         .modal-content {
-            background-color: var(--white);
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             padding: 2rem;
             border-radius: 12px;
             width: 90%;
             max-width: 500px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-
+        .modal-content-with-close {
+            position: relative;
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.5rem;
+            color: #6b7280;
+            cursor: pointer;
+        }
         /* Floating Action Buttons */
         #fab {
             position: absolute;
@@ -194,7 +227,9 @@
             top: 1rem;
             left: 1rem;
             z-index: 20;
-            background-color: white;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             padding: 0.75rem;
             border-radius: 9999px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -220,18 +255,15 @@
             width: 75%;
             max-width: 300px;
             height: 100%;
-            background-color: white;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             padding: 2rem;
             box-shadow: 4px 0 8px rgba(0, 0, 0, 0.2);
             display: flex;
             flex-direction: column;
         }
         
-        /* Transparent rainbow background for menu content */
-        .menu-content.rainbow-bg {
-            background: linear-gradient(135deg, rgba(255, 105, 180, 0.05), rgba(255, 255, 0, 0.05), rgba(0, 255, 0, 0.05), rgba(0, 191, 255, 0.05), rgba(138, 43, 226, 0.05));
-        }
-
         #side-menu a {
             padding: 1rem;
             border-radius: 0.5rem;
@@ -290,7 +322,7 @@
 
         #map-container {
             flex-grow: 1;
-            position: relative; /* Added to make #fab position relative to this container */
+            position: relative;
             padding: 4px;
         }
 
@@ -344,39 +376,68 @@
         .content-container strong {
             font-weight: bold;
         }
+
+        /* Main Screen Specifics */
+        #main-screen {
+            position: relative; /* Set to relative for positioning children */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #main-screen .top-controls {
+            z-index: 30; /* Ensure this is on top of the map */
+            position: relative;
+            background-color: rgba(255, 255, 255, 0.5); /* Use a semi-transparent background */
+        }
+
+        #main-screen .bottom-controls {
+            z-index: 30; /* Ensure this is on top of the map */
+            position: relative;
+            background-color: rgba(255, 255, 255, 0.5); /* Use a semi-transparent background */
+        }
+
     </style>
 </head>
 
 <body>
     <div id="app-container">
         <!-- Splash Screen -->
-        <div id="splash-screen" class="screen active p-8 rainbow-bg flex flex-col items-center justify-start pt-20">
-            <img src="https://raw.githubusercontent.com/Aram814/QueerSafeSpace/refs/heads/main/IMG_9650.PNG"
-                alt="QueerSafeSpace Logo" class="landing-logo">
-            <h1 class="text-4xl md:text-5xl font-bold mt-4">QueerSafeSpace</h1>
-            <p class="text-gray-500 text-lg mt-2">Because Safety Shouldn’t Be A Privilege</p>
-            <p class="text-sm text-center text-gray-700 mt-4 max-w-sm">QueerSafeSpace is a community-driven app for the LGBTQ+ community to find and share safe, inclusive spaces. This is not a dating or social networking app. Your contributions are anonymous, fostering a truly safe and supportive environment.</p>
-            <div class="mt-8 w-full max-w-sm flex flex-col gap-4">
-                <button id="sign-in-btn"
-                    class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signin text-white w-full">Sign
-                    in</button>
-                <button id="sign-up-btn"
-                    class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signup text-white w-full">Sign
-                    up</button>
-                <button id="anon-btn"
-                    class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full">Continue
-                    anonymously</button>
-                <p class="text-sm text-gray-500 mt-2 text-center">The app is fully anonymous to protect all users.
-                    However, without an account, saved data is limited resulting in limited features.</p>
+        <div id="splash-screen" class="screen active p-8 flex flex-col items-center justify-start pt-20">
+            <div class="content-card w-full max-w-xl flex flex-col items-center">
+                <img src="https://raw.githubusercontent.com/Aram814/QueerSafeSpace/refs/heads/main/IMG_9650.PNG"
+                    alt="QueerSafeSpace Logo" class="landing-logo">
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mt-4 text-center">QueerSafeSpace</h1>
+                <p class="text-gray-500 text-lg mt-2 text-center">Because Safety Shouldn’t Be A Privilege</p>
+                <p class="text-sm text-center text-gray-700 mt-4 max-w-sm">QueerSafeSpace is a community-driven app for the LGBTQ+ community to find and share safe, inclusive spaces. This is not a dating or social networking app. Your contributions are anonymous, fostering a truly safe and supportive environment.</p>
+                <div class="mt-8 w-full flex flex-col gap-4">
+                    <button id="sign-in-btn"
+                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signin text-white w-full">Sign
+                        in</button>
+                    <button id="sign-up-btn"
+                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signup text-white w-full">Sign
+                        up</button>
+                    <button id="anon-btn"
+                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full">Continue
+                        anonymously</button>
+                    <p class="text-sm text-gray-500 mt-2 text-center">The app is fully anonymous to protect all users.
+                        However, without an account, saved data is limited resulting in limited features.</p>
+                </div>
             </div>
         </div>
 
         <!-- Permissions Screen -->
-        <div id="permissions-screen" class="screen justify-center items-center p-4 sm:p-8 text-center rainbow-bg">
-            <div class="flex flex-col items-center p-6 md:p-10 rounded-xl bg-white shadow-xl w-full max-w-xl">
+        <div id="permissions-screen" class="screen justify-start items-center p-4 sm:p-8 text-center pt-10">
+            <div class="content-card w-full max-w-xl">
+                <div class="flex items-center mb-4">
+                    <img src="https://raw.githubusercontent.com/Aram814/QueerSafeSpace/refs/heads/main/IMG_9650.PNG"
+                        alt="QueerSafeSpace Logo" class="w-10 h-10 mr-2">
+                    <h1 class="text-2xl font-bold">QueerSafeSpace</h1>
+                </div>
                 <h2 class="text-2xl sm:text-3xl font-bold mb-2">Your Privacy Matters.</h2>
                 <p class="text-gray-500 mb-8 text-sm sm:text-base">To provide the best safety insights, we need your
-                    help.</p>
+                        help.</p>
 
                 <!-- Location Permission -->
                 <div class="w-full mb-6 text-left">
@@ -443,28 +504,31 @@
         </div>
 
         <!-- Main App Screen (Map) -->
-        <div id="main-screen" class="screen flex-col bg-white">
-            <button id="hamburger-menu-btn" class="text-primary text-xl" aria-label="Open side menu">
-                <i class="fa-solid fa-bars"></i>
-            </button>
-            <!-- Logo and App Name -->
-            <div class="flex items-center justify-center p-4">
-                <img src="https://raw.githubusercontent.com/Aram814/QueerSafeSpace/refs/heads/main/IMG_9650.PNG"
-                    alt="QueerSafeSpace Logo" class="h-10 w-10 mr-2">
-                <h1 class="text-2xl font-bold">QueerSafeSpace</h1>
-            </div>
-
-            <!-- Search and Filter Container -->
-            <div class="flex w-full px-4 max-w-xl mx-auto space-x-2">
-                <div id="search-container" class="relative flex-grow shadow-md rounded-full overflow-hidden">
-                    <label for="search-input" class="sr-only">Search</label>
-                    <input type="text" id="search-input" placeholder="Search for safe spaces..."
-                        class="w-full px-6 py-3 rounded-full border-2 border-transparent focus:outline-none focus:border-primary transition-colors">
-                    <i class="fas fa-search absolute right-6 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                </div>
-                <button id="filter-btn" class="p-3 rounded-full bg-white shadow-md text-primary">
-                    <i class="fa-solid fa-filter"></i>
+        <div id="main-screen" class="screen flex-col">
+            <!-- Top Controls -->
+            <div class="top-controls w-full flex flex-col items-center">
+                <button id="hamburger-menu-btn" class="text-primary text-xl" aria-label="Open side menu">
+                    <i class="fa-solid fa-bars"></i>
                 </button>
+                <!-- Logo and App Name -->
+                <div class="flex items-center justify-center p-4">
+                    <img src="https://raw.githubusercontent.com/Aram814/QueerSafeSpace/refs/heads/main/IMG_9650.PNG"
+                        alt="QueerSafeSpace Logo" class="h-10 w-10 mr-2">
+                    <h1 class="text-2xl font-bold">QueerSafeSpace</h1>
+                </div>
+
+                <!-- Search and Filter Container -->
+                <div class="flex w-full px-4 max-w-xl mx-auto space-x-2">
+                    <div id="search-container" class="relative flex-grow shadow-md rounded-full overflow-hidden">
+                        <label for="search-input" class="sr-only">Search</label>
+                        <input type="text" id="search-input" placeholder="Search for safe spaces..."
+                            class="w-full px-6 py-3 rounded-full border-2 border-transparent focus:outline-none focus:border-primary transition-colors">
+                        <i class="fas fa-search absolute right-6 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <button id="filter-btn" class="p-3 rounded-full bg-white shadow-md text-primary">
+                        <i class="fa-solid fa-filter"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- Map Container -->
@@ -475,40 +539,43 @@
                 </button>
             </div>
 
-            <!-- Map Key -->
-            <div class="w-full py-2 map-key-container">
-                <div class="map-key-item">
-                    <div class="color-dot" style="background-color: #19CA2E;"></div>
-                    <span>Safe</span>
+            <!-- Bottom Controls -->
+            <div class="bottom-controls w-full">
+                <!-- Map Key -->
+                <div class="w-full py-2 map-key-container">
+                    <div class="map-key-item">
+                        <div class="color-dot" style="background-color: #19CA2E;"></div>
+                        <span>Safe</span>
+                    </div>
+                    <div class="map-key-item">
+                        <div class="color-dot" style="background-color: #F3F318;"></div>
+                        <span>Mixed</span>
+                    </div>
+                    <div class="map-key-item">
+                        <div class="color-dot" style="background-color: #FF0000;"></div>
+                        <span>Not Safe</span>
+                    </div>
+                    <div class="map-key-item">
+                        <div class="color-dot" style="background-color: #D9D9D9;"></div>
+                        <span>Unknown</span>
+                    </div>
                 </div>
-                <div class="map-key-item">
-                    <div class="color-dot" style="background-color: #F3F318;"></div>
-                    <span>Mixed</span>
-                </div>
-                <div class="map-key-item">
-                    <div class="color-dot" style="background-color: #FF0000;"></div>
-                    <span>Not Safe</span>
-                </div>
-                <div class="map-key-item">
-                    <div class="color-dot" style="background-color: #D9D9D9;"></div>
-                    <span>Unknown</span>
-                </div>
-            </div>
 
-            <!-- Action Buttons below map -->
-            <div class="flex justify-between w-full p-4">
-                <button id="find-safe-space-btn" class="px-6 py-3 rounded-full font-semibold text-white transition-all duration-300 transform hover:scale-105" style="background-color: #1272EF;">
-                    Find My Safe Space
-                </button>
-                <button id="crisis-button" class="px-6 py-3 rounded-full font-semibold text-white transition-all duration-300 transform hover:scale-105 bg-red">
-                    Crisis Button
-                </button>
+                <!-- Action Buttons below map -->
+                <div class="flex justify-between w-full p-4">
+                    <button id="find-safe-space-btn" class="px-6 py-3 rounded-full font-semibold text-white transition-all duration-300 transform hover:scale-105" style="background-color: #1272EF;">
+                        Find My Safe Space
+                    </button>
+                    <button id="crisis-button" class="px-6 py-3 rounded-full font-semibold text-white transition-all duration-300 transform hover:scale-105 bg-red">
+                        Crisis Button
+                    </button>
+                </div>
             </div>
         </div>
 
         <!-- Account Settings Screen (Placeholder) -->
-        <div id="account-settings-screen" class="screen justify-center items-center p-8 bg-white">
-            <div class="flex flex-col items-center p-6 md:p-10 rounded-xl bg-white shadow-xl w-full max-w-xl text-center">
+        <div id="account-settings-screen" class="screen justify-center items-center p-8">
+            <div class="content-card text-center">
                 <h2 class="text-2xl font-bold mb-4">Account Settings</h2>
                 <p class="text-gray-600 mb-4">Manage your username, email, and password here.</p>
                 <p class="text-gray-400 italic">This screen is currently under development.</p>
@@ -517,8 +584,8 @@
         </div>
 
         <!-- Contact Us Screen (Placeholder) -->
-        <div id="contact-us-screen" class="screen justify-center items-center p-8 bg-white">
-            <div class="flex flex-col items-center p-6 md:p-10 rounded-xl bg-white shadow-xl w-full max-w-xl text-center">
+        <div id="contact-us-screen" class="screen justify-center items-center p-8">
+            <div class="content-card text-center">
                 <h2 class="text-2xl font-bold mb-4">Contact Us</h2>
                 <p class="text-gray-600 mb-4">
                     QueerSafeSpace is a community-driven project dedicated to providing a safer environment for LGBTQ+ individuals. We believe everyone deserves to feel secure and have access to supportive resources.
@@ -533,8 +600,8 @@
         </div>
 
         <!-- Privacy Policy Screen -->
-        <div id="privacy-policy-screen" class="screen flex-col items-center p-8 bg-white">
-            <div class="content-container bg-white rounded-xl shadow-xl w-full">
+        <div id="privacy-policy-screen" class="screen flex-col items-center p-8">
+            <div class="content-card w-full max-w-xl text-left">
                 <h2 class="text-center">Privacy Policy</h2>
                 <div class="prose max-w-none text-gray-600 leading-relaxed">
                     <h3 class="text-2xl font-bold text-gray-800">Privacy Policy – QueerSafeSpace</h3>
@@ -599,63 +666,67 @@
 
 
         <!-- Terms and Conditions Screen -->
-        <div id="terms-conditions-screen" class="screen flex-col items-center p-8 bg-white">
-            <div class="content-container bg-white rounded-xl shadow-xl w-full">
-                <h2 class="text-center">Terms & Conditions – QueerSafeSpace</h2>
-                <p class="text-sm text-gray-500 text-center mb-6">Effective Date: September 13, 2025</p>
-                
-                <p>Welcome to QueerSafeSpace! These Terms & Conditions (“Terms”) govern your use of our website, mobile app, and related services (the “Services”). By using QueerSafeSpace, you agree to these Terms.</p>
-                
-                <h3>1. Eligibility</h3>
-                <p>You must be at least 13 years old to use our Services.</p>
-                
-                <h3>2. Purpose of the App</h3>
-                <p>QueerSafeSpace is a community-driven platform designed to provide a safer environment for LGBTQ+ individuals by allowing users to find and share information about inclusive spaces. This app is <strong>not</strong> a dating or social networking platform. Its sole purpose is to enhance safety and community awareness.</p>
-                
-                <h3>3. Account Responsibility</h3>
-                <p>You are responsible for keeping your account information (including your email and password) secure. You agree not to share false or misleading information when using our Services.</p>
-                
-                <h3>4. User Conduct</h3>
-                <p>You agree to use the app in a respectful and responsible manner. You will not:</p>
-                <ul>
-                    <li>Post or submit any content that is hateful, discriminatory, harassing, or threatening.</li>
-                    <li>Misrepresent your identity or the purpose of your contributions.</li>
-                    <li>Share any personally identifiable information about yourself or others in public sections of the app.</li>
-                    <li>Use the app for any illegal activities or to violate any laws.</li>
-                </ul>
-                <p>We reserve the right to remove content that violates our community guidelines.</p>
-                
-                <h3>5. Anonymity and Content</h3>
-                <p>All user contributions, including ratings, reviews, and comments, are completely anonymous. By submitting content, you grant QueerSafeSpace a non-exclusive, royalty-free, worldwide license to use, reproduce, and display your anonymous contributions to improve the app.</p>
-                
-                <h3>6. Location Services</h3>
-                <p>Location features are optional. If you enable location, the app may use it to display nearby safe spaces. Disabling location may limit some features.</p>
-                
-                <h3>7. Intellectual Property</h3>
-                <p>All content, logos, and features of QueerSafeSpace are owned by us unless otherwise noted. You may not copy, distribute, or modify them without permission.</p>
-                
-                <h3>8. Third-Party Services</h3>
-                <p>Our Services may use third-party tools (e.g., Google Maps, Supabase, Github). Your use of these services is also subject to their terms.</p>
-                
-                <h3>9. Disclaimer of Liability</h3>
-                <p>QueerSafeSpace is community-driven. We cannot guarantee the accuracy, safety, or reliability of user-submitted locations or reviews. Use the Services at your own discretion and judgment. QueerSafeSpace is not liable for any damages or harm arising from your use of the app or reliance on user-generated content.</p>
-                
-                <h3>10. Future Paid Features</h3>
-                <p>Currently, QueerSafeSpace is free. In the future, we may offer subscription-based or premium features. Details will be provided in updated Terms.</p>
-                
-                <h3>11. Account Termination</h3>
-                <p>We may suspend or terminate accounts that violate these Terms or harm the community.</p>
-                
-                <h3>12. Changes to Terms</h3>
-                <p>We may modify these terms at any time. If we make changes, we will post the updated terms on this page. Your continued use of the app after any changes constitutes your acceptance of the new terms.</p>
-                
-                <h3>13. Governing Law</h3>
-                <p>These Terms are governed by the laws of the State of Florida, United States.</p>
-                
-                <h3>14. Contact Us</h3>
-                <p>For questions about these Terms, contact us at: QueerSafeSpace.lgbt@gmail.com</p>
-
-                <p class="text-center text-sm text-gray-500 mt-8">&copy; 2025 QueerSafeSpace. All rights reserved.</p>
+        <div id="terms-conditions-screen" class="screen flex-col items-center p-8">
+            <div class="content-card w-full max-w-xl text-left">
+                <h2 class="text-center">Terms & Conditions</h2>
+                <div class="prose max-w-none text-gray-600 leading-relaxed">
+                    <h3 class="text-2xl font-bold text-gray-800">Terms & Conditions – QueerSafeSpace</h3>
+                    <p class="text-sm text-gray-500 mt-0">Effective Date: September 13, 2025</p>
+                    
+                    <p>Welcome to QueerSafeSpace! These Terms & Conditions (“Terms”) govern your use of our website, mobile app, and related services (the “Services”). By using QueerSafeSpace, you agree to these Terms.</p>
+                    
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">1. Eligibility</h4>
+                    <p>You must be at least 13 years old to use our Services.</p>
+                    
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">2. Purpose of the App</h4>
+                    <p>QueerSafeSpace is a community-driven platform designed to provide a safer environment for LGBTQ+ individuals by allowing users to find and share information about inclusive spaces. This app is <strong>not</strong> a dating or social networking platform. Its sole purpose is to enhance safety and community awareness.</p>
+                    
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">3. Account Responsibility</h4>
+                    <p>You are responsible for keeping your account information (including your email and password) secure. You agree not to share false or misleading information when using our Services.</p>
+                    
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">4. User Conduct</h4>
+                    <p>You agree to use the app in a respectful and responsible manner. You will not:</p>
+                    <ul class="list-disc list-inside ml-4 space-y-2">
+                        <li>Post or submit any content that is hateful, discriminatory, harassing, or threatening.</li>
+                        <li>Misrepresent your identity or the purpose of your contributions.</li>
+                        <li>Share any personally identifiable information about yourself or others in public sections of the app.</li>
+                        <li>Use the app for any illegal activities or to violate any laws.</li>
+                    </ul>
+                    <p>We reserve the right to remove content that violates our community guidelines.</p>
+                    
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">5. Anonymity and Content</h4>
+                    <p>All user contributions, including ratings, reviews, and comments, are completely anonymous. By submitting content, you grant QueerSafeSpace a non-exclusive, royalty-free, worldwide license to use, reproduce, and display your anonymous contributions to improve the app.</p>
+                    
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">6. Location Services</h4>
+                    <p>Location features are optional. If you enable location, the app may use it to display nearby safe spaces. Disabling location may limit some features.</p>
+                    
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">7. Intellectual Property</h4>
+                    <p>All content, logos, and features of QueerSafeSpace are owned by us unless otherwise noted. You may not copy, distribute, or modify them without permission.</p>
+                    
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">8. Third-Party Services</h4>
+                    <p>Our Services may use third-party tools (e.g., Google Maps, Supabase, Github). Your use of these services is also subject to their terms.</p>
+                    
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">9. Disclaimer of Liability</h4>
+                    <p>QueerSafeSpace is community-driven. We cannot guarantee the accuracy, safety, or reliability of user-submitted locations or reviews. Use the Services at your own discretion and judgment. QueerSafeSpace is not liable for any damages or harm arising from your use of the app or reliance on user-generated content.</p>
+                    
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">10. Future Paid Features</h4>
+                    <p>Currently, QueerSafeSpace is free. In the future, we may offer subscription-based or premium features. Details will be provided in updated Terms.</p>
+                    
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">11. Account Termination</h4>
+                    <p>We may suspend or terminate accounts that violate these Terms or harm the community.</p>
+                    
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">12. Changes to Terms</h4>
+                    <p>We may modify these terms at any time. If we make changes, we will post the updated terms on this page. Your continued use of the app after any changes constitutes your acceptance of the new terms.</p>
+                    
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">13. Governing Law</h4>
+                    <p>These Terms are governed by the laws of the State of Florida, United States.</p>
+                    
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">14. Contact Us</h4>
+                    <p>For questions about these Terms, contact us at: <a href="mailto:QueerSafeSpace.lgbt@gmail.com" class="text-primary hover:underline">QueerSafeSpace.lgbt@gmail.com</a></p>
+    
+                    <p class="text-center text-sm text-gray-500 mt-8">&copy; 2025 QueerSafeSpace. All rights reserved.</p>
+    
+                </div>
 
                 <div class="text-center mt-8">
                     <button class="px-6 py-3 rounded-full font-semibold bg-primary text-white" id="close-terms-btn">Close</button>
@@ -715,9 +786,19 @@
             </div>
         </div>
 
+        <!-- Pop-up Modal -->
+        <div id="coming-soon-modal" class="modal-overlay">
+            <div class="modal-content modal-content-with-close">
+                <button id="close-coming-soon-btn" class="modal-close-btn">&times;</button>
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Feature Coming Soon!</h2>
+                <p class="text-gray-600 mb-4 text-center">This feature is currently under development. Thank you for your patience!</p>
+            </div>
+        </div>
+
+
         <!-- Sidebar Menu -->
         <div id="side-menu">
-            <div class="menu-content flex flex-col p-8 rainbow-bg">
+            <div class="menu-content flex flex-col p-8 bg-white">
                 <button id="close-menu-btn" class="self-end text-2xl text-gray-500">&times;</button>
                 <div class="flex items-center space-x-2 mb-6">
                     <i class="fa-solid fa-user-circle text-4xl text-gray-500"></i>
@@ -776,7 +857,7 @@
 
         // --- Supabase Configuration & Initialization ---
         const supabaseUrl = 'https://sgvxsyvqluhivohypkkg.supabase.co';
-        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndnhzeXZxbHVoaXZvaHlwa2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MjYzNzIsImV4cCI6MjA3MzMwMjM3Mn0.igseAZIczG6fEdtPNuF3_xyXb3rFKh5nQxxO_YUyCEs';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndnhzeXZxbHVoaXZvaHlwa2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MjYzNzIsImV4cCI6MjA3MzMwMjM3Mn0.igseAZIczG6fEdtPNuF3_xyXb3rFKh5nQxxO_YUyCEh';
 
         const supabase = createClient(supabaseUrl, supabaseAnonKey);
         console.log("Supabase client created successfully.");
@@ -824,9 +905,14 @@
         const privacyLink = document.getElementById('privacy-link');
         const closePrivacyBtn = document.getElementById('close-privacy-btn');
         const closeTermsBtn = document.getElementById('close-terms-btn');
-        // New elements for fixing the ReferenceError
         const backToMapBtn = document.getElementById('back-to-map-btn');
         const closeContactBtn = document.getElementById('close-contact-btn');
+        
+        // New elements for the "Coming Soon" pop-up
+        const findSafeSpaceBtn = document.getElementById('find-safe-space-btn');
+        const crisisButton = document.getElementById('crisis-button');
+        const comingSoonModal = document.getElementById('coming-soon-modal');
+        const closeComingSoonBtn = document.getElementById('close-coming-soon-btn');
 
 
         let modalMode = 'signin';
@@ -841,8 +927,30 @@
             }
 
             const screens = document.querySelectorAll('.screen');
-            screens.forEach(screen => screen.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
+            screens.forEach(screen => {
+                screen.classList.remove('active');
+                screen.style.display = 'none';
+            });
+            
+            const targetScreen = document.getElementById(screenId);
+            if (targetScreen) {
+                targetScreen.classList.add('active');
+                targetScreen.style.display = 'flex';
+            }
+        }
+
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+        }
+
+        function hideModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+            }
         }
 
         function showMessage(message, type = 'info') {
@@ -857,7 +965,7 @@
             modalMode = mode;
             authForm.reset();
             showMessage('');
-            passwordFields.classList.remove('hidden');
+            passwordFields.classList.add('hidden');
             forgotPasswordLink.classList.add('hidden');
             confirmPasswordContainer.classList.add('hidden');
             passwordRequirementsText.classList.add('hidden');
@@ -869,11 +977,13 @@
                 case 'signin':
                     authTitle.textContent = 'Sign In';
                     authButtonText.textContent = 'Sign In';
+                    passwordFields.classList.remove('hidden');
                     forgotPasswordLink.classList.remove('hidden');
                     break;
                 case 'signup':
                     authTitle.textContent = 'Sign Up';
                     authButtonText.textContent = 'Sign Up';
+                    passwordFields.classList.remove('hidden');
                     confirmPasswordContainer.classList.remove('hidden');
                     passwordRequirementsText.classList.remove('hidden');
                     agreementsContainer.classList.remove('hidden');
@@ -918,6 +1028,8 @@
 
                 console.log("Sign up successful:", data);
                 showMessage('Sign up successful! Please check your email to confirm.', 'success');
+                // The user is not truly logged in until they confirm their email.
+                // We show them the permissions screen on first *confirmed* login.
 
             } catch (error) {
                 showMessage(`Sign up failed: ${error.message}`, 'error');
@@ -939,14 +1051,14 @@
 
                 console.log("Sign in successful:", data);
                 showMessage('Signed in successfully!', 'success');
-                authModal.style.display = 'none';
+                hideModal('auth-modal');
                 
-                // Check if user has seen permissions screen before
+                // Show permissions screen for a user's first time logging in
                 const hasSeenPermissions = localStorage.getItem('permissionsShown');
-                if (hasSeenPermissions) {
-                    showScreen('main-screen');
-                } else {
+                if (!hasSeenPermissions) {
                     showScreen('permissions-screen');
+                } else {
+                    showScreen('main-screen');
                 }
 
             } catch (error) {
@@ -979,7 +1091,8 @@
                 const { error } = await supabase.auth.signOut();
                 if (error) throw error;
                 console.log("Signed out successfully.");
-                showScreen('splash-screen');
+                sideMenu.classList.remove('open'); // Close the menu
+                showScreen('splash-screen'); // Return to the splash screen
             } catch (error) {
                 console.error("Supabase Sign Out Error:", error.message);
             }
@@ -987,13 +1100,8 @@
 
         // --- Event Listeners ---
         window.addEventListener('DOMContentLoaded', () => {
-            // Check if permissions have been set on first load
-            const hasSeenPermissions = localStorage.getItem('permissionsShown');
-            if (hasSeenPermissions) {
-                showScreen('main-screen');
-            } else {
-                showScreen('splash-screen');
-            }
+            // Always start with the splash screen
+            showScreen('splash-screen');
 
             // Set initial toggle states based on local storage
             const savedLocationPermission = localStorage.getItem('locationPermission') === 'true';
@@ -1004,21 +1112,18 @@
             // Handle user auth actions
             signInBtn.addEventListener('click', () => {
                 setModalMode('signin');
-                authModal.style.display = 'flex';
+                showModal('auth-modal');
             });
 
             signUpBtn.addEventListener('click', () => {
                 setModalMode('signup');
-                authModal.style.display = 'flex';
+                showModal('auth-modal');
             });
 
             anonBtn.addEventListener('click', () => {
-                // Show permissions screen if it hasn't been seen
-                if (!localStorage.getItem('permissionsShown')) {
-                    showScreen('permissions-screen');
-                } else {
-                    showScreen('main-screen');
-                }
+                console.log("Continue anonymously button clicked. Navigating to permissions screen.");
+                // Always show permissions screen on first anonymous click.
+                showScreen('permissions-screen');
             });
 
             continueToAppBtn.addEventListener('click', () => {
@@ -1029,13 +1134,14 @@
                 // Save permissions to local storage
                 localStorage.setItem('locationPermission', locationAllowed);
                 localStorage.setItem('notificationsPermission', notificationsAllowed);
+                // Mark that the permissions screen has been seen
                 localStorage.setItem('permissionsShown', 'true');
 
                 showScreen('main-screen');
             });
 
             closeAuthModal.addEventListener('click', () => {
-                authModal.style.display = 'none';
+                hideModal('auth-modal');
                 setModalMode('signin');
             });
 
@@ -1098,13 +1204,13 @@
             // Event listeners for links inside the sign-up modal
             termsLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                authModal.style.display = 'none';
+                hideModal('auth-modal');
                 showScreen('terms-conditions-screen');
             });
 
             privacyLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                authModal.style.display = 'none';
+                hideModal('auth-modal');
                 showScreen('privacy-policy-screen');
             });
 
@@ -1117,13 +1223,26 @@
                 showScreen(previousScreenId);
             });
             
-            // New event listeners to fix the showScreen ReferenceError
+            // Event listeners for the placeholder screens
             backToMapBtn.addEventListener('click', () => {
                 showScreen('main-screen');
             });
 
             closeContactBtn.addEventListener('click', () => {
                 showScreen('main-screen');
+            });
+
+            // --- New Coming Soon Modal Logic ---
+            findSafeSpaceBtn.addEventListener('click', () => {
+                showModal('coming-soon-modal');
+            });
+
+            crisisButton.addEventListener('click', () => {
+                showModal('coming-soon-modal');
+            });
+
+            closeComingSoonBtn.addEventListener('click', () => {
+                hideModal('coming-soon-modal');
             });
 
 
