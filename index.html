@@ -22,8 +22,8 @@
                         red: '#ef4444',
                         green: '#22c5e',
                         yellow: '#facc15',
-                        signin: '#FF6161',
-                        signup: '#80FD91',
+                        signin: '#8F7FFF',
+                        signup: '#8EFD17',
                     }
                 }
             }
@@ -168,7 +168,6 @@
             justify-content: center;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             cursor: pointer;
-            z-index: 50;
             transition: transform 0.2s ease-in-out;
         }
 
@@ -196,29 +195,6 @@
             width: 200px;
             height: auto;
             margin-bottom: 2rem;
-        }
-
-        /* Permissions Screen */
-        .permission-toggle-container {
-            display: flex;
-            gap: 0.5rem;
-            flex-direction: column;
-            width: 100%;
-        }
-
-        @media (min-width: 640px) {
-            .permission-toggle-container {
-                flex-direction: row;
-            }
-        }
-
-        .permission-toggle-container button {
-            flex: 1;
-        }
-
-        .permission-toggle-container .selected {
-            background-color: var(--primary);
-            color: var(--white);
         }
 
         /* Side Menu and Toggle */
@@ -397,7 +373,47 @@
             position: relative;
             background-color: rgba(255, 255, 255, 0.5); /* Use a semi-transparent background */
         }
+        
+        .avatar-selection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            gap: 10px;
+            margin-top: 1rem;
+        }
+        
+        .avatar-option {
+            font-size: 2rem;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.2s, transform 0.2s;
+            text-align: center;
+        }
+        
+        .avatar-option:hover {
+            transform: scale(1.1);
+            opacity: 1;
+        }
+        
+        .avatar-option.selected {
+            opacity: 1;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            transform: scale(1.1);
+        }
 
+        .form-message {
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.875rem;
+        }
+
+        /* Add this for the avatar in the menu */
+        .menu-avatar {
+            font-size: 2.5rem;
+            margin-right: 0.5rem;
+            display: inline-block;
+            transition: transform 0.2s ease;
+        }
     </style>
 </head>
 
@@ -408,98 +424,19 @@
             <div class="content-card w-full max-w-xl flex flex-col items-center">
                 <img src="https://raw.githubusercontent.com/Aram814/QueerSafeSpace/refs/heads/main/IMG_9650.PNG"
                     alt="QueerSafeSpace Logo" class="landing-logo">
-                <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mt-4 text-center">QueerSafeSpace</h1>
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-center">QueerSafeSpace</h1>
                 <p class="text-gray-500 text-lg mt-2 text-center">Because Safety Shouldn’t Be A Privilege</p>
                 <p class="text-sm text-center text-gray-700 mt-4 max-w-sm">QueerSafeSpace is a community-driven app for the LGBTQ+ community to find and share safe, inclusive spaces. This is not a dating or social networking app. Your contributions are anonymous, fostering a truly safe and supportive environment.</p>
                 <div class="mt-8 w-full flex flex-col gap-4">
                     <button id="sign-in-btn"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signin text-white w-full">Sign
+                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 w-full" style="background-color: #8F7FFF; color: white;">Sign
                         in</button>
                     <button id="sign-up-btn"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-signup text-white w-full">Sign
+                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 w-full" style="background-color: #8EFD17; color: white;">Sign
                         up</button>
-                    <button id="anon-btn"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-transparent text-primary border-2 border-primary w-full">Continue
-                        anonymously</button>
                     <p class="text-sm text-gray-500 mt-2 text-center">The app is fully anonymous to protect all users.
                         However, without an account, saved data is limited resulting in limited features.</p>
                 </div>
-            </div>
-        </div>
-
-        <!-- Permissions Screen -->
-        <div id="permissions-screen" class="screen justify-start items-center p-4 sm:p-8 text-center pt-10">
-            <div class="content-card w-full max-w-xl">
-                <div class="flex items-center mb-4">
-                    <img src="https://raw.githubusercontent.com/Aram814/QueerSafeSpace/refs/heads/main/IMG_9650.PNG"
-                        alt="QueerSafeSpace Logo" class="w-10 h-10 mr-2">
-                    <h1 class="text-2xl font-bold">QueerSafeSpace</h1>
-                </div>
-                <h2 class="text-2xl sm:text-3xl font-bold mb-2">Your Privacy Matters.</h2>
-                <p class="text-gray-500 mb-8 text-sm sm:text-base">To provide the best safety insights, we need your
-                        help.</p>
-
-                <!-- Location Permission -->
-                <div class="w-full mb-6 text-left">
-                    <h3 class="font-bold text-lg">Location</h3>
-                    <p class="text-sm text-gray-500 mt-1">
-                        This is <strong>critical</strong> for the Safety Map and additional features. It helps us show
-                        you nearby safe/unsafe spaces and resources. Your location is <strong>never</strong> shared
-                        publicly.
-                    </p>
-                    <div class="permission-toggle-container mt-2" role="group" aria-labelledby="location-heading">
-                        <h4 id="location-heading" class="sr-only">Location Permission Options</h4>
-                        <button
-                            class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white"
-                            data-permission="location" data-allow="true" aria-pressed="true">Allow</button>
-                        <button
-                            class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800"
-                            data-permission="location" data-allow="false" aria-pressed="false">Don't Allow (Limited Features)</button>
-                    </div>
-                </div>
-
-                <!-- Notifications Permission -->
-                <div class="w-full mb-6 text-left">
-                    <h3 class="font-bold text-lg">Notifications</h3>
-                    <p class="text-sm text-gray-500 mt-1">
-                        Receive important safety alters, community updates, or crisis mode reminders. You can always
-                        manage this later.
-                    </p>
-                    <div class="permission-toggle-container mt-2" role="group" aria-labelledby="notifications-heading">
-                        <h4 id="notifications-heading" class="sr-only">Notifications Permission Options</h4>
-                        <button
-                            class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white"
-                            data-permission="notifications" data-allow="true" aria-pressed="true">Allow</button>
-                        <button
-                            class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800"
-                            data-permission="notifications" data-allow="false" aria-pressed="false">Don't Allow (Limited Features)</button>
-                    </div>
-                </div>
-
-                <!-- Contacts Permission -->
-                <div class="w-full mb-6 text-left">
-                    <h3 class="font-bold text-lg">Contacts</h3>
-                    <p class="text-sm text-gray-500 mt-1">
-                        This allows you to automatically import selected contacts to designated your
-                        <strong>Trusted Contact(s)</strong>. If you decline, you can still manually add emergency
-                        contacts to use in crisis situations.
-                    </p>
-                    <div class="permission-toggle-container mt-2" role="group" aria-labelledby="contacts-heading">
-                        <h4 id="contacts-heading" class="sr-only">Contacts Permission Options</h4>
-                        <button
-                            class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white"
-                            data-permission="contacts" data-allow="true" aria-pressed="true">Allow</button>
-                        <button
-                            class="permission-btn px-4 py-2 sm:px-6 sm:py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-gray-200 text-gray-800"
-                            data-permission="contacts" data-allow="false" aria-pressed="false">Don't Allow (Limited Features)</button>
-                    </div>
-                </div>
-
-                <button id="continue-to-app-btn"
-                    class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 bg-primary text-white w-full mt-4">Continue
-                    to App</button>
-                <p class="text-xs text-gray-400 mt-4">You can manage your permissions again in your account settings.
-                </p>
             </div>
         </div>
 
@@ -574,12 +511,87 @@
         </div>
 
         <!-- Account Settings Screen (Placeholder) -->
-        <div id="account-settings-screen" class="screen justify-center items-center p-8">
-            <div class="content-card text-center">
-                <h2 class="text-2xl font-bold mb-4">Account Settings</h2>
-                <p class="text-gray-600 mb-4">Manage your username, email, and password here.</p>
-                <p class="text-gray-400 italic">This screen is currently under development.</p>
-                <button id="back-to-map-btn" class="mt-8 px-6 py-3 rounded-full font-semibold bg-primary text-white">Back to Map</button>
+        <div id="account-settings-screen" class="screen justify-start items-center p-8">
+            <div class="content-card w-full max-w-xl">
+                <h2 class="text-2xl font-bold mb-4 text-center">Account Settings</h2>
+                
+                <h3 class="text-lg font-bold mb-2">Change Avatar</h3>
+                <div class="flex flex-col items-center mb-4">
+                    <span id="current-avatar" class="text-6xl mb-4">🏳️‍🌈</span>
+                    <div id="avatar-selection-grid" class="avatar-selection-grid">
+                        <span class="avatar-option" data-avatar="🏳️‍🌈">🏳️‍🌈</span>
+                        <span class="avatar-option" data-avatar="🦄">🦄</span>
+                        <span class="avatar-option" data-avatar="💖">💖</span>
+                        <span class="avatar-option" data-avatar="🌈">🌈</span>
+                        <span class="avatar-option" data-avatar="✨">✨</span>
+                        <span class="avatar-option" data-avatar="🌻">🌻</span>
+                        <span class="avatar-option" data-avatar="🦋">🦋</span>
+                        <span class="avatar-option" data-avatar="🕊️">🕊️</span>
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold mb-2">Change Username</h3>
+                <form id="username-form" class="space-y-4 mb-8">
+                    <div>
+                        <label for="new-username" class="block text-sm font-medium text-gray-700">Username</label>
+                        <input type="text" id="new-username"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                            placeholder="Your new username">
+                    </div>
+                    <div id="username-message" class="form-message hidden"></div>
+                    <button type="submit"
+                        class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                        Update Username
+                    </button>
+                </form>
+
+                <h3 class="text-lg font-bold mb-2">Change Email</h3>
+                <form id="email-form" class="space-y-4 mb-8">
+                    <div>
+                        <label for="new-email" class="block text-sm font-medium text-gray-700">New Email</label>
+                        <input type="email" id="new-email"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                            placeholder="your-new-email@example.com">
+                    </div>
+                    <div>
+                        <label for="confirm-email" class="block text-sm font-medium text-gray-700">Confirm Email</label>
+                        <input type="email" id="confirm-email"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                            placeholder="your-new-email@example.com">
+                    </div>
+                    <div id="email-message" class="form-message hidden"></div>
+                    <button type="submit"
+                        class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                        Update Email
+                    </button>
+                </form>
+
+                <h3 class="text-lg font-bold mb-2">Change Password</h3>
+                <form id="password-form" class="space-y-4 mb-8">
+                    <div>
+                        <label for="current-password" class="block text-sm font-medium text-gray-700">Current Password</label>
+                        <input type="password" id="current-password"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+                    </div>
+                    <div>
+                        <label for="password-new" class="block text-sm font-medium text-gray-700">New Password</label>
+                        <input type="password" id="password-new"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+                        <p class="text-xs text-gray-500 mt-1">Minimum 8 characters.</p>
+                    </div>
+                    <div>
+                        <label for="confirm-password-new" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                        <input type="password" id="confirm-password-new"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+                    </div>
+                    <div id="password-message" class="form-message hidden"></div>
+                    <button type="submit"
+                        class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                        Update Password
+                    </button>
+                </form>
+
+                <button id="back-to-map-btn" class="mt-8 px-6 py-3 rounded-full font-semibold bg-primary text-white w-full">Back to Map</button>
             </div>
         </div>
 
@@ -700,28 +712,28 @@
                     <h4 class="text-xl font-semibold text-gray-700 mt-6">6. Location Services</h4>
                     <p>Location features are optional. If you enable location, the app may use it to display nearby safe spaces. Disabling location may limit some features.</p>
                     
-                    <h4 class="text-xl font-semibold text-gray-700 mt-6">7. Intellectual Property</h4>
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">7. Intellectual Property</p>
                     <p>All content, logos, and features of QueerSafeSpace are owned by us unless otherwise noted. You may not copy, distribute, or modify them without permission.</p>
                     
-                    <h4 class="text-xl font-semibold text-gray-700 mt-6">8. Third-Party Services</h4>
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">8. Third-Party Services</p>
                     <p>Our Services may use third-party tools (e.g., Google Maps, Supabase, Github). Your use of these services is also subject to their terms.</p>
                     
-                    <h4 class="text-xl font-semibold text-gray-700 mt-6">9. Disclaimer of Liability</h4>
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">9. Disclaimer of Liability</p>
                     <p>QueerSafeSpace is community-driven. We cannot guarantee the accuracy, safety, or reliability of user-submitted locations or reviews. Use the Services at your own discretion and judgment. QueerSafeSpace is not liable for any damages or harm arising from your use of the app or reliance on user-generated content.</p>
                     
-                    <h4 class="text-xl font-semibold text-gray-700 mt-6">10. Future Paid Features</h4>
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">10. Future Paid Features</p>
                     <p>Currently, QueerSafeSpace is free. In the future, we may offer subscription-based or premium features. Details will be provided in updated Terms.</p>
                     
-                    <h4 class="text-xl font-semibold text-gray-700 mt-6">11. Account Termination</h4>
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">11. Account Termination</p>
                     <p>We may suspend or terminate accounts that violate these Terms or harm the community.</p>
                     
-                    <h4 class="text-xl font-semibold text-gray-700 mt-6">12. Changes to Terms</h4>
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">12. Changes to Terms</p>
                     <p>We may modify these terms at any time. If we make changes, we will post the updated terms on this page. Your continued use of the app after any changes constitutes your acceptance of the new terms.</p>
                     
-                    <h4 class="text-xl font-semibold text-gray-700 mt-6">13. Governing Law</h4>
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">13. Governing Law</p>
                     <p>These Terms are governed by the laws of the State of Florida, United States.</p>
                     
-                    <h4 class="text-xl font-semibold text-gray-700 mt-6">14. Contact Us</h4>
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">14. Contact Us</p>
                     <p>For questions about these Terms, contact us at: <a href="mailto:QueerSafeSpace.lgbt@gmail.com" class="text-primary hover:underline">QueerSafeSpace.lgbt@gmail.com</a></p>
     
                     <p class="text-center text-sm text-gray-500 mt-8">&copy; 2025 QueerSafeSpace. All rights reserved.</p>
@@ -801,30 +813,12 @@
             <div class="menu-content flex flex-col p-8 bg-white">
                 <button id="close-menu-btn" class="self-end text-2xl text-gray-500">&times;</button>
                 <div class="flex items-center space-x-2 mb-6">
-                    <i class="fa-solid fa-user-circle text-4xl text-gray-500"></i>
+                    <span id="menu-avatar" class="text-4xl">🏳️‍🌈</span>
                     <h3 id="user-name" class="text-2xl font-bold">User Name</h3>
                 </div>
                 <a href="#" class="mb-2 text-gray-700 font-semibold" data-screen="account-settings-screen">
                     <i class="fa-solid fa-user-cog mr-2"></i> Account Settings
                 </a>
-                <div class="flex items-center justify-between mb-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-                    <span class="text-gray-700 font-semibold">
-                        <i class="fa-solid fa-location-dot mr-2"></i> Location
-                    </span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="location-toggle">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="flex items-center justify-between mb-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-                    <span class="text-gray-700 font-semibold">
-                        <i class="fa-solid fa-bell mr-2"></i> Notifications
-                    </span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="notifications-toggle">
-                        <span class="slider"></span>
-                    </label>
-                </div>
                 <div class="flex items-center justify-between mb-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
                     <span class="text-gray-700 font-semibold">
                         <i class="fa-solid fa-shield-alt mr-2"></i> Crisis Mode Settings
@@ -857,14 +851,24 @@
 
         // --- Supabase Configuration & Initialization ---
         const supabaseUrl = 'https://sgvxsyvqluhivohypkkg.supabase.co';
-        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndnhzeXZxbHVoaXZvaHlwa2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MjYzNzIsImV4cCI6MjA3MzMwMjM3Mn0.igseAZIczG6fEdtPNuF3_xyXb3rFKh5nQxxO_YUyCEh';
+        // IMPORTANT: Replace this placeholder with your actual Supabase Anon Key.
+        // You can find it in your Supabase project settings under "API".
+        // Never hardcode this in a production app; use environment variables instead.
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndnhzeXZxbHVoaXZvaHlwa2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MjYzNzIsImV4cCI6MjA3MzMwMjM3Mn0.igseAZIczG6fEdtPNuF3_xyXb3rFKh5nQxxO_YUyCEs';
+        
+        let supabase = null;
 
-        const supabase = createClient(supabaseUrl, supabaseAnonKey);
-        console.log("Supabase client created successfully.");
+        // Ensure the key is not the placeholder before initializing the client.
+        if (supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY' || !supabaseAnonKey) {
+            console.error("Supabase API key is missing. Please replace the placeholder 'YOUR_SUPABASE_ANON_KEY' with your actual key.");
+        } else {
+            supabase = createClient(supabaseUrl, supabaseAnonKey);
+            console.log("Supabase client created successfully.");
+        }
+
 
         // --- DOM Elements ---
         const splashScreen = document.getElementById('splash-screen');
-        const permissionsScreen = document.getElementById('permissions-screen');
         const mainScreen = document.getElementById('main-screen');
         const accountSettingsScreen = document.getElementById('account-settings-screen');
         const contactUsScreen = document.getElementById('contact-us-screen');
@@ -872,8 +876,6 @@
         const termsConditionsScreen = document.getElementById('terms-conditions-screen');
         const signInBtn = document.getElementById('sign-in-btn');
         const signUpBtn = document.getElementById('sign-up-btn');
-        const anonBtn = document.getElementById('anon-btn');
-        const continueToAppBtn = document.getElementById('continue-to-app-btn');
         const authModal = document.getElementById('auth-modal');
         const authForm = document.getElementById('auth-form');
         const authTitle = document.getElementById('auth-title');
@@ -896,8 +898,6 @@
         const menuLinks = sideMenu.querySelectorAll('a');
         const signOutBtn = document.getElementById('sign-out-btn');
         const userNameElement = document.getElementById('user-name');
-        const locationToggle = document.getElementById('location-toggle');
-        const notificationsToggle = document.getElementById('notifications-toggle');
         const termsCheckbox = document.getElementById('terms');
         const privacyCheckbox = document.getElementById('privacy');
         // New elements for modal navigation
@@ -907,20 +907,37 @@
         const closeTermsBtn = document.getElementById('close-terms-btn');
         const backToMapBtn = document.getElementById('back-to-map-btn');
         const closeContactBtn = document.getElementById('close-contact-btn');
-        
+        const menuAvatar = document.getElementById('menu-avatar');
+
         // New elements for the "Coming Soon" pop-up
         const findSafeSpaceBtn = document.getElementById('find-safe-space-btn');
         const crisisButton = document.getElementById('crisis-button');
         const comingSoonModal = document.getElementById('coming-soon-modal');
         const closeComingSoonBtn = document.getElementById('close-coming-soon-btn');
 
+        // --- Account Settings Screen DOM Elements ---
+        const currentAvatarElement = document.getElementById('current-avatar');
+        const avatarSelectionGrid = document.getElementById('avatar-selection-grid');
+        const usernameForm = document.getElementById('username-form');
+        const newUsernameInput = document.getElementById('new-username');
+        const usernameMessage = document.getElementById('username-message');
+        const emailForm = document.getElementById('email-form');
+        const newEmailInput = document.getElementById('new-email');
+        const confirmEmailInput = document.getElementById('confirm-email');
+        const emailMessage = document.getElementById('email-message');
+        const passwordForm = document.getElementById('password-form');
+        const currentPasswordInput = document.getElementById('current-password');
+        const newPasswordInput = document.getElementById('password-new');
+        const confirmNewPasswordInput = document.getElementById('confirm-password-new');
+        const passwordMessage = document.getElementById('password-message');
+
 
         let modalMode = 'signin';
         let previousScreenId = 'splash-screen'; // Track the previous screen for the close buttons
+        let currentUserId = null;
 
         // --- Utility Functions ---
         function showScreen(screenId) {
-            // Save the current active screen before changing it
             const currentActiveScreen = document.querySelector('.screen.active');
             if (currentActiveScreen) {
                 previousScreenId = currentActiveScreen.id;
@@ -953,18 +970,19 @@
             }
         }
 
-        function showMessage(message, type = 'info') {
+        function showMessage(element, message, type = 'info') {
             let color = 'text-gray-500';
             if (type === 'success') color = 'text-green-500';
             if (type === 'error') color = 'text-red-500';
-            authMessage.className = `mt-4 text-center ${color}`;
-            authMessage.textContent = message;
+            element.className = `mt-4 text-center ${color}`;
+            element.textContent = message;
+            element.classList.remove('hidden');
         }
 
         function setModalMode(mode) {
             modalMode = mode;
             authForm.reset();
-            showMessage('');
+            showMessage(authMessage, '', 'info');
             passwordFields.classList.add('hidden');
             forgotPasswordLink.classList.add('hidden');
             confirmPasswordContainer.classList.add('hidden');
@@ -997,25 +1015,28 @@
             }
         }
 
-        // --- Supabase Auth Functions ---
+        // --- Supabase Auth & Data Functions ---
         async function handleSignUp(email, password, confirmPassword) {
-            // Check for agreements
             if (!termsCheckbox.checked || !privacyCheckbox.checked) {
-                showMessage('You must agree to both the Terms and Conditions and the Privacy Policy.', 'error');
+                showMessage(authMessage, 'You must agree to both the Terms and Conditions and the Privacy Policy.', 'error');
                 return;
             }
 
             if (password !== confirmPassword) {
-                showMessage('Passwords do not match. Please try again.', 'error');
+                showMessage(authMessage, 'Passwords do not match. Please try again.', 'error');
                 return;
             }
 
             if (password.length < 8) {
-                showMessage('Password must be a minimum of 8 characters.', 'error');
+                showMessage(authMessage, 'Password must be a minimum of 8 characters.', 'error');
+                return;
+            }
+            if(!supabase){
+                showMessage(authMessage, "Supabase is not initialized. Please check your API key.", "error");
                 return;
             }
 
-            showMessage('Signing up...');
+            showMessage(authMessage, 'Signing up...');
             try {
                 const { data, error } = await supabase.auth.signUp({
                     email: email,
@@ -1025,20 +1046,30 @@
                 if (error) {
                     throw error;
                 }
-
+                
+                // Automatically create a profile for the new user
+                await createProfile(data.user.id);
+                
                 console.log("Sign up successful:", data);
-                showMessage('Sign up successful! Please check your email to confirm.', 'success');
-                // The user is not truly logged in until they confirm their email.
-                // We show them the permissions screen on first *confirmed* login.
+                showMessage(authMessage, 'Sign up successful! Please check your email to confirm.', 'success');
+                hideModal('auth-modal');
+                
+                // Redirect to main screen after successful sign-up
+                showScreen('main-screen');
+
 
             } catch (error) {
-                showMessage(`Sign up failed: ${error.message}`, 'error');
+                showMessage(authMessage, `Sign up failed: ${error.message}`, 'error');
                 console.error("Supabase Sign Up Error:", error.message);
             }
         }
 
         async function handleSignIn(email, password) {
-            showMessage('Signing in...');
+            if(!supabase){
+                showMessage(authMessage, "Supabase is not initialized. Please check your API key.", "error");
+                return;
+            }
+            showMessage(authMessage, 'Signing in...');
             try {
                 const { data, error } = await supabase.auth.signInWithPassword({
                     email: email,
@@ -1050,25 +1081,21 @@
                 }
 
                 console.log("Sign in successful:", data);
-                showMessage('Signed in successfully!', 'success');
+                showMessage(authMessage, 'Signed in successfully!', 'success');
                 hideModal('auth-modal');
-                
-                // Show permissions screen for a user's first time logging in
-                const hasSeenPermissions = localStorage.getItem('permissionsShown');
-                if (!hasSeenPermissions) {
-                    showScreen('permissions-screen');
-                } else {
-                    showScreen('main-screen');
-                }
 
             } catch (error) {
-                showMessage(`Sign in failed: ${error.message}`, 'error');
+                showMessage(authMessage, `Sign in failed: ${error.message}`, 'error');
                 console.error("Supabase Sign In Error:", error.message);
             }
         }
 
         async function handleForgotPassword(email) {
-            showMessage('Sending password reset link...');
+            if(!supabase){
+                showMessage(authMessage, "Supabase is not initialized. Please check your API key.", "error");
+                return;
+            }
+            showMessage(authMessage, 'Sending password reset link...');
             try {
                 const { error } = await supabase.auth.resetPasswordForEmail(email);
 
@@ -1076,38 +1103,169 @@
                     throw error;
                 }
 
-                showMessage('Password reset link sent! Check your email.', 'success');
-                // Disable the email input to prevent resubmitting
+                showMessage(authMessage, 'Password reset link sent! Check your email.', 'success');
                 authEmail.disabled = true;
 
             } catch (error) {
-                showMessage(`Failed to send reset link: ${error.message}`, 'error');
+                showMessage(authMessage, `Failed to send reset link: ${error.message}`, 'error');
                 console.error("Supabase Reset Password Error:", error.message);
             }
         }
 
         async function handleSignOut() {
+            if(!supabase){
+                showMessage(authMessage, "Supabase is not initialized. Please check your API key.", "error");
+                return;
+            }
             try {
                 const { error } = await supabase.auth.signOut();
                 if (error) throw error;
                 console.log("Signed out successfully.");
-                sideMenu.classList.remove('open'); // Close the menu
-                showScreen('splash-screen'); // Return to the splash screen
+                sideMenu.classList.remove('open');
+                showScreen('splash-screen');
             } catch (error) {
                 console.error("Supabase Sign Out Error:", error.message);
             }
         }
+        
+        async function createProfile(userId) {
+            if (!supabase) return;
+            const { data, error } = await supabase
+                .from('profiles')
+                .insert({ 
+                    user_id: userId, 
+                    username: 'New User', 
+                    avatar_url: '🏳️‍🌈',
+                });
+            if (error) {
+                console.error("Error creating profile:", error.message);
+            } else {
+                console.log("Profile created successfully:", data);
+            }
+        }
 
+        async function fetchProfile(userId) {
+            if (!supabase) return;
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('username, avatar_url')
+                    .eq('user_id', userId)
+                    .single();
+
+                if (error) {
+                    throw error;
+                }
+                
+                userNameElement.textContent = data.username;
+                currentAvatarElement.textContent = data.avatar_url;
+                menuAvatar.textContent = data.avatar_url;
+                newUsernameInput.value = data.username;
+                
+                // Set the correct avatar option as selected
+                document.querySelectorAll('.avatar-option').forEach(option => {
+                    if (option.dataset.avatar === data.avatar_url) {
+                        option.classList.add('selected');
+                    } else {
+                        option.classList.remove('selected');
+                    }
+                });
+                return data;
+
+            } catch (error) {
+                console.error("Error fetching profile:", error.message);
+                if (error.code === 'PGRST116') {
+                    // Profile not found, create one
+                    await createProfile(userId);
+                    return await fetchProfile(userId); // Re-fetch after creation
+                }
+            }
+        }
+
+        async function updateUsername(newUsername) {
+            if (!supabase) return;
+            showMessage(usernameMessage, 'Updating username...', 'info');
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .update({ username: newUsername })
+                    .eq('user_id', currentUserId)
+                    .select();
+
+                if (error) {
+                    throw error;
+                }
+                
+                showMessage(usernameMessage, 'Username updated successfully!', 'success');
+                userNameElement.textContent = data[0].username;
+
+            } catch (error) {
+                showMessage(usernameMessage, `Error: ${error.message}`, 'error');
+                console.error("Error updating username:", error.message);
+            }
+        }
+        
+        async function updateAvatar(newAvatar) {
+            if (!supabase) return;
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .update({ avatar_url: newAvatar })
+                    .eq('user_id', currentUserId)
+                    .select();
+
+                if (error) {
+                    throw error;
+                }
+                
+                currentAvatarElement.textContent = data[0].avatar_url;
+                menuAvatar.textContent = data[0].avatar_url;
+
+            } catch (error) {
+                console.error("Error updating avatar:", error.message);
+            }
+        }
+
+        async function updateEmail(newEmail) {
+            if (!supabase) return;
+            showMessage(emailMessage, 'Updating email...', 'info');
+            try {
+                const { data, error } = await supabase.auth.updateUser({ email: newEmail });
+                
+                if (error) {
+                    throw error;
+                }
+                
+                showMessage(emailMessage, 'Email updated! Check your new email for a confirmation link.', 'success');
+
+            } catch (error) {
+                showMessage(emailMessage, `Error: ${error.message}`, 'error');
+                console.error("Error updating email:", error.message);
+            }
+        }
+
+        async function updatePassword(newPassword) {
+            if (!supabase) return;
+            showMessage(passwordMessage, 'Updating password...', 'info');
+            try {
+                const { data, error } = await supabase.auth.updateUser({ password: newPassword });
+                
+                if (error) {
+                    throw error;
+                }
+                
+                showMessage(passwordMessage, 'Password updated successfully!', 'success');
+                passwordForm.reset();
+
+            } catch (error) {
+                showMessage(passwordMessage, `Error: ${error.message}`, 'error');
+                console.error("Error updating password:", error.message);
+            }
+        }
+        
         // --- Event Listeners ---
         window.addEventListener('DOMContentLoaded', () => {
-            // Always start with the splash screen
             showScreen('splash-screen');
-
-            // Set initial toggle states based on local storage
-            const savedLocationPermission = localStorage.getItem('locationPermission') === 'true';
-            const savedNotificationsPermission = localStorage.getItem('notificationsPermission') === 'true';
-            locationToggle.checked = savedLocationPermission;
-            notificationsToggle.checked = savedNotificationsPermission;
 
             // Handle user auth actions
             signInBtn.addEventListener('click', () => {
@@ -1118,26 +1276,6 @@
             signUpBtn.addEventListener('click', () => {
                 setModalMode('signup');
                 showModal('auth-modal');
-            });
-
-            anonBtn.addEventListener('click', () => {
-                console.log("Continue anonymously button clicked. Navigating to permissions screen.");
-                // Always show permissions screen on first anonymous click.
-                showScreen('permissions-screen');
-            });
-
-            continueToAppBtn.addEventListener('click', () => {
-                // Get the state of the permission buttons
-                const locationAllowed = document.querySelector('.permission-btn[data-permission="location"].bg-primary').dataset.allow === 'true';
-                const notificationsAllowed = document.querySelector('.permission-btn[data-permission="notifications"].bg-primary').dataset.allow === 'true';
-
-                // Save permissions to local storage
-                localStorage.setItem('locationPermission', locationAllowed);
-                localStorage.setItem('notificationsPermission', notificationsAllowed);
-                // Mark that the permissions screen has been seen
-                localStorage.setItem('permissionsShown', 'true');
-
-                showScreen('main-screen');
             });
 
             closeAuthModal.addEventListener('click', () => {
@@ -1165,17 +1303,14 @@
                 }
             });
 
-            // Event listener for hamburger menu button
             hamburgerMenuBtn.addEventListener('click', () => {
                 sideMenu.classList.add('open');
             });
 
-            // Event listener for close menu button
             closeMenuBtn.addEventListener('click', () => {
                 sideMenu.classList.remove('open');
             });
 
-            // Event listeners for menu links to navigate screens
             menuLinks.forEach(link => {
                 link.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -1187,18 +1322,8 @@
                 });
             });
 
-            // Event listener for sign out button
             signOutBtn.addEventListener('click', () => {
                 handleSignOut();
-            });
-
-            // Placeholder toggle event listeners
-            locationToggle.addEventListener('change', (event) => {
-                console.log(`Location toggle is now ${event.target.checked ? 'ON' : 'OFF'}`);
-            });
-
-            notificationsToggle.addEventListener('change', (event) => {
-                console.log(`Notifications toggle is now ${event.target.checked ? 'ON' : 'OFF'}`);
             });
 
             // Event listeners for links inside the sign-up modal
@@ -1214,7 +1339,7 @@
                 showScreen('privacy-policy-screen');
             });
 
-            // Event listeners for back buttons on policy screens to go back to previous screen
+            // Event listeners for back buttons on policy screens
             closePrivacyBtn.addEventListener('click', () => {
                 showScreen(previousScreenId);
             });
@@ -1223,7 +1348,6 @@
                 showScreen(previousScreenId);
             });
             
-            // Event listeners for the placeholder screens
             backToMapBtn.addEventListener('click', () => {
                 showScreen('main-screen');
             });
@@ -1232,7 +1356,6 @@
                 showScreen('main-screen');
             });
 
-            // --- New Coming Soon Modal Logic ---
             findSafeSpaceBtn.addEventListener('click', () => {
                 showModal('coming-soon-modal');
             });
@@ -1245,18 +1368,84 @@
                 hideModal('coming-soon-modal');
             });
 
+            // --- New Account Settings Event Listeners ---
+            avatarSelectionGrid.addEventListener('click', (e) => {
+                const avatarOption = e.target.closest('.avatar-option');
+                if (!avatarOption) return;
+
+                const selectedAvatar = avatarOption.dataset.avatar;
+                if (currentAvatarElement.textContent === selectedAvatar) return; // No change
+
+                // Update UI
+                document.querySelectorAll('.avatar-option').forEach(option => option.classList.remove('selected'));
+                avatarOption.classList.add('selected');
+                currentAvatarElement.textContent = selectedAvatar;
+                menuAvatar.textContent = selectedAvatar;
+                
+                updateAvatar(selectedAvatar);
+            });
+            
+            usernameForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newUsername = newUsernameInput.value;
+                if (newUsername.trim() === '') {
+                    showMessage(usernameMessage, 'Username cannot be empty.', 'error');
+                    return;
+                }
+                updateUsername(newUsername);
+            });
+            
+            emailForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newEmail = newEmailInput.value;
+                const confirmEmail = confirmEmailInput.value;
+
+                if (newEmail !== confirmEmail) {
+                    showMessage(emailMessage, 'Emails do not match.', 'error');
+                    return;
+                }
+                updateEmail(newEmail);
+            });
+            
+            passwordForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const newPassword = newPasswordInput.value;
+                const confirmNewPassword = confirmNewPasswordInput.value;
+                
+                // Supabase doesn't require the current password, but we can do a simple check
+                // This will be replaced with a more secure re-authentication flow in a real app
+                if (newPassword.length < 8) {
+                    showMessage(passwordMessage, 'New password must be at least 8 characters long.', 'error');
+                    return;
+                }
+
+                if (newPassword !== confirmNewPassword) {
+                    showMessage(passwordMessage, 'New passwords do not match.', 'error');
+                    return;
+                }
+                
+                updatePassword(newPassword);
+            });
+
 
             // Supabase session listener
-            supabase.auth.onAuthStateChange((event, session) => {
-                console.log("Auth state change event:", event, "Session:", session);
-                if (session) {
-                    // For now, set a placeholder username
-                    userNameElement.textContent = "User Name";
-                } else {
-                    // User is logged out, show splash screen
-                    showScreen('splash-screen');
-                }
-            });
+            if(supabase){
+                supabase.auth.onAuthStateChange(async (event, session) => {
+                    console.log("Auth state change event:", event, "Session:", session);
+                    if (session) {
+                        currentUserId = session.user.id;
+                        // Fetch the user's profile and proceed to the main screen
+                        await fetchProfile(currentUserId);
+                        showScreen('main-screen');
+                    } else {
+                        currentUserId = null;
+                        userNameElement.textContent = "User Name";
+                        currentAvatarElement.textContent = "🏳️‍🌈"; // Reset avatar
+                        menuAvatar.textContent = "🏳️‍🌈";
+                        showScreen('splash-screen');
+                    }
+                });
+            }
         });
     </script>
 </body>
