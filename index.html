@@ -374,19 +374,28 @@
             background-color: rgba(255, 255, 255, 0.5); /* Use a semi-transparent background */
         }
         
-        .avatar-selection-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-            gap: 10px;
+        .avatar-container {
+            background-color: rgba(243, 244, 246, 0.8);
+            border-radius: 12px;
+            padding: 1rem;
             margin-top: 1rem;
+        }
+
+        .avatar-selection-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
         }
         
         .avatar-option {
             font-size: 2rem;
             cursor: pointer;
-            opacity: 0.5;
+            opacity: 0.6;
             transition: opacity 0.2s, transform 0.2s;
             text-align: center;
+            padding: 4px;
+            border-radius: 50%;
         }
         
         .avatar-option:hover {
@@ -415,6 +424,9 @@
             transition: transform 0.2s ease;
         }
     </style>
+    <!-- Google Maps API script -->
+    <!-- Replace 'YOUR_API_KEY' with your actual API key -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD1CzCfikz8oJVPe50hrHLNz2VKnN4rjMc"></script>
 </head>
 
 <body>
@@ -518,15 +530,24 @@
                 <h3 class="text-lg font-bold mb-2">Change Avatar</h3>
                 <div class="flex flex-col items-center mb-4">
                     <span id="current-avatar" class="text-6xl mb-4">🏳️‍🌈</span>
-                    <div id="avatar-selection-grid" class="avatar-selection-grid">
-                        <span class="avatar-option" data-avatar="🏳️‍🌈">🏳️‍🌈</span>
-                        <span class="avatar-option" data-avatar="🦄">🦄</span>
-                        <span class="avatar-option" data-avatar="💖">💖</span>
-                        <span class="avatar-option" data-avatar="🌈">🌈</span>
-                        <span class="avatar-option" data-avatar="✨">✨</span>
-                        <span class="avatar-option" data-avatar="🌻">🌻</span>
-                        <span class="avatar-option" data-avatar="🦋">🦋</span>
-                        <span class="avatar-option" data-avatar="🕊️">🕊️</span>
+                    <div class="avatar-container">
+                        <div id="avatar-selection-grid" class="avatar-selection-grid">
+                            <span class="avatar-option" data-avatar="🏳️‍🌈">🏳️‍🌈</span>
+                            <span class="avatar-option" data-avatar="🏳️‍⚧️">🏳️‍⚧️</span>
+                            <span class="avatar-option" data-avatar="👩">👩</span>
+                            <span class="avatar-option" data-avatar="👨">👨</span>
+                            <span class="avatar-option" data-avatar="🧑">🧑</span>
+                            <span class="avatar-option" data-avatar="❤️">❤️</span>
+                            <span class="avatar-option" data-avatar="🧡">🧡</span>
+                            <span class="avatar-option" data-avatar="💛">💛</span>
+                            <span class="avatar-option" data-avatar="💚">💚</span>
+                            <span class="avatar-option" data-avatar="💙">💙</span>
+                            <span class="avatar-option" data-avatar="💜">💜</span>
+                            <span class="avatar-option" data-avatar="🩵">🩵</span>
+                            <span class="avatar-option" data-avatar="🩷">🩷</span>
+                            <span class="avatar-option" data-avatar="🤍">🤍</span>
+                            <span class="avatar-option" data-avatar="🖤">🖤</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -706,10 +727,10 @@
                     </ul>
                     <p>We reserve the right to remove content that violates our community guidelines.</p>
                     
-                    <h4 class="text-xl font-semibold text-gray-700 mt-6">5. Anonymity and Content</h4>
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">5. Anonymity and Content</p>
                     <p>All user contributions, including ratings, reviews, and comments, are completely anonymous. By submitting content, you grant QueerSafeSpace a non-exclusive, royalty-free, worldwide license to use, reproduce, and display your anonymous contributions to improve the app.</p>
                     
-                    <h4 class="text-xl font-semibold text-gray-700 mt-6">6. Location Services</h4>
+                    <h4 class="text-xl font-semibold text-gray-700 mt-6">6. Location Services</p>
                     <p>Location features are optional. If you enable location, the app may use it to display nearby safe spaces. Disabling location may limit some features.</p>
                     
                     <h4 class="text-xl font-semibold text-gray-700 mt-6">7. Intellectual Property</p>
@@ -865,6 +886,47 @@
             supabase = createClient(supabaseUrl, supabaseAnonKey);
             console.log("Supabase client created successfully.");
         }
+        
+        // --- Map Initialization ---
+        let mapLoaded = false;
+        let map = null;
+
+        function initMap() {
+            if (mapLoaded) return; // Prevent re-initializing the map
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        map = new google.maps.Map(document.getElementById('map'), {
+                            center: userLocation,
+                            zoom: 12,
+                        });
+                        mapLoaded = true;
+                    },
+                    () => {
+                        // If geolocation fails, center the map on a default location
+                        const defaultLocation = { lat: 28.74, lng: -82.49 }; // Central Florida, USA
+                        map = new google.maps.Map(document.getElementById('map'), {
+                            center: defaultLocation,
+                            zoom: 10,
+                        });
+                        mapLoaded = true;
+                    }
+                );
+            } else {
+                // If the browser doesn't support geolocation, use a default location
+                const defaultLocation = { lat: 28.74, lng: -82.49 }; // Central Florida, USA
+                map = new google.maps.Map(document.getElementById('map'), {
+                    center: defaultLocation,
+                    zoom: 10,
+                });
+                mapLoaded = true;
+            }
+        }
 
 
         // --- DOM Elements ---
@@ -953,6 +1015,21 @@
             if (targetScreen) {
                 targetScreen.classList.add('active');
                 targetScreen.style.display = 'flex';
+            }
+
+            // If the map screen is being shown, initialize the map
+            if (screenId === 'main-screen' && !mapLoaded) {
+                if (window.google && window.google.maps) {
+                    initMap();
+                } else {
+                    // Poll for the Google Maps API to be ready
+                    const interval = setInterval(() => {
+                        if (window.google && window.google.maps) {
+                            initMap();
+                            clearInterval(interval);
+                        }
+                    }, 200);
+                }
             }
         }
 
@@ -1183,7 +1260,10 @@
         }
 
         async function updateUsername(newUsername) {
-            if (!supabase) return;
+            if (!supabase || !currentUserId) {
+                showMessage(usernameMessage, "User not authenticated.", 'error');
+                return;
+            }
             showMessage(usernameMessage, 'Updating username...', 'info');
             try {
                 const { data, error } = await supabase
@@ -1206,7 +1286,7 @@
         }
         
         async function updateAvatar(newAvatar) {
-            if (!supabase) return;
+            if (!supabase || !currentUserId) return;
             try {
                 const { data, error } = await supabase
                     .from('profiles')
@@ -1227,7 +1307,10 @@
         }
 
         async function updateEmail(newEmail) {
-            if (!supabase) return;
+            if (!supabase || !currentUserId) {
+                showMessage(emailMessage, "User not authenticated.", 'error');
+                return;
+            }
             showMessage(emailMessage, 'Updating email...', 'info');
             try {
                 const { data, error } = await supabase.auth.updateUser({ email: newEmail });
@@ -1237,6 +1320,7 @@
                 }
                 
                 showMessage(emailMessage, 'Email updated! Check your new email for a confirmation link.', 'success');
+                emailForm.reset();
 
             } catch (error) {
                 showMessage(emailMessage, `Error: ${error.message}`, 'error');
@@ -1245,7 +1329,10 @@
         }
 
         async function updatePassword(newPassword) {
-            if (!supabase) return;
+            if (!supabase || !currentUserId) {
+                showMessage(passwordMessage, "User not authenticated.", 'error');
+                return;
+            }
             showMessage(passwordMessage, 'Updating password...', 'info');
             try {
                 const { data, error } = await supabase.auth.updateUser({ password: newPassword });
