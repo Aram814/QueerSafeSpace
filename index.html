@@ -1084,7 +1084,7 @@ window.goScreen = function(id) {
   const el = document.getElementById(id);
   if (!el) return;
   el.classList.add('active');
-  el.style.display = 'flex';
+  el.style.display = el.classList.contains('scrollable') ? 'block' : 'flex';
   if (id === 'main') setTimeout(initMap, 80);
   if (id === 'account') refreshAccountUI();
 };
