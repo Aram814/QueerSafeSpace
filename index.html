@@ -805,7 +805,7 @@
       <div class="safety-row">
         <button type="button" class="safety-btn s-safe"   onclick="pickSafety('safe',this)"><span class="ico">✅</span>Safe</button>
         <button type="button" class="safety-btn s-mixed"  onclick="pickSafety('mixed',this)"><span class="ico">⚠️</span>Mixed</button>
-        <button type="button" class="safety-btn s-unsafe" onclick="pickSafety('unsafe',this)"><span class="ico">❌</span>Not Safe</button>
+        <button type="button" class="safety-btn s-unsafe" onclick="pickSafety('not_safe',this)"><span class="ico">❌</span>Not Safe</button>
       </div>
     </div>
 
@@ -856,7 +856,7 @@
       <div class="safety-row">
         <button type="button" class="safety-btn s-safe"   onclick="pickRate('safe',this)"><span class="ico">✅</span>Safe</button>
         <button type="button" class="safety-btn s-mixed"  onclick="pickRate('mixed',this)"><span class="ico">⚠️</span>Mixed</button>
-        <button type="button" class="safety-btn s-unsafe" onclick="pickRate('unsafe',this)"><span class="ico">❌</span>Not Safe</button>
+        <button type="button" class="safety-btn s-unsafe" onclickpickRate('not_safe',this)s)"><span class="ico">❌</span>Not Safe</button>
       </div>
     </div>
     <div class="fg">
@@ -1402,21 +1402,26 @@ window.submitSpace = async function() {
 
   setMsg('add-msg', 'Submitting…');
 
-  const { data: sp, error: e1 } = await sb.from('locations').insert({
-    name, address: addLoc.display_name,
-    latitude: parseFloat(addLoc.lat), longitude: parseFloat(addLoc.lon),
-    notes: desc, tags, user_id: user.id,
-    category: 'community', safety_rating: addSafety
-  }).select().single();
+  try {
+    const { data: sp, error: e1 } = await sb.from('locations').insert({
+      name, address: addLoc.display_name,
+      latitude: parseFloat(addLoc.lat), longitude: parseFloat(addLoc.lon),
+      notes: desc, tags, user_id: user.id,
+      category: 'community', safety_rating: addSafety
+    }).select().single();
 
-  if (e1) { setMsg('add-msg', e1.message, true); return; }
+    if (e1) { setMsg('add-msg', e1.message, true); return; }
 
-  await sb.from('ratings').insert({ space_id: sp.id, user_id: user.id, rating: addSafety });
+    await sb.from('ratings').insert({ space_id: sp.id, user_id: user.id, rating: addSafety });
 
-  closeOverlay('add-overlay');
-  toast('🏳️‍🌈 Space added! Thank you!');
-  await loadSpaces();
-  if (markers[sp.id]) { map.setView([sp.latitude, sp.longitude], 15); markers[sp.id].openPopup(); }
+    closeOverlay('add-overlay');
+    toast('🏳️‍🌈 Space added! Thank you!');
+    await loadSpaces();
+    if (markers[sp.id]) { map.setView([sp.latitude, sp.longitude], 15); markers[sp.id].openPopup(); }
+  } catch (err) {
+    console.error('submitSpace error:', err);
+    setMsg('add-msg', err.message || 'Something went wrong. Please try again.', true);
+  }
 };
 
 /* ================================================================
@@ -1503,15 +1508,20 @@ window.submitRating = async function() {
   if (!rateSafety) { setMsg('rate-msg', 'Please select a rating.', true); return; }
   setMsg('rate-msg', 'Submitting…');
   const comment = document.getElementById('rate-comment').value.trim();
-  const { error } = await sb.from('ratings').upsert({
-    space_id: curSpaceId, user_id: user.id,
-    rating: rateSafety, comment: comment || null
-  }, { onConflict: 'space_id,user_id' });
-  if (error) { setMsg('rate-msg', error.message, true); return; }
-  closeOverlay('rate-overlay');
-  toast('Thanks for rating!');
-  await loadSpaces();
-  openDetail(curSpaceId);
+  try {
+    const { error } = await sb.from('ratings').upsert({
+      space_id: curSpaceId, user_id: user.id,
+      rating: rateSafety, comment: comment || null
+    }, { onConflict: 'space_id,user_id' });
+    if (error) { setMsg('rate-msg', error.message, true); return; }
+    closeOverlay('rate-overlay');
+    toast('Thanks for rating!');
+    await loadSpaces();
+    openDetail(curSpaceId);
+  } catch (err) {
+    console.error('submitRating error:', err);
+    setMsg('rate-msg', err.message || 'Something went wrong. Please try again.', true);
+  }
 };
 
 /* ================================================================
