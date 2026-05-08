@@ -1,934 +1,1659 @@
-<!DOCTYPE-html>
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QueerSafeSpace</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>QueerSafeSpace — Because Safety Shouldn't Be A Privilege</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#6366f1',
-                        secondary: '#94a3b8',
-                        background: '#f1f5f9',
-                        text: '#1e293b',
-                        white: '#ffffff',
-                        red: '#ef4444',
-                        green: '#22c5e',
-                        yellow: '#facc15',
-                        signin: '#8F7FFF',
-                        signup: '#8EFD17',
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- Font Awesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-        xintegrity="sha512-iecdLp/Xq/C7xP5Kj8T6hE3p78+kC/K7p+g1k6Qf6d2G9w9a7a9g5tS5K3X/9z7aG6wD9wG8wF2e6y"
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <style>
-        /* Global CSS Variables */
-        :root {
-            --primary: #6366f1;
-            --secondary: #94a3b8;
-            --background: #f1f5f9;
-            --text: #1e293b;
-            --white: #ffffff;
-            --red: #ef4444;
-            --green: #22c5e;
-            --yellow: #facc15;
-            --find-space-blue: #1272EF; /* Added new color variable */
-        }
+  <style>
+    /* ===================== RESET & BASE ===================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #7C3AED;
+      --primary-dark: #5B21B6;
+      --primary-light: #EDE9FE;
+      --safe: #16A34A;
+      --safe-bg: #F0FDF4;
+      --safe-dot: #22C55E;
+      --mixed: #D97706;
+      --mixed-bg: #FFFBEB;
+      --mixed-dot: #FBBF24;
+      --unsafe: #DC2626;
+      --unsafe-bg: #FEF2F2;
+      --unsafe-dot: #EF4444;
+      --unknown: #6B7280;
+      --unknown-bg: #F9FAFB;
+      --unknown-dot: #9CA3AF;
+      --text: #111827;
+      --text-muted: #6B7280;
+      --border: #E5E7EB;
+      --bg: #F9FAFB;
+      --white: #FFFFFF;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+      --shadow: 0 4px 16px rgba(0,0,0,0.12);
+      --shadow-lg: 0 12px 40px rgba(0,0,0,0.18);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+    html, body {
+      height: 100%; width: 100%;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text);
+      overflow: hidden;
+    }
 
-        /* Base Body and Container Styles */
-        body {
-            font-family: 'Inter', sans-serif;
-            color: var(--text);
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            background: linear-gradient(
-                to right,
-                rgba(255, 0, 0, 0.55),
-                rgba(255, 144, 7, 0.55),
-                rgba(251, 255, 0, 0.55),
-                rgba(0, 250, 0, 0.55),
-                rgba(0, 255, 238, 0.55),
-                rgba(21, 0, 255, 0.55),
-                rgba(106, 0, 255, 0.55),
-                rgba(255, 0, 183, 0.55)
-            );
-        }
+    /* ===================== SCREENS ===================== */
+    .screen {
+      position: fixed; inset: 0;
+      display: none; flex-direction: column;
+      overflow: hidden;
+      z-index: 10;
+    }
+    .screen.active { display: flex; }
+    .screen.scrollable { overflow-y: auto; }
 
-        /* Screen Transitions and Layouts */
-        .screen {
-            display: none;
-            position: absolute; /* Changed to absolute to stack them */
-            top: 0;
-            left: 0;
-            width: 100%;
-            min-height: 100vh;
-            overflow-y: auto;
-            animation: fadeIn 0.5s ease-in-out;
-            z-index: 10;
-        }
+    /* ===================== SPLASH ===================== */
+    #splash {
+      background: linear-gradient(135deg,
+        #FF6B6B 0%, #FF8E53 15%, #FFD166 30%,
+        #06D6A0 50%, #118AB2 65%, #8338EC 80%, #FF006E 100%);
+      background-size: 300% 300%;
+      animation: gradShift 10s ease infinite;
+      align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    @keyframes gradShift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .splash-card {
+      background: rgba(255,255,255,0.93);
+      backdrop-filter: blur(24px);
+      border-radius: 28px;
+      padding: 40px 32px 32px;
+      max-width: 420px; width: 100%;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+    }
+    .splash-logo { width: 96px; height: 96px; margin: 0 auto 20px; }
+    .splash-title { font-size: 2rem; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+    .splash-tagline { font-size: 0.95rem; color: var(--text-muted); margin-bottom: 18px; font-weight: 500; }
+    .splash-desc { font-size: 0.88rem; color: #374151; line-height: 1.65; margin-bottom: 28px; }
+    .btn {
+      display: block; width: 100%; padding: 14px 20px;
+      border-radius: 50px; border: none; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; transition: transform 0.1s, opacity 0.2s;
+      margin-bottom: 10px; font-family: inherit;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary   { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-signup    { background: #8EFD17; color: #1a1a1a; }
+    .btn-signup:hover { opacity: 0.88; }
+    .btn-ghost     { background: transparent; color: var(--text-muted); font-size: 0.85rem; font-weight: 500; }
+    .btn-ghost:hover { color: var(--text); }
+    .btn-danger    { background: #FEF2F2; color: var(--unsafe); }
+    .btn-danger:hover { background: #FEE2E2; }
+    .splash-note   { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
 
-        .screen.active {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        /* Unique Backgrounds for Each Page */
-        .screen::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0.55;
-            z-index: 1; /* Ensure background is behind content */
-        }
-        
-        #map {
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
+    /* ===================== MAP SCREEN ===================== */
+    /*
+     * #main is a flex-column container (position:fixed;inset:0 from .screen).
+     * Children are normal-flow flex items — no absolute positioning on topbar/filter.
+     * Layout:
+     *   Mobile/Tablet:  topbar → filter-bar → map-area → bottom-bar
+     *   Desktop(≥1024): topbar (full width) | sidebar + map-area side by side
+     */
 
-        /* Frosted Glass Card Effect */
-        .content-card {
-            background-color: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 2rem;
-            width: 90%;
-            max-width: 500px;
-            z-index: 2; /* Ensure card content is above background */
-        }
+    /* ── Topbar: normal-flow flex child ── */
+    .topbar {
+      flex-shrink: 0; position: relative; z-index: 100;
+      display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+      background: #fff; border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+    .icon-btn {
+      width: 40px; height: 40px; border-radius: 50%; border: none;
+      background: var(--bg); color: var(--text);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background 0.15s; flex-shrink: 0; font-size: 0.95rem;
+    }
+    .icon-btn:hover { background: var(--border); }
+    .icon-btn.primary { background: var(--primary); color: #fff; }
+    .icon-btn.primary:hover { background: var(--primary-dark); }
 
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
+    .search-wrap { flex: 1; position: relative; }
+    .search-wrap input {
+      width: 100%; padding: 9px 14px 9px 38px;
+      border-radius: 50px; border: 1.5px solid var(--border);
+      background: var(--bg); font-size: 0.88rem; outline: none;
+      font-family: inherit; transition: border-color 0.2s;
+    }
+    .search-wrap input:focus { border-color: var(--primary); background: #fff; }
+    .search-wrap .s-icon {
+      position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+      color: var(--text-muted); font-size: 0.8rem; pointer-events: none;
+    }
+    .search-dropdown {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: #fff; border-radius: var(--radius-sm); box-shadow: var(--shadow);
+      max-height: 220px; overflow-y: auto; z-index: 200; display: none;
+    }
+    .search-dropdown.open { display: block; }
+    .sdrop-item {
+      padding: 10px 14px; cursor: pointer; font-size: 0.85rem;
+      border-bottom: 1px solid var(--border); transition: background 0.1s;
+    }
+    .sdrop-item:last-child { border-bottom: none; }
+    .sdrop-item:hover { background: var(--bg); }
 
-        .modal-content {
-            background-color: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            padding: 2rem;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .modal-content-with-close {
-            position: relative;
-        }
-        .modal-close-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 1.5rem;
-            color: #6b7280;
-            cursor: pointer;
-        }
-        /* Floating Action Buttons */
-        #fab {
-            position: absolute;
-            bottom: 2rem;
-            left: 2rem;
-            width: 60px;
-            height: 60px;
-            background-color: rgb(138, 63, 252);
-            color: var(--white);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            cursor: pointer;
-            transition: transform 0.2s ease-in-out;
-            z-index: 1000;
-        }
+    /* ── Filter bar: normal-flow on mobile, hidden on desktop ── */
+    .filter-bar {
+      flex-shrink: 0;
+      display: flex; gap: 7px; padding: 8px 14px;
+      background: rgba(255,255,255,0.97); border-bottom: 1px solid var(--border);
+      overflow-x: auto; scrollbar-width: none; z-index: 10;
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+    .chip {
+      padding: 5px 14px; border-radius: 50px; border: 2px solid;
+      font-size: 0.78rem; font-weight: 700; white-space: nowrap;
+      cursor: pointer; transition: all 0.18s; background: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08); font-family: inherit;
+    }
+    .chip-all   { border-color: var(--primary); color: var(--primary); }
+    .chip-safe  { border-color: var(--safe);    color: var(--safe); }
+    .chip-mixed { border-color: var(--mixed);   color: var(--mixed); }
+    .chip-unsafe{ border-color: var(--unsafe);  color: var(--unsafe); }
+    .chip.active.chip-all    { background: var(--primary); color: #fff; }
+    .chip.active.chip-safe   { background: var(--safe);    color: #fff; }
+    .chip.active.chip-mixed  { background: var(--mixed);   color: #fff; }
+    .chip.active.chip-unsafe { background: var(--unsafe);  color: #fff; }
 
-        #fab:active {
-            transform: scale(0.95);
-        }
+    /* ── Main body: wraps sidebar + map, fills remaining space ── */
+    .main-body {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;
+    }
 
-        #crisis-button {
-            padding: 0.75rem 1.5rem;
-            background-color: var(--red);
-            color: var(--white);
-            border-radius: 9999px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            cursor: pointer;
-            transition: transform 0.2s ease-in-out;
-            font-weight: 600;
-        }
+    /* ── Map area: defined height on mobile/tablet ── */
+    .map-area {
+      flex: 0 0 auto;
+      height: 44vh;          /* mobile default */
+      position: relative; overflow: hidden;
+    }
+    #map { position: absolute; inset: 0; z-index: 1; }
 
-        #crisis-button:active {
-            transform: scale(0.95);
-        }
-        
-        /* Landing Page Specifics */
-        .landing-logo {
-            width: 200px;
-            height: auto;
-            margin-bottom: 2rem;
-        }
+    /* ── Bottom bar: legend + crisis button ── */
+    .bottom-bar {
+      flex-shrink: 0; background: #fff; border-top: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+    }
+    .map-key {
+      display: flex; gap: 10px; flex-wrap: wrap; flex: 1;
+    }
+    .key-item  { display: flex; align-items: center; gap: 5px; font-size: 0.76rem; font-weight: 600; }
+    .key-dot   { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
-        /* Side Menu and Toggle */
-        #hamburger-menu-btn {
-            position: absolute;
-            top: 1rem;
-            left: 1rem;
-            z-index: 1001; /* Above the map */
-            background-color: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            padding: 0.75rem;
-            border-radius: 9999px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
+    /* ── Crisis button in bottom bar ── */
+    .crisis-btn {
+      background: var(--unsafe); color: #fff; border: none; border-radius: 50px;
+      padding: 9px 16px; font-size: 0.82rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; white-space: nowrap; flex-shrink: 0;
+      box-shadow: 0 3px 10px rgba(220,38,38,0.35); transition: transform 0.15s;
+    }
+    .crisis-btn:hover { transform: scale(1.03); }
 
-        #side-menu {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100%;
-            width: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            transform: translateX(-100%);
-            transition: transform 0.3s ease-in-out;
-            z-index: 2000;
-        }
+    /* ── Sidebar: desktop only ── */
+    .sidebar { display: none; }
 
-        #side-menu.open {
-            transform: translateX(0);
-        }
+    /* ── Sidebar desktop filter chips (vertical stack) ── */
+    .sidebar-chips { display: flex; flex-direction: column; gap: 6px; }
+    .sidebar-chips .chip { text-align: left; box-shadow: none; padding: 8px 14px; font-size: 0.82rem; }
 
-        #side-menu .menu-content {
-            width: 75%;
-            max-width: 300px;
-            height: 100%;
-            background-color: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            padding: 2rem;
-            box-shadow: 4px 0 8px rgba(0, 0, 0, 0.2);
-            display: flex;
-            flex-direction: column;
-        }
-        
-        #side-menu a {
-            padding: 1rem;
-            border-radius: 0.5rem;
-            transition: background-color 0.2s;
-        }
+    /* ── Sidebar legend card ── */
+    .legend-card {
+      background: var(--bg); border-radius: var(--radius-sm); padding: 14px;
+    }
+    .legend-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+                    letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 10px; }
+    .legend-card .key-item { margin-bottom: 6px; font-size: 0.84rem; }
+    .legend-card .key-item:last-child { margin-bottom: 0; }
+    .legend-card .key-dot  { width: 11px; height: 11px; }
 
-        #side-menu a:hover {
-            background-color: var(--background);
-        }
+    /* ── Sidebar crisis button ── */
+    .crisis-sidebar-btn {
+      background: var(--unsafe-bg); color: var(--unsafe); border: 2px solid var(--unsafe-dot);
+      border-radius: var(--radius-sm); padding: 12px 16px;
+      font-size: 0.88rem; font-weight: 700; cursor: pointer; font-family: inherit;
+      text-align: left; transition: background 0.15s;
+    }
+    .crisis-sidebar-btn:hover { background: #FEE2E2; }
 
-        /* Custom Toggle Switch */
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 28px;
-        }
+    /* ── Sidebar tip card ── */
+    .sidebar-tip {
+      background: var(--primary-light); border-radius: var(--radius-sm); padding: 12px 14px;
+      font-size: 0.82rem; color: var(--primary); line-height: 1.5;
+    }
+    .sidebar-tip strong { display: block; margin-bottom: 3px; }
 
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
+    /* ── TABLET (≥ 600px): taller map ── */
+    @media (min-width: 600px) {
+      .map-area { height: 52vh; }
+    }
 
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 28px;
-        }
+    /* ── DESKTOP (≥ 1024px): side-by-side layout ── */
+    @media (min-width: 1024px) {
+      /* Switch main to CSS grid */
+      #main {
+        display: grid !important;
+        grid-template-rows: auto 1fr;
+        grid-template-columns: 300px 1fr;
+        grid-template-areas:
+          "topbar  topbar"
+          "sidebar maparea";
+        overflow: hidden;
+      }
+      .topbar    { grid-area: topbar; }
+      .filter-bar { display: none; }          /* hidden — desktop uses sidebar chips */
+      .main-body { display: contents; }       /* dissolve wrapper, children become grid items */
+      .sidebar {
+        grid-area: sidebar;
+        display: flex; flex-direction: column; gap: 14px;
+        background: #fff; border-right: 1px solid var(--border);
+        overflow-y: auto; padding: 16px;
+      }
+      .map-area  {
+        grid-area: maparea;
+        height: auto; /* fill the grid row instead of fixed vh */
+        flex: none;
+      }
+      .bottom-bar { display: none; }          /* hidden — desktop uses sidebar */
+    }
 
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 20px;
-            width: 20px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
+    /* ── LARGE DESKTOP (≥ 1280px): wider sidebar ── */
+    @media (min-width: 1280px) {
+      #main { grid-template-columns: 340px 1fr; }
+    }
 
-        input:checked+.slider {
-            background-color: #80FD91;
-        }
+    /* ===================== SIDE MENU ===================== */
+    .menu-veil {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 500; display: none; opacity: 0; transition: opacity 0.25s;
+    }
+    .menu-veil.open { display: block; opacity: 1; }
+    .side-menu {
+      position: absolute; top: 0; left: 0; height: 100%; width: 285px;
+      background: #fff; display: flex; flex-direction: column; overflow-y: auto;
+      transform: translateX(-100%); transition: transform 0.28s ease;
+    }
+    .menu-veil.open .side-menu { transform: translateX(0); }
+    .menu-head {
+      background: linear-gradient(135deg, var(--primary), #a855f7);
+      padding: 36px 20px 24px; color: #fff;
+    }
+    .menu-avatar {
+      width: 60px; height: 60px; border-radius: 50%;
+      background: rgba(255,255,255,0.25); border: 3px solid rgba(255,255,255,0.5);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; margin-bottom: 12px;
+    }
+    .menu-uname { font-size: 1.05rem; font-weight: 700; }
+    .menu-email { font-size: 0.78rem; opacity: 0.8; margin-top: 2px; }
+    .menu-nav { flex: 1; padding: 10px 0; }
+    .menu-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 20px; cursor: pointer; font-size: 0.93rem;
+      color: var(--text); transition: background 0.12s; text-decoration: none;
+    }
+    .menu-item:hover { background: var(--bg); }
+    .menu-item i { width: 20px; text-align: center; color: var(--text-muted); }
+    .menu-item.red { color: var(--unsafe); }
+    .menu-item.red i { color: var(--unsafe); }
+    .menu-sep { height: 1px; background: var(--border); margin: 6px 20px; }
+    .menu-foot {
+      padding: 14px 20px; font-size: 0.72rem; color: var(--text-muted);
+      text-align: center; border-top: 1px solid var(--border);
+    }
 
-        input:checked+.slider:before {
-            transform: translateX(22px);
-        }
+    /* ===================== MODALS ===================== */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 600; display: none; align-items: flex-end; justify-content: center;
+    }
+    .overlay.center { align-items: center; }
+    .overlay.open { display: flex; }
+    .sheet {
+      background: #fff; border-radius: 24px 24px 0 0;
+      width: 100%; max-width: 600px; max-height: 92vh; overflow-y: auto;
+      padding: 20px 22px 28px; animation: slideUp 0.28s ease;
+    }
+    .overlay.center .sheet {
+      border-radius: 22px; width: 92%; max-width: 440px; animation: popIn 0.2s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @keyframes popIn   { from { opacity: 0; transform: scale(0.93); } to { opacity: 1; transform: scale(1); } }
+    .sheet-handle {
+      width: 38px; height: 4px; background: var(--border); border-radius: 2px;
+      margin: 0 auto 18px;
+    }
+    .sheet-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
+    }
+    .sheet-title { font-size: 1.2rem; font-weight: 800; }
+    .close-x {
+      width: 30px; height: 30px; border-radius: 50%; border: none; background: var(--bg);
+      cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;
+    }
 
-        #map-container {
-            flex-grow: 1;
-            position: relative;
-            padding: 4px;
-            min-height: 0; /* Important for flex-grow in column */
-        }
+    /* ===================== FORMS ===================== */
+    .fg { margin-bottom: 16px; }
+    .fl {
+      display: block; font-size: 0.75rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px;
+    }
+    .fi {
+      width: 100%; padding: 11px 14px; border-radius: var(--radius-sm);
+      border: 2px solid var(--border); font-size: 0.92rem; outline: none;
+      font-family: inherit; transition: border-color 0.2s; background: var(--bg);
+    }
+    .fi:focus { border-color: var(--primary); background: #fff; }
+    .fi.ta { resize: vertical; min-height: 78px; }
+    .ferr { font-size: 0.78rem; color: var(--unsafe); margin-top: 4px; }
+    .fok  { font-size: 0.78rem; color: var(--safe); margin-top: 4px; }
+    .fmsg { font-size: 0.82rem; text-align: center; margin-bottom: 12px; min-height: 20px; }
 
-        /* Map key styling */
-        .map-key-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 1rem;
-            font-size: 0.8rem;
-            color: #6b7280;
-            text-align: center;
-        }
+    /* Safety buttons */
+    .safety-row { display: flex; gap: 8px; }
+    .safety-btn {
+      flex: 1; padding: 11px 6px; border-radius: var(--radius-sm);
+      border: 2px solid var(--border); background: #fff;
+      cursor: pointer; text-align: center; font-size: 0.82rem; font-weight: 700;
+      transition: all 0.18s; font-family: inherit;
+    }
+    .safety-btn .ico { font-size: 1.4rem; display: block; margin-bottom: 3px; }
+    .safety-btn.s-safe:hover,   .safety-btn.s-safe.sel   { border-color: var(--safe);   background: var(--safe-bg);   color: var(--safe); }
+    .safety-btn.s-mixed:hover,  .safety-btn.s-mixed.sel  { border-color: var(--mixed);  background: var(--mixed-bg);  color: var(--mixed); }
+    .safety-btn.s-unsafe:hover, .safety-btn.s-unsafe.sel { border-color: var(--unsafe); background: var(--unsafe-bg); color: var(--unsafe); }
 
-        .map-key-item {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
+    /* Tags */
+    .tags-wrap { display: flex; flex-wrap: wrap; gap: 7px; }
+    .tag-btn {
+      padding: 6px 12px; border-radius: 50px; border: 1.5px solid var(--border);
+      background: #fff; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+      transition: all 0.18s; font-family: inherit;
+    }
+    .tag-btn.sel { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
 
-        .color-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
+    /* Checkboxes */
+    .chk-row { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 10px; }
+    .chk-row input { margin-top: 3px; accent-color: var(--primary); }
+    .chk-row label { font-size: 0.84rem; color: var(--text-muted); }
+    .chk-row label a { color: var(--primary); text-decoration: none; }
 
-        /* Content pages styling */
-        .content-container {
-            padding: 2rem;
-            max-width: 800px;
-            margin: 0 auto;
-            text-align: left;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        .content-container h2 {
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
-        }
-        .content-container h3 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-top: 1.5rem;
-            margin-bottom: 0.5rem;
-        }
-        .content-container p, .content-container ul {
-            margin-bottom: 1rem;
-            color: #4b5563;
-        }
-        .content-container strong {
-            font-weight: bold;
-        }
+    /* ===================== AUTH TABS ===================== */
+    .auth-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
+    .auth-tab {
+      flex: 1; padding: 11px; text-align: center; font-size: 0.92rem; font-weight: 700;
+      cursor: pointer; color: var(--text-muted); border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: all 0.18s; font-family: inherit; border: none; background: none;
+    }
+    .auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
 
-        /* Main Screen Specifics */
-        #main-screen {
-            position: relative; /* Set to relative for positioning children */
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            height: 100vh;
-        }
+    /* ===================== SPACE DETAIL ===================== */
+    .space-name { font-size: 1.35rem; font-weight: 800; margin-bottom: 4px; }
+    .space-addr { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px; }
+    .safety-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 14px; border-radius: 50px; font-size: 0.82rem; font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .sb-safe   { background: var(--safe-bg);    color: var(--safe); }
+    .sb-mixed  { background: var(--mixed-bg);   color: var(--mixed); }
+    .sb-unsafe { background: var(--unsafe-bg);  color: var(--unsafe); }
+    .sb-unknown{ background: var(--unknown-bg); color: var(--unknown); }
 
-        #main-screen .top-controls {
-            z-index: 1000; /* Ensure this is on top of the map */
-            position: relative;
-            background-color: rgba(255, 255, 255, 0.5); /* Use a semi-transparent background */
-        }
+    .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; font-size: 0.8rem; }
+    .bar-lbl { width: 70px; color: var(--text-muted); }
+    .bar-track { flex: 1; height: 7px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+    .bar-fill  { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+    .bar-ct    { width: 28px; text-align: right; color: var(--text-muted); }
 
-        #main-screen .bottom-controls {
-            z-index: 1000; /* Ensure this is on top of the map */
-            position: relative;
-            background-color: rgba(255, 255, 255, 0.5); /* Use a semi-transparent background */
-        }
-        
-        .avatar-container {
-            background-color: rgba(243, 244, 246, 0.8);
-            border-radius: 12px;
-            padding: 1rem;
-            margin-top: 1rem;
-        }
+    .space-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
+    .stag {
+      padding: 4px 10px; border-radius: 50px; background: var(--primary-light);
+      color: var(--primary); font-size: 0.73rem; font-weight: 700;
+    }
 
-        .avatar-selection-grid {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 12px;
-        }
-        
-        .avatar-option {
-            font-size: 2rem;
-            cursor: pointer;
-            opacity: 0.6;
-            transition: opacity 0.2s, transform 0.2s;
-            text-align: center;
-            padding: 4px;
-            border-radius: 50%;
-        }
-        
-        .avatar-option:hover {
-            transform: scale(1.1);
-            opacity: 1;
-        }
-        
-        .avatar-option.selected {
-            opacity: 1;
-            border: 2px solid var(--primary);
-            border-radius: 50%;
-            transform: scale(1.1);
-        }
+    .reviews-sec { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 4px; }
+    .rev-item {
+      padding: 10px 12px; background: var(--bg); border-radius: var(--radius-sm);
+      margin-bottom: 8px; font-size: 0.83rem;
+    }
+    .rev-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .rev-dot { width: 8px; height: 8px; border-radius: 50%; margin-left: auto; flex-shrink: 0; }
+    .rev-text { color: var(--text-muted); line-height: 1.5; }
+    .empty-state { text-align: center; padding: 28px 16px; color: var(--text-muted); }
+    .empty-state .ei { font-size: 2rem; margin-bottom: 8px; }
 
-        .form-message {
-            margin-top: 1rem;
-            text-align: center;
-            font-size: 0.875rem;
-        }
+    /* ===================== ACCOUNT SCREEN ===================== */
+    #account {
+      background: var(--bg);
+      overflow-y: auto;
+    }
+    .acc-head {
+      background: linear-gradient(135deg, var(--primary), #a855f7);
+      padding: 44px 20px 28px; text-align: center; color: #fff; flex-shrink: 0;
+    }
+    .acc-avatar {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: rgba(255,255,255,0.25); border: 3px solid rgba(255,255,255,0.5);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.4rem; margin: 0 auto 12px; cursor: pointer;
+    }
+    .acc-name { font-size: 1.25rem; font-weight: 700; }
+    .acc-email { font-size: 0.82rem; opacity: 0.8; margin-top: 2px; }
+    .acc-hint { font-size: 0.72rem; opacity: 0.65; margin-top: 4px; }
+    .acc-section {
+      background: #fff; border-radius: var(--radius); margin: 14px;
+      box-shadow: var(--shadow-sm); overflow: hidden;
+    }
+    .acc-section-title {
+      padding: 12px 16px 6px; font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted);
+    }
+    .acc-row {
+      display: flex; align-items: center; gap: 12px; padding: 13px 16px;
+      border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s;
+    }
+    .acc-row:last-child { border-bottom: none; }
+    .acc-row:hover { background: var(--bg); }
+    .acc-row-icon { font-size: 1rem; width: 22px; text-align: center; }
+    .acc-row-lbl { flex: 1; font-size: 0.92rem; }
+    .acc-row-val { font-size: 0.82rem; color: var(--text-muted); }
+    .acc-row-ch  { color: var(--text-muted); font-size: 0.8rem; }
+    .acc-spacer  { height: 16px; }
 
-        /* Add this for the avatar in the menu */
-        .menu-avatar {
-            font-size: 2.5rem;
-            margin-right: 0.5rem;
-            display: inline-block;
-            transition: transform 0.2s ease;
-        }
-    </style>
+    /* Avatar picker grid */
+    .av-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 14px; }
+    .av-opt {
+      width: 52px; height: 52px; border-radius: 50%; background: var(--bg);
+      border: 2px solid var(--border); display: flex; align-items: center; justify-content: center;
+      font-size: 1.35rem; cursor: pointer; transition: all 0.18s;
+    }
+    .av-opt.sel { border-color: var(--primary); background: var(--primary-light); }
+
+    /* ===================== CRISIS SCREEN ===================== */
+    #crisis { background: #fff; overflow-y: auto; }
+    .crisis-head {
+      background: var(--unsafe); color: #fff; padding: 44px 20px 22px; text-align: center; flex-shrink: 0;
+    }
+    .crisis-head h1 { font-size: 1.45rem; font-weight: 800; margin-bottom: 4px; }
+    .crisis-head p  { font-size: 0.88rem; opacity: 0.9; }
+    .crisis-body { padding: 18px; }
+    .crisis-card {
+      background: #fff; border-radius: var(--radius); padding: 16px;
+      margin-bottom: 12px; box-shadow: var(--shadow-sm);
+      border-left: 4px solid var(--unsafe-dot);
+    }
+    .crisis-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
+    .crisis-card a  { font-size: 1.1rem; font-weight: 800; color: var(--unsafe); text-decoration: none; display: flex; align-items: center; gap: 7px; }
+    .crisis-card p  { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+
+    /* ===================== CONTACT/PAGES ===================== */
+    .page-head {
+      background: linear-gradient(135deg, var(--primary), #a855f7);
+      padding: 44px 20px 20px; color: #fff;
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .page-back {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(255,255,255,0.2); border: none; color: #fff;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem;
+    }
+    .page-head h1 { font-size: 1.25rem; font-weight: 700; }
+    .page-body { padding: 18px; overflow-y: auto; flex: 1; }
+    .info-card {
+      background: #fff; border-radius: var(--radius); padding: 18px;
+      box-shadow: var(--shadow-sm); margin-bottom: 14px;
+    }
+    .info-card p { font-size: 0.9rem; line-height: 1.65; color: #374151; }
+    .info-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 8px; }
+
+    /* ===================== TOASTS & MISC ===================== */
+    .toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(12px);
+      background: #111827; color: #fff; padding: 9px 20px; border-radius: 50px;
+      font-size: 0.83rem; font-weight: 600; z-index: 9999;
+      opacity: 0; transition: all 0.28s; white-space: nowrap; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .geocoder-box {
+      background: #fff; border-radius: var(--radius-sm); box-shadow: var(--shadow);
+      margin-top: 4px; max-height: 200px; overflow-y: auto; display: none;
+    }
+    .geocoder-box.open { display: block; }
+    .geo-item { padding: 10px 14px; cursor: pointer; font-size: 0.84rem; border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    .geo-item:last-child { border-bottom: none; }
+    .geo-item:hover { background: var(--bg); }
+    .geo-name { font-weight: 600; }
+    .geo-addr { font-size: 0.73rem; color: var(--text-muted); }
+
+    .sel-loc {
+      background: var(--primary-light); border-radius: var(--radius-sm);
+      padding: 9px 12px; font-size: 0.83rem; margin-top: 6px;
+      display: none; align-items: center; gap: 7px; color: var(--primary); font-weight: 600;
+    }
+    .sel-loc.show { display: flex; }
+
+    /* Leaflet popup overrides */
+    .leaflet-popup-content-wrapper { border-radius: 14px !important; box-shadow: var(--shadow) !important; padding: 0 !important; }
+    .leaflet-popup-content { margin: 0 !important; }
+    .map-popup { padding: 14px 16px; min-width: 150px; }
+    .map-popup-name { font-weight: 800; font-size: 0.92rem; margin-bottom: 3px; }
+    .map-popup-rating { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; }
+    .map-popup-btn {
+      width: 100%; padding: 7px; background: var(--primary); color: #fff;
+      border: none; border-radius: 50px; font-size: 0.8rem; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+    }
+
+    /* Divider */
+    .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+    /* Legal text */
+    .legal { font-size: 0.84rem; color: var(--text-muted); line-height: 1.65; }
+    .legal h3 { color: var(--text); font-size: 0.92rem; margin: 14px 0 4px; }
+
+    /* Location pin preview on map */
+    .temp-pin-notice {
+      position: absolute; top: 110px; left: 50%; transform: translateX(-50%);
+      z-index: 98; background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(8px); border-radius: 50px;
+      padding: 7px 16px; font-size: 0.8rem; font-weight: 600; color: var(--primary);
+      box-shadow: var(--shadow-sm); display: none; white-space: nowrap;
+    }
+    .temp-pin-notice.show { display: block; }
+
+    @media (max-width: 400px) {
+      .splash-card { padding: 32px 20px 24px; }
+      .splash-title { font-size: 1.75rem; }
+    }
+  </style>
 </head>
-
 <body>
-    <div id="app-container">
-        <!-- Splash Screen -->
-        <div id="splash-screen" class="screen active p-8 flex flex-col items-center justify-start pt-20">
-            <div class="content-card w-full max-w-xl flex flex-col items-center">
-                <img src="https://raw.githubusercontent.com/Aram814/QueerSafeSpace/refs/heads/main/IMG_9650.PNG"
-                    alt="QueerSafeSpace Logo" class="landing-logo">
-                <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-center">QueerSafeSpace</h1>
-                <p class="text-gray-500 text-lg mt-2 text-center">Because Safety Shouldn’t Be A Privilege</p>
-                <p class="text-sm text-center text-gray-900 mt-4 max-w-sm">QueerSafeSpace is a community-driven app for the LGBTQ+ community to find and share safe, inclusive spaces. This is not a dating or social networking app. Your contributions are anonymous, fostering a truly safe and supportive environment.</p>
-                <p class="text-sm text-center text-gray-700 mt-4 max-w-sm">Use the button below to sign up now and get a small glipse at what the future will look like.
-                <br class="text-sm text-center text-gray-700 mt-4 max-w-sm">By signing up you will also be included in upcoming news and updates for QueerSafeSpace.
-                <br class="text-sm text-center text-gray-700 mt-4 max-w-sm">By signing up you will be helping our community ensure that safety can be provided to all.</p> 
-                <div class="mt-8 w-full flex flex-col gap-4">
-                    <button id="sign-in-btn"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 w-full" style="background-color: #8F7FFF; color: white;">Sign
-                        in</button>
-                    <button id="sign-up-btn"
-                        class="px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 w-full" style="background-color: #8EFD17; color: white;">Sign
-                        up</button>
-                    <p class="text-sm text-gray-500 mt-1 text-center">The app is fully anonymous to protect all users.
-                        However, without an account, saved data is limited resulting in limited features.</p>
-                </div>
-            </div>
+
+<!-- ============================= SPLASH ============================= -->
+<div id="splash" class="screen active">
+  <div class="splash-card">
+    <!-- Rainbow shield logo (SVG inline) -->
+    <svg class="splash-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="sg" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%"   style="stop-color:#E40303"/>
+          <stop offset="17%"  style="stop-color:#FF8C00"/>
+          <stop offset="33%"  style="stop-color:#FFED00"/>
+          <stop offset="50%"  style="stop-color:#008026"/>
+          <stop offset="67%"  style="stop-color:#004DFF"/>
+          <stop offset="83%"  style="stop-color:#750787"/>
+          <stop offset="100%" style="stop-color:#750787"/>
+        </linearGradient>
+      </defs>
+      <path d="M50 6 L88 22 L88 56 C88 76 70 92 50 97 C30 92 12 76 12 56 L12 22 Z"
+            fill="url(#sg)" stroke="#1a1a2e" stroke-width="2.5"/>
+      <circle cx="50" cy="45" r="16" fill="rgba(255,255,255,0.88)"/>
+      <path d="M44 45 L49 50 L57 41" stroke="#5B21B6" stroke-width="3.5"
+            stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
+
+    <h1 class="splash-title">QueerSafeSpace</h1>
+    <p class="splash-tagline">Because Safety Shouldn't Be A Privilege</p>
+    <p class="splash-desc">
+      A community-driven map for the LGBTQ+ community to find and share
+      safe, inclusive spaces. Not a dating app — just a safe haven.
+      Anonymous. Free. For everyone.
+    </p>
+
+    <button class="btn btn-primary" onclick="openAuth('signup')">Join the Community</button>
+    <button class="btn btn-signup"  onclick="openAuth('signin')">Sign In</button>
+    <button class="btn btn-ghost"   onclick="goAnon()">Browse Map Anonymously →</button>
+    <p class="splash-note">🔒 Fully anonymous. Account unlocks saved favorites & ratings.</p>
+  </div>
+</div>
+
+<!-- ============================= MAIN MAP ============================= -->
+<div id="main" class="screen">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <button class="icon-btn" onclick="openMenu()" aria-label="Menu">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <div class="search-wrap">
+      <i class="fa-solid fa-magnifying-glass s-icon"></i>
+      <input id="map-search" type="text" placeholder="Search location…" autocomplete="off" />
+      <div class="search-dropdown" id="map-sdrop"></div>
+    </div>
+    <button class="icon-btn primary" onclick="openAddSpace()" aria-label="Add a safe space" title="Add a safe space">
+      <i class="fa-solid fa-plus"></i>
+    </button>
+  </div>
+
+  <!-- Mobile/Tablet: horizontal filter chips -->
+  <div class="filter-bar">
+    <button class="chip chip-all  active" data-f="all"    onclick="setFilter('all',this)"   >🏳️‍🌈 All</button>
+    <button class="chip chip-safe"        data-f="safe"   onclick="setFilter('safe',this)"  >✅ Safe</button>
+    <button class="chip chip-mixed"       data-f="mixed"  onclick="setFilter('mixed',this)" >⚠️ Mixed</button>
+    <button class="chip chip-unsafe"      data-f="unsafe" onclick="setFilter('unsafe',this)">❌ Not Safe</button>
+  </div>
+
+  <!-- Main body: sidebar (desktop only) + map area -->
+  <div class="main-body">
+
+    <!-- Desktop sidebar -->
+    <aside class="sidebar" aria-label="Map filters and information">
+      <div class="sidebar-chips">
+        <button class="chip chip-all  active" data-f="all"    onclick="setFilter('all',this)"   >🏳️‍🌈 All Spaces</button>
+        <button class="chip chip-safe"        data-f="safe"   onclick="setFilter('safe',this)"  >✅ Safe</button>
+        <button class="chip chip-mixed"       data-f="mixed"  onclick="setFilter('mixed',this)" >⚠️ Mixed</button>
+        <button class="chip chip-unsafe"      data-f="unsafe" onclick="setFilter('unsafe',this)">❌ Not Safe</button>
+      </div>
+      <div class="legend-card">
+        <p class="legend-title">Map Legend</p>
+        <div class="map-key" style="flex-direction:column;gap:6px;">
+          <span class="key-item"><span class="key-dot" style="background:var(--safe-dot)"></span>Safe</span>
+          <span class="key-item"><span class="key-dot" style="background:var(--mixed-dot)"></span>Mixed</span>
+          <span class="key-item"><span class="key-dot" style="background:var(--unsafe-dot)"></span>Not Safe</span>
+          <span class="key-item"><span class="key-dot" style="background:var(--unknown-dot)"></span>Unknown</span>
         </div>
+      </div>
+      <button class="crisis-sidebar-btn" onclick="goScreen('crisis')">🆘 Crisis Resources</button>
+      <div class="sidebar-tip">
+        <strong>💡 Add a Space</strong>
+        <span style="font-size:0.8rem;color:var(--text-muted);">Tap <strong>+</strong> in the top bar to share a safe space with the community.</span>
+      </div>
+    </aside>
 
-        <!-- Main App Screen (Map) -->
-        <div id="main-screen" class="screen flex-col">
-            <!-- Top Controls -->
-            <div class="top-controls w-full flex flex-col items-center">
-                <button id="hamburger-menu-btn" class="text-primary text-xl" aria-label="Open side menu">
-                    <i class="fa-solid fa-bars"></i>
-                </button>
-                <!-- Logo and App Name -->
-                <div class="flex items-center justify-center p-4">
-                    <img src="https://raw.githubusercontent.com/Aram814/QueerSafeSpace/refs/heads/main/IMG_9650.PNG"
-                        alt="QueerSafeSpace Logo" class="h-10 w-10 mr-2">
-                    <h1 class="text-2xl font-bold">QueerSafeSpace</h1>
-                </div>
-
-                <!-- Search and Filter Container -->
-                <div class="flex w-full px-4 max-w-xl mx-auto space-x-2">
-                    <div id="search-container" class="relative flex-grow shadow-md rounded-full overflow-hidden">
-                        <label for="search-input" class="sr-only">Search</label>
-                        <input type="text" id="search-input" placeholder="Search for safe spaces..."
-                            class="w-full px-6 py-3 rounded-full border-2 border-transparent focus:outline-none focus:border-primary transition-colors">
-                        <i class="fas fa-search absolute right-6 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                    </div>
-                    <button id="filter-btn" class="p-3 rounded-full bg-white shadow-md text-primary">
-                        <i class="fa-solid fa-filter"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Map Container -->
-            <div id="map-container" class="flex-grow p-4">
-                <div id="map" class="w-full h-full rounded-xl shadow-lg border-2 border-gray-200"></div>
-                <button id="fab" aria-label="Add a new safe space">
-                    <i class="fa-solid fa-plus text-2xl"></i>
-                </button>
-            </div>
-
-            <!-- Bottom Controls -->
-            <div class="bottom-controls w-full">
-                <!-- Map Key -->
-                <div class="w-full py-2 map-key-container">
-                    <div class="map-key-item">
-                        <div class="color-dot" style="background-color: #19CA2E;"></div>
-                        <span>Safe</span>
-                    </div>
-                    <div class="map-key-item">
-                        <div class="color-dot" style="background-color: #F3F318;"></div>
-                        <span>Mixed</span>
-                    </div>
-                    <div class="map-key-item">
-                        <div class="color-dot" style="background-color: #FF0000;"></div>
-                        <span>Not Safe</span>
-                    </div>
-                    <div class="map-key-item">
-                        <div class="color-dot" style="background-color: #D9D9D9;"></div>
-                        <span>Unknown</span>
-                    </div>
-                </div>
-
-                <!-- Action Buttons below map -->
-                <div class="flex justify-between w-full p-4">
-                    <button id="find-safe-space-btn" class="px-6 py-3 rounded-full font-semibold text-white transition-all duration-300 transform hover:scale-105" style="background-color: #1272EF;">
-                        Find My Safe Space
-                    </button>
-                    <button id="crisis-button" class="px-6 py-3 rounded-full font-semibold text-white transition-all duration-300 transform hover:scale-105 bg-red">
-                        Crisis Button
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Account Settings Screen -->
-        <div id="account-settings-screen" class="screen justify-start items-center p-8">
-            <div class="content-card w-full max-w-xl">
-                <h2 class="text-2xl font-bold mb-4 text-center">Account Settings</h2>
-                
-                <h3 class="text-lg font-bold mb-2">Change Avatar</h3>
-                <div class="flex flex-col items-center mb-4">
-                    <span id="current-avatar" class="text-6xl mb-4">🏳️‍🌈</span>
-                    <div class="avatar-container">
-                        <div id="avatar-selection-grid" class="avatar-selection-grid">
-                            <span class="avatar-option" data-avatar="🏳️‍🌈">🏳️‍🌈</span>
-                            <span class="avatar-option" data-avatar="🏳️‍⚧️">🏳️‍⚧️</span>
-                            <span class="avatar-option" data-avatar="👩">👩</span>
-                            <span class="avatar-option" data-avatar="👨">👨</span>
-                            <span class="avatar-option" data-avatar="🧑">🧑</span>
-                            <span class="avatar-option" data-avatar="❤️">❤️</span>
-                            <span class="avatar-option" data-avatar="🧡">🧡</span>
-                            <span class="avatar-option" data-avatar="💛">💛</span>
-                            <span class="avatar-option" data-avatar="💚">💚</span>
-                            <span class="avatar-option" data-avatar="💙">💙</span>
-                            <span class="avatar-option" data-avatar="💜">💜</span>
-                            <span class="avatar-option" data-avatar="🩵">🩵</span>
-                            <span class="avatar-option" data-avatar="🩷">🩷</span>
-                            <span class="avatar-option" data-avatar="🤍">🤍</span>
-                            <span class="avatar-option" data-avatar="🖤">🖤</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <h3 class="text-lg font-bold mb-2">Change Username</h3>
-                <form id="username-form" class="space-y-4 mb-8">
-                    <div>
-                        <label for="new-username" class="block text-sm font-medium text-gray-700">Username</label>
-                        <input type="text" id="new-username"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-                            placeholder="Your new username">
-                    </div>
-                    <div id="username-message" class="form-message hidden"></div>
-                    <button type="submit"
-                        class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                        Update Username
-                    </button>
-                </form>
-
-                <h3 class="text-lg font-bold mb-2">Change Email</h3>
-                <form id="email-form" class="space-y-4 mb-8">
-                    <div>
-                        <label for="new-email" class="block text-sm font-medium text-gray-700">New Email</label>
-                        <input type="email" id="new-email"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-                            placeholder="your-new-email@example.com">
-                    </div>
-                    <div>
-                        <label for="confirm-email" class="block text-sm font-medium text-gray-700">Confirm Email</label>
-                        <input type="email" id="confirm-email"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-                            placeholder="your-new-email@example.com">
-                    </div>
-                    <div id="email-message" class="form-message hidden"></div>
-                    <button type="submit"
-                        class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                        Update Email
-                    </button>
-                </form>
-
-                <h3 class="text-lg font-bold mb-2">Change Password</h3>
-                <form id="password-form" class="space-y-4 mb-8">
-                    <div>
-                        <label for="current-password" class="block text-sm font-medium text-gray-700">Current Password</label>
-                        <input type="password" id="current-password"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
-                    </div>
-                    <div>
-                        <label for="password-new" class="block text-sm font-medium text-gray-700">New Password</label>
-                        <input type="password" id="password-new"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
-                        <p class="text-xs text-gray-500 mt-1">Minimum 8 characters.</p>
-                    </div>
-                    <div>
-                        <label for="confirm-password-new" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
-                        <input type="password" id="confirm-password-new"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
-                    </div>
-                    <div id="password-message" class="form-message hidden"></div>
-                    <button type="submit"
-                        class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                        Update Password
-                    </button>
-                </form>
-
-                <button id="back-to-map-btn" class="mt-8 px-6 py-3 rounded-full font-semibold bg-primary text-white w-full">Back to Map</button>
-            </div>
-        </div>
-
-        <!-- Contact Us Screen -->
-        <div id="contact-us-screen" class="screen justify-center items-center p-8">
-            <div class="content-card text-center">
-                <h2 class="text-2xl font-bold mb-4">Contact Us</h2>
-                <p class="text-gray-600 mb-4">
-                    QueerSafeSpace is a community-driven project dedicated to providing a safer environment for LGBTQ+ individuals.
-                </p>
-                <div class="flex flex-col items-center space-y-2 mt-4">
-                    <a href="mailto:queersafespace.lgbt@gmail.com" class="text-primary hover:underline"><i class="fa-solid fa-envelope mr-2"></i> QueerSafeSpace.lgbt@gmail.com</a>
-                    <a href="https://www.instagram.com/queersafespace.lgbt?igsh=OHkxbzkxaWdxOGRu" class="text-primary hover:underline"><i class="fa-brands fa-instagram mr-2"></i> @QueerSafeSpace.LGBT</a>
-                </div>
-                <button id="close-contact-btn" class="mt-8 px-6 py-3 rounded-full font-semibold bg-primary text-white">Close</button>
-            </div>
-        </div>
-
-        <!-- Privacy Policy Screen -->
-        <div id="privacy-policy-screen" class="screen flex-col items-center p-8">
-            <div class="content-card w-full max-w-xl text-left">
-                <h2 class="text-center font-bold text-2xl mb-4">Privacy Policy</h2>
-                <div class="prose max-w-none text-gray-600 leading-relaxed text-sm overflow-y-auto max-h-[60vh]">
-                    <p>Effective Date: September 13, 2025</p>
-                    <p>QueerSafeSpace respects your privacy. We collect account info, location data (optional), and usage data.</p>
-                    <!-- Content abbreviated for brevity as per your template -->
-                </div>
-                <div class="text-center mt-8">
-                    <button class="px-6 py-3 rounded-full font-semibold bg-primary text-white" id="close-privacy-btn">Close</button>
-                </div>
-            </div>
-        </div>
-
-
-        <!-- Terms and Conditions Screen -->
-        <div id="terms-conditions-screen" class="screen flex-col items-center p-8">
-            <div class="content-card w-full max-w-xl text-left">
-                <h2 class="text-center font-bold text-2xl mb-4">Terms & Conditions</h2>
-                <div class="prose max-w-none text-gray-600 leading-relaxed text-sm overflow-y-auto max-h-[60vh]">
-                    <p>Effective Date: September 13, 2025</p>
-                    <p>By using QueerSafeSpace, you agree to these Terms. You must be at least 13 years old.</p>
-                    <!-- Content abbreviated for brevity as per your template -->
-                </div>
-                <div class="text-center mt-8">
-                    <button class="px-6 py-3 rounded-full font-semibold bg-primary text-white" id="close-terms-btn">Close</button>
-                </div>
-            </div>
-        </div>
-
-
-        <!-- Auth Modal -->
-        <div id="auth-modal" class="modal-overlay">
-            <div class="modal-content">
-                <h2 id="auth-title" class="text-2xl font-bold mb-4"></h2>
-                <form id="auth-form" class="space-y-4">
-                    <div>
-                        <label for="auth-email" class="block text-sm font-medium text-gray-700">Email</label>
-                        <input type="email" id="auth-email"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-                            placeholder="you@example.com">
-                    </div>
-                    <div id="password-fields">
-                        <div>
-                            <label for="auth-password" class="block text-sm font-medium text-gray-700">Password</label>
-                            <input type="password" id="auth-password"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
-                            <p id="password-requirements-text" class="text-xs text-gray-500 mt-1 hidden">Password must be a minimum of 8 characters.</p>
-                        </div>
-                        <div id="confirm-password-container" class="mt-4 hidden">
-                            <label for="auth-confirm-password" class="block text-sm font-medium text-gray-700">Confirm Password</label>
-                            <input type="password" id="auth-confirm-password"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
-                        </div>
-                    </div>
-                    <div id="agreements-container" class="space-y-2 text-sm text-gray-400 hidden">
-                        <div class="flex items-start">
-                            <input type="checkbox" id="terms" name="terms" class="mr-2 mt-1 rounded text-purple-600 focus:ring-purple-500">
-                            <label for="terms" class="text-gray-700">I agree to the <a href="#" class="text-primary hover:underline" id="terms-link">Terms and Conditions</a></label>
-                        </div>
-                        <div class="flex items-start">
-                            <input type="checkbox" id="privacy" name="privacy" class="mr-2 mt-1 rounded text-purple-600 focus:ring-purple-500">
-                            <label for="privacy" class="text-gray-700">I agree to the <a href="#" class="text-primary hover:underline" id="privacy-link">Privacy Policy</a></label>
-                        </div>
-                    </div>
-                    <a href="#" id="forgot-password-link" class="text-sm text-primary hover:underline hidden">Forgot password?</a>
-                    <button id="submit-auth-btn" type="submit"
-                        class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                        <span id="auth-button-text"></span>
-                    </button>
-                </form>
-                <div id="auth-message" class="mt-4 text-center"></div>
-                <button id="close-auth-modal" class="mt-4 w-full text-sm text-gray-500 hover:text-gray-700">Cancel</button>
-            </div>
-        </div>
-
-        <!-- Coming Soon Modal -->
-        <div id="coming-soon-modal" class="modal-overlay">
-            <div class="modal-content modal-content-with-close">
-                <button id="close-coming-soon-btn" class="modal-close-btn">&times;</button>
-                <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Feature Coming Soon!</h2>
-                <p class="text-gray-600 mb-4 text-center">This feature is currently under development.</p>
-            </div>
-        </div>
-
-
-        <!-- Sidebar Menu -->
-        <div id="side-menu">
-            <div class="menu-content flex flex-col p-8 bg-white">
-                <button id="close-menu-btn" class="self-end text-2xl text-gray-500">&times;</button>
-                <div class="flex items-center space-x-2 mb-6">
-                    <span id="menu-avatar" class="text-4xl">🏳️‍🌈</span>
-                    <h3 id="user-name" class="text-2xl font-bold">User Name</h3>
-                </div>
-                <a href="#" class="mb-2 text-gray-700 font-semibold" data-screen="account-settings-screen">
-                    <i class="fa-solid fa-user-cog mr-2"></i> Account Settings
-                </a>
-                <div class="flex items-center justify-between mb-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
-                    <span class="text-gray-700 font-semibold">
-                        <i class="fa-solid fa-shield-alt mr-2"></i> Crisis Mode Settings
-                    </span>
-                    <span class="text-xs text-gray-400 italic">Coming Soon</span>
-                </div>
-                <hr class="border-t border-gray-200 my-2">
-                <a href="#" class="mb-2 text-gray-700 font-semibold" data-screen="contact-us-screen">
-                    <i class="fa-solid fa-headset mr-2"></i> Contact Us!
-                </a>
-                <a href="#" class="mb-2 text-gray-700 font-semibold" data-screen="privacy-policy-screen">
-                    <i class="fa-solid fa-lock mr-2"></i> Privacy Policy
-                </a>
-                <a href="#" class="mb-2 text-gray-700 font-semibold" data-screen="terms-conditions-screen">
-                    <i class="fa-solid fa-file-contract mr-2"></i> Terms and Conditions
-                </a>
-                <div class="mt-auto">
-                    <hr class="border-t-2 border-gray-200 my-4">
-                    <button id="sign-out-btn" class="w-full text-left py-2 px-4 rounded-md text-gray-700 font-semibold">
-                        <i class="fa-solid fa-right-from-bracket mr-2"></i> Log out
-                    </button>
-                </div>
-            </div>
-        </div>
+    <!-- Map -->
+    <div class="map-area">
+      <div id="map"></div>
     </div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <script type="module">
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.2/+esm';
+  </div><!-- /.main-body -->
 
-        // --- Supabase Configuration ---
-        const supabaseUrl = 'https://sgvxsyvqluhivohypkkg.supabase.co';
-        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndnhzeXZxbHVoaXZvaHlwa2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MjYzNzIsImV4cCI6MjA3MzMwMjM3Mn0.igseAZIczG6fEdtPNuF3_xyXb3rFKh5nQxxO_YUyCEs';
-        const supabase = createClient(supabaseUrl, supabaseAnonKey);
-        
-        // --- Map Initialization (LEAFLET) ---
-        let map;
-        let mapLoaded = false;
+  <!-- Mobile/Tablet: bottom bar (legend + crisis) -->
+  <div class="bottom-bar">
+    <div class="map-key">
+      <span class="key-item"><span class="key-dot" style="background:var(--safe-dot)"></span>Safe</span>
+      <span class="key-item"><span class="key-dot" style="background:var(--mixed-dot)"></span>Mixed</span>
+      <span class="key-item"><span class="key-dot" style="background:var(--unsafe-dot)"></span>Not Safe</span>
+      <span class="key-item"><span class="key-dot" style="background:var(--unknown-dot)"></span>Unknown</span>
+    </div>
+    <button class="crisis-btn" onclick="goScreen('crisis')">🆘 Crisis Help</button>
+  </div>
 
-        function initMap() {
-            if (mapLoaded) {
-                map.invalidateSize();
-                return;
-            }
+</div><!-- /#main -->
 
-            // Initialize Leaflet map
-            map = L.map('map', { zoomControl: false }).setView([28.74, -82.49], 10);
+<!-- ============================= SIDE MENU ============================= -->
+<div class="menu-veil" id="menu-veil" onclick="closeMenuCheck(event)">
+  <div class="side-menu" onclick="event.stopPropagation()">
+    <div class="menu-head">
+      <div class="menu-avatar" id="menu-av">🏳️‍🌈</div>
+      <div class="menu-uname" id="menu-un">Guest</div>
+      <div class="menu-email" id="menu-em">Not signed in</div>
+    </div>
+    <nav class="menu-nav">
+      <div class="menu-item" onclick="closeMenuGo('main')">
+        <i class="fa-solid fa-map"></i> Map
+      </div>
+      <div class="menu-item" onclick="closeMenuGo('crisis')">
+        <i class="fa-solid fa-triangle-exclamation"></i> Crisis Resources
+      </div>
+      <div class="menu-item" onclick="closeMenuGo('contact')">
+        <i class="fa-solid fa-envelope"></i> Contact Us
+      </div>
+      <div class="menu-sep"></div>
+      <div class="menu-item" id="mi-account" style="display:none" onclick="closeMenuGo('account')">
+        <i class="fa-solid fa-gear"></i> Account Settings
+      </div>
+      <div class="menu-item" id="mi-signin" onclick="closeMenuThen(()=>openAuth('signin'))">
+        <i class="fa-solid fa-right-to-bracket"></i> Sign In
+      </div>
+      <div class="menu-item red" id="mi-signout" style="display:none" onclick="signOut()">
+        <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+      </div>
+    </nav>
+    <div class="menu-foot">QueerSafeSpace · Because Safety Shouldn't Be A Privilege</div>
+  </div>
+</div>
 
-            // Add OpenStreetMap tiles
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
+<!-- ============================= AUTH MODAL ============================= -->
+<div class="overlay center" id="auth-overlay">
+  <div class="sheet" style="border-radius:22px">
+    <div class="sheet-header">
+      <span class="sheet-title" id="auth-title">Sign In</span>
+      <button class="close-x" onclick="closeOverlay('auth-overlay')">✕</button>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-si" onclick="authTab('signin')">Sign In</button>
+      <button class="auth-tab"        id="tab-su" onclick="authTab('signup')">Sign Up</button>
+    </div>
+    <form id="auth-form" onsubmit="handleAuth(event)">
+      <div class="fg">
+        <label class="fl">Email</label>
+        <input type="email" id="a-email" class="fi" placeholder="you@example.com" required />
+      </div>
+      <div class="fg">
+        <label class="fl">Password</label>
+        <input type="password" id="a-pw" class="fi" placeholder="Minimum 8 characters" required />
+      </div>
+      <div class="fg" id="a-cpw-wrap" style="display:none">
+        <label class="fl">Confirm Password</label>
+        <input type="password" id="a-cpw" class="fi" placeholder="Repeat password" />
+      </div>
+      <div id="a-agree-wrap" style="display:none; margin-bottom:14px">
+        <div class="chk-row">
+          <input type="checkbox" id="a-terms" />
+          <label for="a-terms">I agree to the <a href="#" onclick="showLegal('terms');return false">Terms &amp; Conditions</a></label>
+        </div>
+        <div class="chk-row">
+          <input type="checkbox" id="a-priv" />
+          <label for="a-priv">I agree to the <a href="#" onclick="showLegal('privacy');return false">Privacy Policy</a></label>
+        </div>
+      </div>
+      <div class="fmsg" id="a-msg"></div>
+      <button type="submit" class="btn btn-primary" id="a-submit">Sign In</button>
+      <div id="a-forgot" style="text-align:center; margin-top:10px">
+        <a href="#" onclick="forgotPw();return false"
+           style="font-size:0.83rem; color:var(--primary); text-decoration:none">Forgot password?</a>
+      </div>
+    </form>
+  </div>
+</div>
 
-            // Move zoom controls to bottom right
-            L.control.zoom({ position: 'bottomright' }).addTo(map);
+<!-- ============================= ADD SPACE MODAL ============================= -->
+<div class="overlay" id="add-overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title">📍 Add a Safe Space</span>
+      <button class="close-x" onclick="closeOverlay('add-overlay')">✕</button>
+    </div>
 
-            // Try to locate user
-            map.locate({setView: true, maxZoom: 14});
+    <div class="fg">
+      <label class="fl">Search for a location</label>
+      <input type="text" id="add-search" class="fi" placeholder="Search address or place name…"
+             autocomplete="off" oninput="debGeo(this.value,'add-geo')" />
+      <div class="geocoder-box" id="add-geo"></div>
+      <div class="sel-loc" id="add-loc-prev"><i class="fa-solid fa-location-dot"></i> <span id="add-loc-txt"></span></div>
+    </div>
 
-            mapLoaded = true;
-        }
+    <div class="fg">
+      <label class="fl">Space Name</label>
+      <input type="text" id="add-name" class="fi" placeholder="e.g. Rainbow Café, City Library…" />
+    </div>
 
-        // --- Search Implementation (Simple Leaflet Geocoder logic) ---
-        const searchInput = document.getElementById('search-input');
-        searchInput.addEventListener('keypress', async (e) => {
-            if (e.key === 'Enter') {
-                const query = searchInput.value;
-                if (!query) return;
-                
-                try {
-                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
-                    const data = await response.json();
-                    if (data && data.length > 0) {
-                        const result = data[0];
-                        map.setView([result.lat, result.lon], 15);
-                        L.marker([result.lat, result.lon]).addTo(map)
-                            .bindPopup(result.display_name).openPopup();
-                    }
-                } catch (err) {
-                    console.error("Search error:", err);
-                }
-            }
-        });
+    <div class="fg">
+      <label class="fl">How safe is this space?</label>
+      <div class="safety-row">
+        <button type="button" class="safety-btn s-safe"   onclick="pickSafety('safe',this)"><span class="ico">✅</span>Safe</button>
+        <button type="button" class="safety-btn s-mixed"  onclick="pickSafety('mixed',this)"><span class="ico">⚠️</span>Mixed</button>
+        <button type="button" class="safety-btn s-unsafe" onclick="pickSafety('unsafe',this)"><span class="ico">❌</span>Not Safe</button>
+      </div>
+    </div>
 
-        // --- Screen & Modal Management ---
-        const screens = document.querySelectorAll('.screen');
-        const modals = document.querySelectorAll('.modal-overlay');
+    <div class="fg">
+      <label class="fl">Tags (select all that apply)</label>
+      <div class="tags-wrap" id="add-tags">
+        <button type="button" class="tag-btn" data-tag="LGBTQ+-owned"            onclick="toggleTag(this)">🏳️‍🌈 LGBTQ+-owned</button>
+        <button type="button" class="tag-btn" data-tag="Trans-friendly"           onclick="toggleTag(this)">🏳️‍⚧️ Trans-friendly</button>
+        <button type="button" class="tag-btn" data-tag="Gender-neutral bathrooms" onclick="toggleTag(this)">🚻 Gender-neutral bathrooms</button>
+        <button type="button" class="tag-btn" data-tag="Ally business"            onclick="toggleTag(this)">💛 Ally business</button>
+        <button type="button" class="tag-btn" data-tag="Youth-friendly"           onclick="toggleTag(this)">👶 Youth-friendly</button>
+        <button type="button" class="tag-btn" data-tag="Wheelchair accessible"    onclick="toggleTag(this)">♿ Accessible</button>
+        <button type="button" class="tag-btn" data-tag="BIPOC-friendly"           onclick="toggleTag(this)">✊ BIPOC-friendly</button>
+        <button type="button" class="tag-btn" data-tag="Medical/health services"  onclick="toggleTag(this)">🏥 Medical/health</button>
+      </div>
+    </div>
 
-        function showScreen(screenId) {
-            screens.forEach(s => {
-                s.classList.remove('active');
-                s.style.display = 'none';
-            });
-            const target = document.getElementById(screenId);
-            if (target) {
-                target.classList.add('active');
-                target.style.display = 'flex';
-                
-                if (screenId === 'main-screen') {
-                    // Small timeout to ensure container has dimensions
-                    setTimeout(initMap, 100);
-                }
-            }
-        }
+    <div class="fg">
+      <label class="fl">Additional notes (optional)</label>
+      <textarea id="add-desc" class="fi ta" placeholder="Any extra info that might help others…"></textarea>
+    </div>
 
-        function showModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function hideModal(id) { document.getElementById(id).style.display = 'none'; }
+    <div class="fmsg" id="add-msg"></div>
+    <button class="btn btn-primary" onclick="submitSpace()">Submit Space 🏳️‍🌈</button>
+  </div>
+</div>
 
-        // --- Supabase Logic & Event Binding ---
-        let currentUserId = null;
-        let modalMode = 'signin';
+<!-- ============================= SPACE DETAIL MODAL ============================= -->
+<div class="overlay" id="detail-overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div style="text-align:right; margin-bottom:6px">
+      <button class="close-x" onclick="closeOverlay('detail-overlay')">✕</button>
+    </div>
+    <div id="detail-body"></div>
+  </div>
+</div>
 
-        const authForm = document.getElementById('auth-form');
-        const authEmail = document.getElementById('auth-email');
-        const authPassword = document.getElementById('auth-password');
-        const authConfirmPassword = document.getElementById('auth-confirm-password');
-        const authMessage = document.getElementById('auth-message');
-        const userNameElement = document.getElementById('user-name');
-        const currentAvatarElement = document.getElementById('current-avatar');
-        const menuAvatar = document.getElementById('menu-avatar');
+<!-- ============================= RATE MODAL ============================= -->
+<div class="overlay center" id="rate-overlay">
+  <div class="sheet" style="border-radius:22px">
+    <div class="sheet-header">
+      <span class="sheet-title">Rate This Space</span>
+      <button class="close-x" onclick="closeOverlay('rate-overlay')">✕</button>
+    </div>
+    <div class="fg">
+      <label class="fl">Your Rating</label>
+      <div class="safety-row">
+        <button type="button" class="safety-btn s-safe"   onclick="pickRate('safe',this)"><span class="ico">✅</span>Safe</button>
+        <button type="button" class="safety-btn s-mixed"  onclick="pickRate('mixed',this)"><span class="ico">⚠️</span>Mixed</button>
+        <button type="button" class="safety-btn s-unsafe" onclick="pickRate('unsafe',this)"><span class="ico">❌</span>Not Safe</button>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Comment (optional)</label>
+      <textarea id="rate-comment" class="fi ta" placeholder="Share your experience…"></textarea>
+    </div>
+    <div class="fmsg" id="rate-msg"></div>
+    <button class="btn btn-primary" onclick="submitRating()">Submit Rating</button>
+  </div>
+</div>
 
-        // Bind all UI buttons
-        document.getElementById('sign-in-btn').onclick = () => { setModalMode('signin'); showModal('auth-modal'); };
-        document.getElementById('sign-up-btn').onclick = () => { setModalMode('signup'); showModal('auth-modal'); };
-        document.getElementById('close-auth-modal').onclick = () => hideModal('auth-modal');
-        document.getElementById('hamburger-menu-btn').onclick = () => document.getElementById('side-menu').classList.add('open');
-        document.getElementById('close-menu-btn').onclick = () => document.getElementById('side-menu').classList.remove('open');
-        document.getElementById('sign-out-btn').onclick = () => supabase.auth.signOut();
-        document.getElementById('back-to-map-btn').onclick = () => showScreen('main-screen');
-        document.getElementById('close-contact-btn').onclick = () => showScreen('main-screen');
-        document.getElementById('close-privacy-btn').onclick = () => showScreen('main-screen');
-        document.getElementById('close-terms-btn').onclick = () => showScreen('main-screen');
-        document.getElementById('find-safe-space-btn').onclick = () => showModal('coming-soon-modal');
-        document.getElementById('crisis-button').onclick = () => showModal('coming-soon-modal');
-        document.getElementById('close-coming-soon-btn').onclick = () => hideModal('coming-soon-modal');
+<!-- ============================= AVATAR PICKER ============================= -->
+<div class="overlay center" id="av-overlay">
+  <div class="sheet" style="border-radius:22px">
+    <div class="sheet-header">
+      <span class="sheet-title">Choose Avatar</span>
+      <button class="close-x" onclick="closeOverlay('av-overlay')">✕</button>
+    </div>
+    <div class="av-grid" id="av-grid"></div>
+    <button class="btn btn-primary" style="margin-top:16px" onclick="saveAvatar()">Save Avatar</button>
+  </div>
+</div>
 
-        // Nav Links in sidebar
-        document.querySelectorAll('#side-menu a').forEach(link => {
-            link.onclick = (e) => {
-                e.preventDefault();
-                showScreen(link.dataset.screen);
-                document.getElementById('side-menu').classList.remove('open');
-            };
-        });
+<!-- ============================= EDIT MODAL ============================= -->
+<div class="overlay center" id="edit-overlay">
+  <div class="sheet" style="border-radius:22px">
+    <div class="sheet-header">
+      <span class="sheet-title" id="edit-title">Edit</span>
+      <button class="close-x" onclick="closeOverlay('edit-overlay')">✕</button>
+    </div>
+    <div id="edit-body"></div>
+  </div>
+</div>
 
-        function setModalMode(mode) {
-            modalMode = mode;
-            document.getElementById('auth-title').innerText = mode === 'signin' ? 'Sign In' : 'Sign Up';
-            document.getElementById('auth-button-text').innerText = mode === 'signin' ? 'Sign In' : 'Sign Up';
-            document.getElementById('confirm-password-container').classList.toggle('hidden', mode === 'signin');
-            document.getElementById('agreements-container').classList.toggle('hidden', mode === 'signin');
-            document.getElementById('password-requirements-text').classList.toggle('hidden', mode === 'signin');
-            document.getElementById('forgot-password-link').classList.toggle('hidden', mode === 'signup');
-        }
+<!-- ============================= LEGAL MODAL ============================= -->
+<div class="overlay center" id="legal-overlay">
+  <div class="sheet" style="border-radius:22px; max-height:82vh; overflow-y:auto">
+    <div class="sheet-header">
+      <span class="sheet-title" id="legal-title">Privacy Policy</span>
+      <button class="close-x" onclick="closeOverlay('legal-overlay')">✕</button>
+    </div>
+    <div id="legal-body" class="legal"></div>
+  </div>
+</div>
 
-        authForm.onsubmit = async (e) => {
-            e.preventDefault();
-            const email = authEmail.value;
-            const password = authPassword.value;
-            
-            authMessage.innerText = "Processing...";
+<!-- ============================= CRISIS SCREEN ============================= -->
+<div id="crisis" class="screen scrollable">
+  <div class="crisis-head">
+    <h1>🆘 Crisis Resources</h1>
+    <p>You are not alone. Help is available 24/7.</p>
+  </div>
+  <div class="crisis-body">
+    <div class="crisis-card">
+      <h3>Trevor Project <span style="font-size:0.75rem;font-weight:500;color:var(--text-muted)">(LGBTQ+ Youth)</span></h3>
+      <a href="tel:18664887386"><i class="fa-solid fa-phone"></i> 1-866-488-7386</a>
+      <p>24/7 crisis support for LGBTQ+ young people under 25. Also available via chat & text.</p>
+    </div>
+    <div class="crisis-card">
+      <h3>Trans Lifeline</h3>
+      <a href="tel:18775658860"><i class="fa-solid fa-phone"></i> 1-877-565-8860</a>
+      <p>Trans-led peer support hotline staffed by and for transgender people.</p>
+    </div>
+    <div class="crisis-card">
+      <h3>988 Suicide &amp; Crisis Lifeline</h3>
+      <a href="tel:988"><i class="fa-solid fa-phone"></i> 988</a>
+      <p>Free, confidential 24/7 support. <strong>Press 3</strong> for dedicated LGBTQ+ support.</p>
+    </div>
+    <div class="crisis-card">
+      <h3>Crisis Text Line</h3>
+      <a href="sms:741741"><i class="fa-solid fa-comment-sms"></i> Text HOME to 741741</a>
+      <p>Free 24/7 text-based support from trained crisis counselors.</p>
+    </div>
+    <div class="crisis-card">
+      <h3>GLBT National Hotline</h3>
+      <a href="tel:18884434902"><i class="fa-solid fa-phone"></i> 1-888-843-4564</a>
+      <p>Peer support, information and local resources for LGBTQ+ people of all ages.</p>
+    </div>
+    <div class="crisis-card">
+      <h3>National DV Hotline <span style="font-size:0.75rem;font-weight:500;color:var(--text-muted)">(LGBTQ+ inclusive)</span></h3>
+      <a href="tel:18007997233"><i class="fa-solid fa-phone"></i> 1-800-799-7233</a>
+      <p>Safe, confidential support for anyone experiencing domestic violence.</p>
+    </div>
+    <button class="btn btn-primary" onclick="goScreen('main')" style="margin-top:6px">← Back to Map</button>
+    <div style="height:20px"></div>
+  </div>
+</div>
 
-            if (modalMode === 'signup') {
-                const { data, error } = await supabase.auth.signUp({ email, password });
-                if (error) authMessage.innerText = error.message;
-                else authMessage.innerText = "Success! Please check your email.";
-            } else {
-                const { error } = await supabase.auth.signInWithPassword({ email, password });
-                if (error) authMessage.innerText = error.message;
-                else hideModal('auth-modal');
-            }
-        };
+<!-- ============================= ACCOUNT SCREEN ============================= -->
+<div id="account" class="screen scrollable">
+  <div class="acc-head">
+    <div class="acc-avatar" id="acc-av" onclick="openAvPicker()">🏳️‍🌈</div>
+    <div class="acc-name"  id="acc-nm">Username</div>
+    <div class="acc-email" id="acc-em">email@example.com</div>
+    <div class="acc-hint">Tap avatar to change</div>
+  </div>
 
-        // Auth state change handler
-        supabase.auth.onAuthStateChange(async (event, session) => {
-            if (session) {
-                currentUserId = session.user.id;
-                userNameElement.innerText = session.user.email.split('@')[0];
-                showScreen('main-screen');
-            } else {
-                currentUserId = null;
-                showScreen('splash-screen');
-            }
-        });
+  <div class="acc-section">
+    <div class="acc-section-title">Profile</div>
+    <div class="acc-row" onclick="openEdit('username')">
+      <span class="acc-row-icon">👤</span>
+      <span class="acc-row-lbl">Username</span>
+      <span class="acc-row-val" id="acc-un-val">—</span>
+      <span class="acc-row-ch">›</span>
+    </div>
+  </div>
 
-        // Initialize Check
-        (async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) showScreen('main-screen');
-            else showScreen('splash-screen');
-        })();
-    </script>
+  <div class="acc-section">
+    <div class="acc-section-title">Account</div>
+    <div class="acc-row" onclick="openEdit('email')">
+      <span class="acc-row-icon">✉️</span>
+      <span class="acc-row-lbl">Email</span>
+      <span class="acc-row-val" id="acc-em-val">—</span>
+      <span class="acc-row-ch">›</span>
+    </div>
+    <div class="acc-row" onclick="openEdit('password')">
+      <span class="acc-row-icon">🔑</span>
+      <span class="acc-row-lbl">Password</span>
+      <span class="acc-row-val">••••••••</span>
+      <span class="acc-row-ch">›</span>
+    </div>
+  </div>
+
+  <div class="acc-section">
+    <div class="acc-section-title">More</div>
+    <div class="acc-row" onclick="goScreen('crisis')">
+      <span class="acc-row-icon">🆘</span>
+      <span class="acc-row-lbl">Crisis Resources</span>
+      <span class="acc-row-ch">›</span>
+    </div>
+    <div class="acc-row" onclick="goScreen('contact')">
+      <span class="acc-row-icon">✉️</span>
+      <span class="acc-row-lbl">Contact Us</span>
+      <span class="acc-row-ch">›</span>
+    </div>
+    <div class="acc-row" onclick="showLegal('privacy')">
+      <span class="acc-row-icon">🔒</span>
+      <span class="acc-row-lbl">Privacy Policy</span>
+      <span class="acc-row-ch">›</span>
+    </div>
+    <div class="acc-row" onclick="showLegal('terms')">
+      <span class="acc-row-icon">📄</span>
+      <span class="acc-row-lbl">Terms &amp; Conditions</span>
+      <span class="acc-row-ch">›</span>
+    </div>
+  </div>
+
+  <div style="padding:16px">
+    <button class="btn btn-danger" onclick="signOut()">Sign Out</button>
+    <button class="btn btn-ghost"  onclick="goScreen('main')">← Back to Map</button>
+  </div>
+  <div class="acc-spacer"></div>
+</div>
+
+<!-- ============================= CONTACT SCREEN ============================= -->
+<div id="contact" class="screen scrollable">
+  <div class="page-head">
+    <button class="page-back" onclick="goScreen('main')"><i class="fa-solid fa-arrow-left"></i></button>
+    <h1>Contact Us</h1>
+  </div>
+  <div class="page-body">
+    <div class="info-card">
+      <h3>About QueerSafeSpace</h3>
+      <p>QueerSafeSpace is a community-driven project dedicated to providing a safer environment for LGBTQ+ individuals. Built by and for our community — because safety shouldn't be a privilege.</p>
+    </div>
+    <div class="info-card">
+      <h3>Get in Touch</h3>
+      <p style="margin-bottom:14px">Have a question, suggestion, or want to report an issue?</p>
+      <a href="mailto:QueerSafeSpace.lgbt@gmail.com" class="btn btn-primary" style="text-decoration:none;display:block;text-align:center">
+        <i class="fa-solid fa-envelope" style="margin-right:6px"></i>QueerSafeSpace.lgbt@gmail.com
+      </a>
+    </div>
+    <div class="info-card">
+      <h3>Follow Us</h3>
+      <a href="https://www.instagram.com/queersafespace.lgbt" target="_blank" class="btn btn-primary" style="text-decoration:none;display:block;text-align:center;background:#E1306C">
+        <i class="fa-brands fa-instagram" style="margin-right:6px"></i>@QueerSafeSpace.LGBT
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<!-- ============================= SCRIPTS ============================= -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+(function() {
+const { createClient } = window.supabase;
+
+/* ================================================================
+   CONFIG
+================================================================ */
+const SUPA_URL = 'https://sgvxsyvqluhivohypkkg.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndnhzeXZxbHVoaXZvaHlwa2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MjYzNzIsImV4cCI6MjA3MzMwMjM3Mn0.igseAZIczG6fEdtPNuF3_xyXb3rFKh5nQxxO_YUyCEs';
+const sb = createClient(SUPA_URL, SUPA_KEY);
+
+const AVATARS = ['🏳️‍🌈','🏳️‍⚧️','👩','👨','🧑','❤️','🧡','💛','💚','💙','💜','🩵','🩷','🤍','🖤'];
+
+/* ================================================================
+   STATE
+================================================================ */
+let map = null;
+let markers = {};
+let spaces  = [];
+let filter  = 'all';
+let user    = null;
+let profile = {};
+let addSafety  = null;
+let rateSafety = null;
+let addLoc     = null;
+let curSpaceId = null;
+let selAvatar  = null;
+let geoTimer   = null;
+let mapReady   = false;
+
+/* ================================================================
+   SCREEN MANAGEMENT
+================================================================ */
+window.goScreen = function(id) {
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active');
+    s.style.display = 'none';
+  });
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('active');
+  el.style.display = 'flex';
+  if (id === 'main') setTimeout(initMap, 80);
+  if (id === 'account') refreshAccountUI();
+};
+
+window.openOverlay  = id => document.getElementById(id).classList.add('open');
+window.closeOverlay = id => document.getElementById(id).classList.remove('open');
+
+/* ================================================================
+   AUTH
+================================================================ */
+window.openAuth = function(mode) {
+  authTab(mode);
+  openOverlay('auth-overlay');
+};
+window.goAnon = () => goScreen('main');
+
+window.authTab = function(mode) {
+  document.getElementById('tab-si').classList.toggle('active', mode === 'signin');
+  document.getElementById('tab-su').classList.toggle('active', mode === 'signup');
+  document.getElementById('auth-title').textContent = mode === 'signin' ? 'Sign In' : 'Sign Up';
+  document.getElementById('a-submit').textContent   = mode === 'signin' ? 'Sign In' : 'Sign Up';
+  document.getElementById('a-cpw-wrap').style.display  = mode === 'signup' ? 'block' : 'none';
+  document.getElementById('a-agree-wrap').style.display= mode === 'signup' ? 'block' : 'none';
+  document.getElementById('a-forgot').style.display    = mode === 'signin' ? 'block' : 'none';
+  setMsg('a-msg', '');
+  document.getElementById('auth-form').dataset.mode = mode;
+};
+
+window.handleAuth = async function(e) {
+  e.preventDefault();
+  const mode  = document.getElementById('auth-form').dataset.mode || 'signin';
+  const email = document.getElementById('a-email').value.trim();
+  const pw    = document.getElementById('a-pw').value;
+  setMsg('a-msg', 'Processing…');
+
+  if (mode === 'signup') {
+    const cpw = document.getElementById('a-cpw').value;
+    if (pw !== cpw)     { setMsg('a-msg', 'Passwords do not match.', true); return; }
+    if (pw.length < 8)  { setMsg('a-msg', 'Password must be at least 8 characters.', true); return; }
+    if (!document.getElementById('a-terms').checked || !document.getElementById('a-priv').checked) {
+      setMsg('a-msg', 'Please agree to Terms & Privacy Policy.', true); return;
+    }
+    const { error } = await sb.auth.signUp({ email, password: pw });
+    if (error) { setMsg('a-msg', error.message, true); return; }
+    setMsg('a-msg', '✅ Check your email to confirm your account!', false, true);
+  } else {
+    const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+    if (error) { setMsg('a-msg', error.message, true); return; }
+    closeOverlay('auth-overlay');
+  }
+};
+
+window.forgotPw = async function() {
+  const email = document.getElementById('a-email').value.trim();
+  if (!email) { toast('Enter your email first'); return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email);
+  if (error) { toast(error.message); return; }
+  toast('Password reset email sent!');
+};
+
+window.signOut = async function() {
+  await sb.auth.signOut();
+  closeMenu();
+  goScreen('splash');
+  toast('Signed out');
+};
+
+/* Auth state listener */
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (session) {
+    user = session.user;
+    await loadProfile();
+    updateMenuUI();
+    if (!document.getElementById('main').classList.contains('active')) goScreen('main');
+  } else {
+    user = null; profile = {};
+    updateMenuUI();
+  }
+});
+
+async function loadProfile() {
+  if (!user) return;
+  const { data } = await sb.from('profiles').select('*').eq('user_id', user.id).single();
+  if (data) {
+    profile = data;
+  } else {
+    const uname = user.email.split('@')[0];
+    await sb.from('profiles').insert({ user_id: user.id, username: uname, avatar_url: '🏳️‍🌈' });
+    profile = { username: uname, avatar_url: '🏳️‍🌈' };
+  }
+}
+
+function updateMenuUI() {
+  const loggedIn = !!user;
+  document.getElementById('mi-account').style.display  = loggedIn ? 'flex' : 'none';
+  document.getElementById('mi-signin').style.display   = loggedIn ? 'none' : 'flex';
+  document.getElementById('mi-signout').style.display  = loggedIn ? 'flex' : 'none';
+  const av = profile.avatar_url || profile.avatar || '🏳️‍🌈';
+  const un = profile.username || (user ? user.email.split('@')[0] : 'Guest');
+  const em = user ? user.email : 'Not signed in';
+  document.getElementById('menu-av').textContent = loggedIn ? av : '👤';
+  document.getElementById('menu-un').textContent = un;
+  document.getElementById('menu-em').textContent = em;
+}
+
+function refreshAccountUI() {
+  if (!user) return;
+  const av = profile.avatar_url || profile.avatar || '🏳️‍🌈';
+  const un = profile.username || user.email.split('@')[0];
+  document.getElementById('acc-av').textContent    = av;
+  document.getElementById('acc-nm').textContent    = un;
+  document.getElementById('acc-em').textContent    = user.email;
+  document.getElementById('acc-un-val').textContent = un;
+  document.getElementById('acc-em-val').textContent = user.email;
+}
+
+/* ================================================================
+   MAP
+================================================================ */
+function initMap() {
+  if (mapReady) { map.invalidateSize(); return; }
+  map = L.map('map', { zoomControl: false }).setView([39.5, -98.35], 4);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+    maxZoom: 19
+  }).addTo(map);
+
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+  map.locate({ setView: true, maxZoom: 13 });
+
+  mapReady = true;
+  loadSpaces();
+
+  /* Map search */
+  const inp  = document.getElementById('map-search');
+  const drop = document.getElementById('map-sdrop');
+  let st;
+  inp.addEventListener('input', () => {
+    clearTimeout(st);
+    const q = inp.value.trim();
+    if (q.length < 3) { drop.classList.remove('open'); return; }
+    st = setTimeout(() => runGeo(q, drop, r => {
+      map.setView([parseFloat(r.lat), parseFloat(r.lon)], 15);
+      drop.classList.remove('open');
+      inp.value = r.display_name.split(',')[0];
+    }), 380);
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.search-wrap')) drop.classList.remove('open');
+  });
+}
+
+async function loadSpaces() {
+  const { data, error } = await sb.from('locations').select('*, ratings(rating)');
+  if (error) { console.warn('Could not load spaces:', error.message); return; }
+  spaces = data || [];
+  renderMarkers();
+}
+
+function overallRating(ratings) {
+  if (!ratings || !ratings.length) return 'unknown';
+  const c = { safe: 0, mixed: 0, not_safe: 0 };
+  ratings.forEach(r => { if (c[r.rating] !== undefined) c[r.rating]++; });
+  const max = Math.max(c.safe, c.mixed, c.not_safe);
+  if (c.safe === max && c.safe > 0)     return 'safe';
+  if (c.not_safe === max && c.not_safe > 0) return 'not_safe';
+  if (c.mixed > 0)                      return 'mixed';
+  return 'unknown';
+}
+
+const PIN_COLORS = { safe: '#22C55E', mixed: '#FBBF24', not_safe: '#EF4444', unknown: '#9CA3AF' };
+const RATING_LABELS = { safe: '✅ Safe', mixed: '⚠️ Mixed', not_safe: '❌ Not Safe', unknown: '❓ Unknown' };
+
+function renderMarkers() {
+  Object.values(markers).forEach(m => map.removeLayer(m));
+  markers = {};
+  if (!map) return;
+
+  const fMap = { safe: 'safe', mixed: 'mixed', unsafe: 'not_safe' };
+
+  spaces.forEach(sp => {
+    const rating = overallRating(sp.ratings);
+    if (filter !== 'all' && rating !== fMap[filter]) return;
+
+    const color = PIN_COLORS[rating];
+    const total = sp.ratings ? sp.ratings.length : 0;
+
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="
+        width:28px;height:28px;
+        background:${color};
+        border-radius:50% 50% 50% 0;
+        transform:rotate(-45deg);
+        border:3px solid #fff;
+        box-shadow:0 3px 8px rgba(0,0,0,0.28);
+      "></div>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 28],
+      popupAnchor: [0, -30]
+    });
+
+    const marker = L.marker([sp.latitude, sp.longitude], { icon }).addTo(map);
+    marker.bindPopup(`
+      <div class="map-popup">
+        <div class="map-popup-name">${esc(sp.name)}</div>
+        <div class="map-popup-rating">${RATING_LABELS[rating]} · ${total} rating${total !== 1 ? 's' : ''}</div>
+        <button class="map-popup-btn" onclick="window.openDetail('${sp.id}')">View Details →</button>
+      </div>
+    `);
+    markers[sp.id] = marker;
+  });
+}
+
+window.setFilter = function(f, btn) {
+  filter = f;
+  // sync both mobile filter-bar chips AND desktop sidebar chips
+  document.querySelectorAll('.filter-bar .chip, .sidebar-chips .chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.f === f);
+  });
+  renderMarkers();
+};
+
+/* ================================================================
+   GEOCODING (Nominatim)
+================================================================ */
+function runGeo(q, box, onPick) {
+  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.length) { box.innerHTML = '<div class="geo-item">No results found</div>'; box.classList.add('open'); return; }
+      box.innerHTML = data.map(r => `
+        <div class="geo-item" onclick="window.__geoSel(${JSON.stringify(r).replace(/"/g,'&quot;')})">
+          <div class="geo-name">${esc(r.name || r.display_name.split(',')[0])}</div>
+          <div class="geo-addr">${esc(r.display_name)}</div>
+        </div>`).join('');
+      box.classList.add('open');
+      window.__geoSel = function(res) {
+        onPick(res);
+        box.innerHTML = '';
+        box.classList.remove('open');
+      };
+    }).catch(() => {});
+}
+
+window.debGeo = function(val, boxId) {
+  clearTimeout(geoTimer);
+  const box = document.getElementById(boxId);
+  if (!val || val.length < 3) { box.classList.remove('open'); return; }
+  geoTimer = setTimeout(() => runGeo(val, box, res => {
+    addLoc = res;
+    document.getElementById('add-search').value = esc(res.name || res.display_name.split(',')[0]);
+    document.getElementById('add-loc-txt').textContent = res.display_name;
+    document.getElementById('add-loc-prev').classList.add('show');
+    if (!document.getElementById('add-name').value)
+      document.getElementById('add-name').value = res.name || res.display_name.split(',')[0];
+  }), 380);
+};
+
+/* ================================================================
+   ADD SPACE
+================================================================ */
+window.openAddSpace = function() {
+  if (!user) { toast('Sign in to add a space'); openAuth('signin'); return; }
+  addSafety = null; addLoc = null;
+  ['add-search','add-name','add-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('add-loc-prev').classList.remove('show');
+  setMsg('add-msg', '');
+  document.querySelectorAll('.safety-btn').forEach(b => b.classList.remove('sel'));
+  document.querySelectorAll('#add-tags .tag-btn').forEach(t => t.classList.remove('sel'));
+  openOverlay('add-overlay');
+};
+
+window.pickSafety = function(val, btn) {
+  addSafety = val;
+  document.querySelectorAll('.safety-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+};
+
+window.toggleTag = btn => btn.classList.toggle('sel');
+
+window.submitSpace = async function() {
+  if (!addLoc)    { setMsg('add-msg', 'Search and select a location.', true); return; }
+  const name = document.getElementById('add-name').value.trim();
+  if (!name)      { setMsg('add-msg', 'Enter a name for the space.', true); return; }
+  if (!addSafety) { setMsg('add-msg', 'Select a safety rating.', true); return; }
+
+  const tags = [...document.querySelectorAll('#add-tags .tag-btn.sel')].map(t => t.dataset.tag);
+  const desc = document.getElementById('add-desc').value.trim();
+
+  setMsg('add-msg', 'Submitting…');
+
+  const { data: sp, error: e1 } = await sb.from('locations').insert({
+    name, address: addLoc.display_name,
+    latitude: parseFloat(addLoc.lat), longitude: parseFloat(addLoc.lon),
+    notes: desc, tags, user_id: user.id,
+    category: 'community', safety_rating: addSafety
+  }).select().single();
+
+  if (e1) { setMsg('add-msg', e1.message, true); return; }
+
+  await sb.from('ratings').insert({ space_id: sp.id, user_id: user.id, rating: addSafety });
+
+  closeOverlay('add-overlay');
+  toast('🏳️‍🌈 Space added! Thank you!');
+  await loadSpaces();
+  if (markers[sp.id]) { map.setView([sp.latitude, sp.longitude], 15); markers[sp.id].openPopup(); }
+};
+
+/* ================================================================
+   SPACE DETAIL
+================================================================ */
+window.openDetail = async function(spaceId) {
+  curSpaceId = spaceId;
+  map.closePopup();
+
+  const { data: sp } = await sb.from('locations').select('*, ratings(*)').eq('id', spaceId).single();
+  if (!sp) return;
+
+  const ratings = sp.ratings || [];
+  const counts = { safe: 0, mixed: 0, not_safe: 0 };
+  ratings.forEach(r => { if (counts[r.rating] !== undefined) counts[r.rating]++; });
+  const total   = ratings.length;
+  const overall = overallRating(ratings);
+
+  const badgeClass = { safe: 'sb-safe', mixed: 'sb-mixed', not_safe: 'sb-unsafe', unknown: 'sb-unknown' };
+  const tagsHtml = (sp.tags || []).map(t => `<span class="stag">${esc(t)}</span>`).join('');
+
+  const bars = [
+    ['safe',     '✅ Safe',     '#22C55E'],
+    ['mixed',    '⚠️ Mixed',    '#FBBF24'],
+    ['not_safe', '❌ Not Safe', '#EF4444'],
+  ].map(([k, lbl, col]) => `
+    <div class="bar-row">
+      <span class="bar-lbl">${lbl}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${total ? Math.round(counts[k]/total*100) : 0}%;background:${col}"></div></div>
+      <span class="bar-ct">${counts[k]}</span>
+    </div>`).join('');
+
+  const reviewsHtml = !total
+    ? `<div class="empty-state"><div class="ei">💬</div>No ratings yet — be the first!</div>`
+    : ratings.slice(0, 8).map(r => `
+        <div class="rev-item">
+          <div class="rev-head">
+            <span>👤</span>
+            <span style="font-size:0.76rem;color:var(--text-muted)">${new Date(r.created_at).toLocaleDateString()}</span>
+            <div class="rev-dot" style="background:${PIN_COLORS[r.rating] || '#9CA3AF'}"></div>
+          </div>
+          ${r.comment ? `<div class="rev-text">${esc(r.comment)}</div>` : ''}
+        </div>`).join('');
+
+  document.getElementById('detail-body').innerHTML = `
+    <div class="space-name">${esc(sp.name)}</div>
+    ${sp.address ? `<div class="space-addr"><i class="fa-solid fa-location-dot" style="margin-right:4px"></i>${esc(sp.address.split(',').slice(0,3).join(','))}</div>` : ''}
+    <div class="safety-badge ${badgeClass[overall]}">${RATING_LABELS[overall]} · ${total} rating${total!==1?'s':''}</div>
+    ${total ? `<div style="margin-bottom:14px">${bars}</div>` : ''}
+    ${tagsHtml ? `<div class="space-tags">${tagsHtml}</div>` : ''}
+    ${sp.notes ? `<p style="font-size:0.88rem;color:var(--text-muted);line-height:1.6;margin-bottom:14px">${esc(sp.notes)}</p>` : ''}
+    <button class="btn btn-primary" style="margin-bottom:14px" onclick="openRate('${spaceId}')">
+      ${user ? '⭐ Rate This Space' : '🔑 Sign In to Rate'}
+    </button>
+    <div class="reviews-sec">
+      <div style="font-weight:700;margin-bottom:10px">Recent Ratings</div>
+      ${reviewsHtml}
+    </div>
+  `;
+  openOverlay('detail-overlay');
+};
+
+/* ================================================================
+   RATINGS
+================================================================ */
+window.openRate = function(spaceId) {
+  if (!user) { closeOverlay('detail-overlay'); openAuth('signin'); return; }
+  curSpaceId = spaceId;
+  rateSafety = null;
+  document.getElementById('rate-comment').value = '';
+  setMsg('rate-msg', '');
+  document.querySelectorAll('#rate-overlay .safety-btn').forEach(b => b.classList.remove('sel'));
+  closeOverlay('detail-overlay');
+  openOverlay('rate-overlay');
+};
+
+window.pickRate = function(val, btn) {
+  rateSafety = val;
+  document.querySelectorAll('#rate-overlay .safety-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+};
+
+window.submitRating = async function() {
+  if (!rateSafety) { setMsg('rate-msg', 'Please select a rating.', true); return; }
+  setMsg('rate-msg', 'Submitting…');
+  const comment = document.getElementById('rate-comment').value.trim();
+  const { error } = await sb.from('ratings').upsert({
+    space_id: curSpaceId, user_id: user.id,
+    rating: rateSafety, comment: comment || null
+  }, { onConflict: 'space_id,user_id' });
+  if (error) { setMsg('rate-msg', error.message, true); return; }
+  closeOverlay('rate-overlay');
+  toast('Thanks for rating!');
+  await loadSpaces();
+  openDetail(curSpaceId);
+};
+
+/* ================================================================
+   MENU
+================================================================ */
+window.openMenu = () => document.getElementById('menu-veil').classList.add('open');
+window.closeMenu = () => document.getElementById('menu-veil').classList.remove('open');
+window.closeMenuCheck = e => { if (e.target === document.getElementById('menu-veil')) closeMenu(); };
+window.closeMenuGo = function(id) {
+  closeMenu();
+  if (id === 'account' && !user) { openAuth('signin'); return; }
+  goScreen(id);
+};
+window.closeMenuThen = function(fn) { closeMenu(); fn(); };
+
+/* ================================================================
+   AVATAR
+================================================================ */
+window.openAvPicker = function() {
+  const cur = profile.avatar_url || profile.avatar || '🏳️‍🌈';
+  selAvatar = cur;
+  document.getElementById('av-grid').innerHTML = AVATARS.map(a =>
+    `<div class="av-opt${a===cur?' sel':''}" onclick="window.pickAv('${a}',this)">${a}</div>`).join('');
+  openOverlay('av-overlay');
+};
+window.pickAv = function(em, el) {
+  selAvatar = em;
+  document.querySelectorAll('.av-opt').forEach(a => a.classList.remove('sel'));
+  el.classList.add('sel');
+};
+window.saveAvatar = async function() {
+  if (!selAvatar || !user) return;
+  await sb.from('profiles').update({ avatar_url: selAvatar }).eq('user_id', user.id);
+  profile.avatar_url = selAvatar;
+  updateMenuUI(); refreshAccountUI();
+  closeOverlay('av-overlay');
+  toast('Avatar updated!');
+};
+
+/* ================================================================
+   EDIT MODALS
+================================================================ */
+window.openEdit = function(field) {
+  document.getElementById('edit-title').textContent =
+    { username: 'Change Username', email: 'Change Email', password: 'Change Password' }[field];
+
+  let html = '';
+  if (field === 'username') {
+    html = `
+      <div class="fg"><label class="fl">New Username</label>
+        <input type="text" id="ed-val" class="fi" value="${esc(profile.username||'')}" /></div>
+      <div class="fmsg" id="ed-msg"></div>
+      <button class="btn btn-primary" onclick="saveEdit('username')">Update Username</button>`;
+  } else if (field === 'email') {
+    html = `
+      <div class="fg"><label class="fl">New Email</label>
+        <input type="email" id="ed-val" class="fi" value="${esc(user?.email||'')}" /></div>
+      <div class="fmsg" id="ed-msg"></div>
+      <button class="btn btn-primary" onclick="saveEdit('email')">Update Email</button>`;
+  } else {
+    html = `
+      <div class="fg"><label class="fl">New Password</label>
+        <input type="password" id="ed-pw1" class="fi" placeholder="Minimum 8 characters" /></div>
+      <div class="fg"><label class="fl">Confirm New Password</label>
+        <input type="password" id="ed-pw2" class="fi" placeholder="Repeat password" /></div>
+      <div class="fmsg" id="ed-msg"></div>
+      <button class="btn btn-primary" onclick="saveEdit('password')">Update Password</button>`;
+  }
+  document.getElementById('edit-body').innerHTML = html;
+  openOverlay('edit-overlay');
+};
+
+window.saveEdit = async function(field) {
+  const msg = document.getElementById('ed-msg');
+  if (field === 'username') {
+    const val = document.getElementById('ed-val').value.trim();
+    if (!val) { setMsg('ed-msg','Username cannot be empty.',true); return; }
+    const { error } = await sb.from('profiles').update({ username: val }).eq('user_id', user.id);
+    if (error) { setMsg('ed-msg',error.message,true); return; }
+    profile.username = val; updateMenuUI(); refreshAccountUI();
+    closeOverlay('edit-overlay'); toast('Username updated!');
+  } else if (field === 'email') {
+    const val = document.getElementById('ed-val').value.trim();
+    const { error } = await sb.auth.updateUser({ email: val });
+    if (error) { setMsg('ed-msg',error.message,true); return; }
+    setMsg('ed-msg','Check your new email to confirm.',false,true);
+  } else {
+    const p1 = document.getElementById('ed-pw1').value;
+    const p2 = document.getElementById('ed-pw2').value;
+    if (p1 !== p2)   { setMsg('ed-msg','Passwords do not match.',true); return; }
+    if (p1.length<8) { setMsg('ed-msg','Minimum 8 characters.',true); return; }
+    const { error } = await sb.auth.updateUser({ password: p1 });
+    if (error) { setMsg('ed-msg',error.message,true); return; }
+    closeOverlay('edit-overlay'); toast('Password updated!');
+  }
+};
+
+/* ================================================================
+   LEGAL
+================================================================ */
+window.showLegal = function(type) {
+  document.getElementById('legal-title').textContent =
+    type === 'privacy' ? 'Privacy Policy' : 'Terms & Conditions';
+  document.getElementById('legal-body').innerHTML = type === 'privacy' ? `
+    <h3>Effective Date: September 13, 2025</h3>
+    <p>QueerSafeSpace respects your privacy and is committed to protecting your personal information.</p>
+    <h3>What We Collect</h3>
+    <p>We collect account info (email, password hash), optional location data when you add spaces, and basic usage data to improve the app.</p>
+    <h3>Anonymity</h3>
+    <p>Your contributions are anonymous. We never sell your data or share it with advertisers.</p>
+    <h3>Location Data</h3>
+    <p>Location is used only to center the map and to place spaces you submit. We do not track your movement.</p>
+    <h3>Data Storage</h3>
+    <p>Data is stored securely via Supabase. You can request account deletion by contacting us.</p>
+    <h3>Contact</h3>
+    <p>QueerSafeSpace.lgbt@gmail.com</p>
+  ` : `
+    <h3>Effective Date: September 13, 2025</h3>
+    <p>By using QueerSafeSpace, you agree to these Terms. You must be at least 13 years old.</p>
+    <h3>Community Guidelines</h3>
+    <p>Do not submit false, misleading, or harmful information. Do not harass or harm other community members. Respect everyone's identity and experience.</p>
+    <h3>Content</h3>
+    <p>Space submissions are community-generated. QueerSafeSpace does not guarantee the accuracy of any safety rating. Always use your own judgment.</p>
+    <h3>Limitation of Liability</h3>
+    <p>QueerSafeSpace is provided as-is. We are not liable for any harm resulting from reliance on community-submitted data.</p>
+  `;
+  openOverlay('legal-overlay');
+  return false;
+};
+
+/* ================================================================
+   HELPERS
+================================================================ */
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function setMsg(id, txt, isErr=false, isOk=false) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = txt;
+  el.style.color = isErr ? 'var(--unsafe)' : isOk ? 'var(--safe)' : 'var(--text-muted)';
+}
+
+window.toast = function(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+};
+
+/* ================================================================
+   INIT
+================================================================ */
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    user = session.user;
+    await loadProfile();
+    updateMenuUI();
+    goScreen('main');
+  }
+  document.getElementById('auth-form').dataset.mode = 'signin';
+})();
+
+})(); // end IIFE
+</script>
 </body>
 </html>
