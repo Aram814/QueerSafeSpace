@@ -250,8 +250,8 @@
 
     /* ── DESKTOP (≥ 1024px): side-by-side layout ── */
     @media (min-width: 1024px) {
-      /* Switch main to CSS grid */
-      #main {
+      /* Switch main to CSS grid — only when active (prevents bleed-through on splash) */
+      #main.active {
         display: grid !important;
         grid-template-rows: auto 1fr;
         grid-template-columns: 300px 1fr;
