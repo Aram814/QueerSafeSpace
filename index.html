@@ -1120,20 +1120,25 @@ window.handleAuth = async function(e) {
   const pw    = document.getElementById('a-pw').value;
   setMsg('a-msg', 'Processing…');
 
-  if (mode === 'signup') {
-    const cpw = document.getElementById('a-cpw').value;
-    if (pw !== cpw)     { setMsg('a-msg', 'Passwords do not match.', true); return; }
-    if (pw.length < 8)  { setMsg('a-msg', 'Password must be at least 8 characters.', true); return; }
-    if (!document.getElementById('a-terms').checked || !document.getElementById('a-priv').checked) {
-      setMsg('a-msg', 'Please agree to Terms & Privacy Policy.', true); return;
+  try {
+    if (mode === 'signup') {
+      const cpw = document.getElementById('a-cpw').value;
+      if (pw !== cpw)     { setMsg('a-msg', 'Passwords do not match.', true); return; }
+      if (pw.length < 8)  { setMsg('a-msg', 'Password must be at least 8 characters.', true); return; }
+      if (!document.getElementById('a-terms').checked || !document.getElementById('a-priv').checked) {
+        setMsg('a-msg', 'Please agree to Terms & Privacy Policy.', true); return;
+      }
+      const { error } = await sb.auth.signUp({ email, password: pw });
+      if (error) { setMsg('a-msg', error.message, true); return; }
+      setMsg('a-msg', '✅ Check your email to confirm your account!', false, true);
+    } else {
+      const { data: authData, error } = await sb.auth.signInWithPassword({ email, password: pw });
+      if (error) { setMsg('a-msg', error.message, true); return; }
+      closeOverlay('auth-overlay');
     }
-    const { error } = await sb.auth.signUp({ email, password: pw });
-    if (error) { setMsg('a-msg', error.message, true); return; }
-    setMsg('a-msg', '✅ Check your email to confirm your account!', false, true);
-  } else {
-    const { error } = await sb.auth.signInWithPassword({ email, password: pw });
-    if (error) { setMsg('a-msg', error.message, true); return; }
-    closeOverlay('auth-overlay');
+  } catch (err) {
+    console.error('handleAuth error:', err);
+    setMsg('a-msg', err.message || 'Something went wrong. Please try again.', true);
   }
 };
 
@@ -1154,26 +1159,45 @@ window.signOut = async function() {
 
 /* Auth state listener */
 sb.auth.onAuthStateChange(async (event, session) => {
-  if (session) {
-    user = session.user;
-    await loadProfile();
-    updateMenuUI();
-    if (!document.getElementById('main').classList.contains('active')) goScreen('main');
-  } else {
-    user = null; profile = {};
-    updateMenuUI();
+  try {
+    if (session) {
+      user = session.user;
+      await loadProfile();
+      updateMenuUI();
+      if (!document.getElementById('main').classList.contains('active')) goScreen('main');
+    } else {
+      user = null; profile = {};
+      updateMenuUI();
+    }
+  } catch (err) {
+    console.error('onAuthStateChange error:', err);
+    if (session && !document.getElementById('main').classList.contains('active')) goScreen('main');
   }
 });
 
 async function loadProfile() {
   if (!user) return;
-  const { data } = await sb.from('profiles').select('*').eq('user_id', user.id).single();
-  if (data) {
-    profile = data;
-  } else {
-    const uname = user.email.split('@')[0];
-    await sb.from('profiles').insert({ user_id: user.id, username: uname, avatar_url: '🏳️‍🌈' });
-    profile = { username: uname, avatar_url: '🏳️‍🌈' };
+  try {
+    const { data, error } = await sb.from('profiles').select('*').eq('user_id', user.id).maybeSingle();
+    if (data) {
+      profile = data;
+    } else {
+      const uname = (user.email || '').split('@')[0] || 'friend';
+      const { data: newP, error: insertErr } = await sb.from('profiles')
+        .insert({ user_id: user.id, username: uname, avatar_url: '🏳️‍🌈' })
+        .select()
+        .single();
+      if (newP) {
+        profile = newP;
+      } else {
+        console.warn('Profile insert error (may be duplicate):', insertErr?.message);
+        const { data: retry } = await sb.from('profiles').select('*').eq('user_id', user.id).maybeSingle();
+        profile = retry || { username: uname, avatar_url: '🏳️‍🌈' };
+      }
+    }
+  } catch (err) {
+    console.error('loadProfile error:', err);
+    profile = { username: (user.email || '').split('@')[0] || 'friend', avatar_url: '🏳️‍🌈' };
   }
 }
 
@@ -1643,12 +1667,16 @@ window.toast = function(msg) {
    INIT
 ================================================================ */
 (async () => {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) {
-    user = session.user;
-    await loadProfile();
-    updateMenuUI();
-    goScreen('main');
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      user = session.user;
+      await loadProfile();
+      updateMenuUI();
+      goScreen('main');
+    }
+  } catch (err) {
+    console.error('Init error:', err);
   }
   document.getElementById('auth-form').dataset.mode = 'signin';
 })();
