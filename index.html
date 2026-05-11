@@ -544,7 +544,10 @@
     .geo-item:last-child { border-bottom: none; }
     .geo-item:hover { background: var(--bg); }
     .geo-name { font-weight: 600; }
-    .geo-addr { font-size: 0.73rem; color: var(--text-muted); }
+    .geo-addr { font-size: 0.73rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .geo-dist { margin-left: auto; font-size: 0.7rem; color: var(--primary); background: var(--primary-light); padding: 1px 7px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; }
+    .geo-in-qss { font-size: 0.68rem; color: var(--safe); background: var(--safe-bg); padding: 1px 6px; border-radius: 99px; flex-shrink: 0; }
+    .geo-item.loading { color: var(--text-muted); font-style: italic; cursor: default; }
 
     .sel-loc {
       background: var(--primary-light); border-radius: var(--radius-sm);
@@ -638,7 +641,7 @@
     </button>
     <div class="search-wrap">
       <i class="fa-solid fa-magnifying-glass s-icon"></i>
-      <input id="map-search" type="text" placeholder="Search location…" autocomplete="off" />
+      <input id="map-search" type="text" placeholder="Search cafes, parks, Walmart…" autocomplete="off" />
       <div class="search-dropdown" id="map-sdrop"></div>
     </div>
     <button class="icon-btn primary" onclick="openAddSpace()" aria-label="Add a safe space" title="Add a safe space">
@@ -1068,6 +1071,8 @@ let profile = {};
 let addSafety  = null;
 let rateSafety = null;
 let addLoc     = null;
+let userLat    = null;
+let userLon    = null;
 let curSpaceId = null;
 let selAvatar  = null;
 let geoTimer   = null;
@@ -1243,19 +1248,52 @@ function initMap() {
   mapReady = true;
   loadSpaces();
 
-  /* Map search */
+  /* Capture user GPS for search biasing */
+  map.on('locationfound', e => { userLat = e.latlng.lat; userLon = e.latlng.lng; });
+
+  /* Map search — smart location-aware */
   const inp  = document.getElementById('map-search');
   const drop = document.getElementById('map-sdrop');
   let st;
   inp.addEventListener('input', () => {
     clearTimeout(st);
     const q = inp.value.trim();
-    if (q.length < 3) { drop.classList.remove('open'); return; }
-    st = setTimeout(() => runGeo(q, drop, r => {
-      map.setView([parseFloat(r.lat), parseFloat(r.lon)], 15);
-      drop.classList.remove('open');
-      inp.value = r.display_name.split(',')[0];
-    }), 380);
+    if (q.length < 2) { drop.classList.remove('open'); return; }
+    drop.innerHTML = '<div class="geo-item loading">Searching nearby…</div>';
+    drop.classList.add('open');
+    st = setTimeout(async () => {
+      try {
+        const results = await smartSearch(q);
+        if (!results.length) {
+          drop.innerHTML = '<div class="geo-item loading">No places found nearby</div>';
+          return;
+        }
+        drop.innerHTML = results.map((r, i) => {
+          const inQSS = spaces.some(sp => getDistKm(r.lat, r.lon, sp.latitude, sp.longitude) < 0.1);
+          const distTxt = r.dist != null
+            ? (r.dist < 1 ? Math.round(r.dist*1000)+'m' : r.dist.toFixed(1)+'km') : '';
+          return `<div class="geo-item" data-idx="${i}">
+            <div class="geo-name">${esc(r.name)}</div>
+            <div class="geo-addr">
+              <span>${esc(r.address || '')}</span>
+              ${inQSS ? '<span class="geo-in-qss">✅ In QSS</span>' : ''}
+              ${distTxt ? `<span class="geo-dist">${distTxt}</span>` : ''}
+            </div>
+          </div>`;
+        }).join('');
+        window.__srResults = results;
+        drop.querySelectorAll('.geo-item[data-idx]').forEach(el => {
+          el.addEventListener('click', () => {
+            const r = window.__srResults[+el.dataset.idx];
+            inp.value = r.name;
+            drop.classList.remove('open');
+            pickSearchResult(r);
+          });
+        });
+      } catch(e) {
+        drop.innerHTML = '<div class="geo-item loading">Search failed — try again</div>';
+      }
+    }, 450);
   });
   document.addEventListener('click', e => {
     if (!e.target.closest('.search-wrap')) drop.classList.remove('open');
@@ -1334,39 +1372,187 @@ window.setFilter = function(f, btn) {
 };
 
 /* ================================================================
-   GEOCODING (Nominatim)
+   SMART SEARCH — Overpass + Nominatim, location-biased
 ================================================================ */
-function runGeo(q, box, onPick) {
-  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1`)
-    .then(r => r.json())
-    .then(data => {
-      if (!data.length) { box.innerHTML = '<div class="geo-item">No results found</div>'; box.classList.add('open'); return; }
-      box.innerHTML = data.map(r => `
-        <div class="geo-item" onclick="window.__geoSel(${JSON.stringify(r).replace(/"/g,'&quot;')})">
-          <div class="geo-name">${esc(r.name || r.display_name.split(',')[0])}</div>
-          <div class="geo-addr">${esc(r.display_name)}</div>
-        </div>`).join('');
-      box.classList.add('open');
-      window.__geoSel = function(res) {
-        onPick(res);
-        box.innerHTML = '';
-        box.classList.remove('open');
-      };
-    }).catch(() => {});
+const PLACE_TAGS = {
+  cafe:        [['amenity','cafe']],
+  coffee:      [['amenity','cafe']],
+  restaurant:  [['amenity','restaurant']],
+  food:        [['amenity','restaurant'],['amenity','fast_food']],
+  'fast food': [['amenity','fast_food']],
+  bar:         [['amenity','bar']],
+  pub:         [['amenity','pub']],
+  club:        [['amenity','nightclub']],
+  nightclub:   [['amenity','nightclub']],
+  pharmacy:    [['amenity','pharmacy'],['shop','chemist']],
+  hospital:    [['amenity','hospital']],
+  clinic:      [['amenity','clinic'],['amenity','doctors']],
+  doctor:      [['amenity','doctors'],['amenity','clinic']],
+  gym:         [['leisure','fitness_centre'],['amenity','gym']],
+  fitness:     [['leisure','fitness_centre']],
+  yoga:        [['leisure','fitness_centre']],
+  park:        [['leisure','park']],
+  garden:      [['leisure','garden']],
+  library:     [['amenity','library']],
+  hotel:       [['tourism','hotel']],
+  hostel:      [['tourism','hostel']],
+  motel:       [['tourism','motel']],
+  bank:        [['amenity','bank']],
+  atm:         [['amenity','atm']],
+  supermarket: [['shop','supermarket']],
+  grocery:     [['shop','supermarket'],['shop','convenience'],['shop','grocery']],
+  mall:        [['shop','mall'],['amenity','marketplace']],
+  theater:     [['amenity','theatre']],
+  theatre:     [['amenity','theatre']],
+  cinema:      [['amenity','cinema']],
+  movie:       [['amenity','cinema']],
+  school:      [['amenity','school']],
+  university:  [['amenity','university']],
+  college:     [['amenity','college'],['amenity','university']],
+  church:      [['amenity','place_of_worship']],
+  mosque:      [['amenity','place_of_worship']],
+  temple:      [['amenity','place_of_worship']],
+  worship:     [['amenity','place_of_worship']],
+  salon:       [['shop','hairdresser'],['shop','beauty']],
+  barbershop:  [['shop','hairdresser']],
+  laundry:     [['shop','laundry'],['amenity','laundry']],
+  gas:         [['amenity','fuel']],
+  parking:     [['amenity','parking']],
+};
+
+function getDistKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function formatOsmAddress(tags) {
+  const p = [];
+  if (tags['addr:housenumber'] && tags['addr:street']) p.push(tags['addr:housenumber']+' '+tags['addr:street']);
+  else if (tags['addr:street']) p.push(tags['addr:street']);
+  if (tags['addr:city']) p.push(tags['addr:city']);
+  if (tags['addr:state']) p.push(tags['addr:state']);
+  return p.join(', ') || tags.amenity || tags.shop || tags.leisure || tags.tourism || '';
+}
+
+async function overpassNearby(tagPairs, lat, lon, radius, limit=20) {
+  const lines = tagPairs.map(([k,v]) =>
+    `  node["${k}"="${v}"](around:${radius},${lat},${lon});
+  way["${k}"="${v}"](around:${radius},${lat},${lon});`
+  ).join('
+');
+  const query = `[out:json][timeout:15];
+(
+${lines}
+);
+out center ${limit};`;
+  const res = await fetch('https://overpass-api.de/api/interpreter',
+    { method:'POST', body:`data=${encodeURIComponent(query)}` });
+  const { elements } = await res.json();
+  return elements.map(el => {
+    const eLat = el.lat ?? el.center?.lat;
+    const eLon = el.lon ?? el.center?.lon;
+    if (!eLat || !el.tags?.name) return null;
+    return { name:el.tags.name, address:formatOsmAddress(el.tags), lat:eLat, lon:eLon,
+             display_name:el.tags.name, dist:getDistKm(lat,lon,eLat,eLon) };
+  }).filter(Boolean).sort((a,b)=>a.dist-b.dist).slice(0,limit);
+}
+
+async function overpassNameSearch(q, lat, lon, radius) {
+  const safeQ = q.replace(/['"\\[\]()]/g,'');
+  const query = `[out:json][timeout:10];
+(
+  node["name"~"${safeQ}",i](around:${radius},${lat},${lon});
+  way["name"~"${safeQ}",i](around:${radius},${lat},${lon});
+);
+out center 15;`;
+  const res = await fetch('https://overpass-api.de/api/interpreter',
+    { method:'POST', body:`data=${encodeURIComponent(query)}` });
+  const { elements } = await res.json();
+  return elements.map(el => {
+    const eLat = el.lat ?? el.center?.lat;
+    const eLon = el.lon ?? el.center?.lon;
+    if (!eLat) return null;
+    return { name:el.tags.name||q, address:formatOsmAddress(el.tags), lat:eLat, lon:eLon,
+             display_name:el.tags.name||q, dist:getDistKm(lat,lon,eLat,eLon) };
+  }).filter(Boolean).sort((a,b)=>a.dist-b.dist).slice(0,15);
+}
+
+async function nominatimBiased(q, lat, lon) {
+  const vb = `${lon-0.8},${lat+0.6},${lon+0.8},${lat-0.6}`;
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=8&addressdetails=1&viewbox=${vb}&bounded=0`;
+  const res = await fetch(url, { headers:{'Accept-Language':'en'} });
+  const data = await res.json();
+  return data.map(r => ({
+    name: r.name||r.display_name.split(',')[0],
+    address: r.display_name,
+    lat: parseFloat(r.lat), lon: parseFloat(r.lon),
+    display_name: r.display_name,
+    dist: getDistKm(lat,lon,parseFloat(r.lat),parseFloat(r.lon))
+  }));
+}
+
+async function smartSearch(q) {
+  const lower = q.toLowerCase().trim();
+  const center = map.getCenter();
+  const lat = userLat||center.lat, lon = userLon||center.lng;
+  const tagPairs = PLACE_TAGS[lower] ||
+    Object.entries(PLACE_TAGS).find(([k]) => lower.includes(k)||k.includes(lower))?.[1];
+  if (tagPairs) {
+    const r = await overpassNearby(tagPairs, lat, lon, 8000, 20);
+    if (r.length) return r;
+  }
+  const r2 = await overpassNameSearch(q, lat, lon, 12000);
+  if (r2.length) return r2;
+  return await nominatimBiased(q, lat, lon);
+}
+
+function pickSearchResult(r) {
+  map.flyTo([r.lat, r.lon], 17, { animate:true, duration:0.7 });
+  const nearby = spaces.find(sp => getDistKm(r.lat,r.lon,sp.latitude,sp.longitude) < 0.1);
+  if (nearby) { setTimeout(() => openDetail(nearby.id), 500); }
+  else {
+    addLoc = { lat:r.lat, lon:r.lon, display_name:r.address||r.name, name:r.name };
+    setTimeout(() => toast(`📍 "${r.name}" isn't in QueerSafeSpace yet — tap + to add it!`), 500);
+  }
 }
 
 window.debGeo = function(val, boxId) {
   clearTimeout(geoTimer);
   const box = document.getElementById(boxId);
-  if (!val || val.length < 3) { box.classList.remove('open'); return; }
-  geoTimer = setTimeout(() => runGeo(val, box, res => {
-    addLoc = res;
-    document.getElementById('add-search').value = esc(res.name || res.display_name.split(',')[0]);
-    document.getElementById('add-loc-txt').textContent = res.display_name;
-    document.getElementById('add-loc-prev').classList.add('show');
-    if (!document.getElementById('add-name').value)
-      document.getElementById('add-name').value = res.name || res.display_name.split(',')[0];
-  }), 380);
+  if (!val || val.length < 2) { box.classList.remove('open'); return; }
+  box.innerHTML = '<div class="geo-item loading">Searching…</div>';
+  box.classList.add('open');
+  geoTimer = setTimeout(async () => {
+    try {
+      const center = map.getCenter();
+      const lat = userLat||center.lat, lon = userLon||center.lng;
+      const results = await nominatimBiased(val, lat, lon);
+      if (!results.length) { box.innerHTML = '<div class="geo-item loading">No results</div>'; return; }
+      box.innerHTML = results.map((r,i) => `
+        <div class="geo-item" data-gi="${i}">
+          <div class="geo-name">${esc(r.name)}</div>
+          <div class="geo-addr"><span>${esc(r.address||r.display_name||'')}</span></div>
+        </div>`).join('');
+      window.__geoResults = results;
+      box.querySelectorAll('.geo-item[data-gi]').forEach(el => {
+        el.addEventListener('click', () => {
+          const res = window.__geoResults[+el.dataset.gi];
+          addLoc = res;
+          document.getElementById('add-search').value = esc(res.name);
+          document.getElementById('add-loc-txt').textContent = res.display_name||res.address||res.name;
+          document.getElementById('add-loc-prev').classList.add('show');
+          box.classList.remove('open');
+          const nameEl = document.getElementById('add-name');
+          if (!nameEl.value) nameEl.value = res.name||(res.display_name||'').split(',')[0];
+        });
+      });
+    } catch(e) {
+      box.innerHTML = '<div class="geo-item loading">Search failed — try again</div>';
+    }
+  }, 380);
 };
 
 /* ================================================================
