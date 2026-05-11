@@ -589,10 +589,54 @@
       .splash-card { padding: 32px 20px 24px; }
       .splash-title { font-size: 1.75rem; }
     }
+  /* ===================== BETA NOTICE MODAL ===================== */
+  #beta-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; padding: 20px;
+  }
+  #beta-modal {
+    background: #fff; border-radius: 16px; max-width: 420px; width: 100%;
+    padding: 32px 28px 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    text-align: center; animation: fadeInUp .3s ease;
+  }
+  #beta-modal .beta-icon { font-size: 2.5rem; margin-bottom: 12px; }
+  #beta-modal h2 { font-size: 1.2rem; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
+  #beta-modal p { font-size: 0.92rem; color: #4B5563; line-height: 1.6; margin-bottom: 20px; }
+  #beta-modal button {
+    background: var(--primary); color: #fff; border: none;
+    padding: 12px 32px; border-radius: 8px; font-size: 0.95rem;
+    font-weight: 600; cursor: pointer; transition: background .2s;
+  }
+  #beta-modal button:hover { background: var(--primary-dark); }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
   </style>
 </head>
 <body>
 
+
+<!-- ============================= BETA NOTICE MODAL ============================= -->
+<div id="beta-modal-overlay">
+  <div id="beta-modal">
+    <div class="beta-icon">🏳️‍🌈</div>
+    <h2>Welcome to QueerSafeSpace!</h2>
+    <p>
+      Our site is currently under construction as we work hard to bring
+      you the best experience possible. Not all features are fully
+      functional just yet, but we invite you to explore, click around,
+      and share your feedback — every bit helps us build something
+      truly special for our community.
+    </p>
+    <p style="font-size:0.88rem; color:#7C3AED; font-weight:600; margin-bottom:20px;">
+      Stay tuned for updates. Big things are coming. 💜<br/>
+      Love, The QueerSafeSpace Team
+    </p>
+    <button onclick="document.getElementById('beta-modal-overlay').style.display='none'">Got it, let me explore!</button>
+  </div>
+</div>
 <!-- ============================= SPLASH ============================= -->
 <div id="splash" class="screen active">
   <div class="splash-card">
