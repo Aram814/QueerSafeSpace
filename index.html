@@ -1100,6 +1100,14 @@ window.authTab = function(mode) {
   document.getElementById('auth-form').dataset.mode = mode;
 };
 
+/* Helper: race a promise against a timeout */
+function withTimeout(promise, ms, msg) {
+  const timer = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(msg)), ms)
+  );
+  return Promise.race([promise, timer]);
+}
+
 window.handleAuth = async function(e) {
   e.preventDefault();
   const mode  = document.getElementById('auth-form').dataset.mode || 'signin';
@@ -1115,12 +1123,19 @@ window.handleAuth = async function(e) {
       if (!document.getElementById('a-terms').checked || !document.getElementById('a-priv').checked) {
         setMsg('a-msg', 'Please agree to Terms & Privacy Policy.', true); return;
       }
-      const { error } = await sb.auth.signUp({ email, password: pw });
+      const { error } = await withTimeout(
+        sb.auth.signUp({ email, password: pw }),
+        12000, 'Connection timed out. Please try again in a moment.'
+      );
       if (error) { setMsg('a-msg', error.message, true); return; }
-      setMsg('a-msg', '✅ Check your email to confirm your account!', false, true);
+      setMsg('a-msg', '\u2705 Check your email to confirm your account!', false, true);
     } else {
-      const { data: authData, error } = await sb.auth.signInWithPassword({ email, password: pw });
+      const { data: authData, error } = await withTimeout(
+        sb.auth.signInWithPassword({ email, password: pw }),
+        12000, 'Connection timed out. Please try again in a moment.'
+      );
       if (error) { setMsg('a-msg', error.message, true); return; }
+      // close the overlay — onAuthStateChange will handle navigation
       closeOverlay('auth-overlay');
     }
   } catch (err) {
@@ -1132,11 +1147,17 @@ window.handleAuth = async function(e) {
 window.forgotPw = async function() {
   const email = document.getElementById('a-email').value.trim();
   if (!email) { toast('Enter your email first'); return; }
-  const { error } = await sb.auth.resetPasswordForEmail(email);
-  if (error) { toast(error.message); return; }
-  toast('Password reset email sent!');
+  try {
+    const { error } = await withTimeout(
+      sb.auth.resetPasswordForEmail(email),
+      12000, 'Connection timed out. Please try again.'
+    );
+    if (error) { toast(error.message); return; }
+    toast('Password reset email sent!');
+  } catch (err) {
+    toast(err.message || 'Something went wrong. Please try again.');
+  }
 };
-
 window.signOut = async function() {
   await sb.auth.signOut();
   closeMenu();
