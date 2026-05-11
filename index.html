@@ -80,7 +80,7 @@
       text-align: center;
       box-shadow: var(--shadow-lg);
     }
-    .splash-logo { width: 96px; height: 96px; margin: 0 auto 20px; }
+    .splash-logo { display: block; width: 96px; height: 96px; margin: 0 auto 20px; }
     .splash-title { font-size: 2rem; font-weight: 800; color: var(--text); margin-bottom: 6px; }
     .splash-tagline { font-size: 0.95rem; color: var(--text-muted); margin-bottom: 18px; font-weight: 500; }
     .splash-desc { font-size: 0.88rem; color: #374151; line-height: 1.65; margin-bottom: 28px; }
@@ -596,25 +596,7 @@
 <!-- ============================= SPLASH ============================= -->
 <div id="splash" class="screen active">
   <div class="splash-card">
-    <!-- Rainbow shield logo (SVG inline) -->
-    <svg class="splash-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="sg" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%"   style="stop-color:#E40303"/>
-          <stop offset="17%"  style="stop-color:#FF8C00"/>
-          <stop offset="33%"  style="stop-color:#FFED00"/>
-          <stop offset="50%"  style="stop-color:#008026"/>
-          <stop offset="67%"  style="stop-color:#004DFF"/>
-          <stop offset="83%"  style="stop-color:#750787"/>
-          <stop offset="100%" style="stop-color:#750787"/>
-        </linearGradient>
-      </defs>
-      <path d="M50 6 L88 22 L88 56 C88 76 70 92 50 97 C30 92 12 76 12 56 L12 22 Z"
-            fill="url(#sg)" stroke="#1a1a2e" stroke-width="2.5"/>
-      <circle cx="50" cy="45" r="16" fill="rgba(255,255,255,0.88)"/>
-      <path d="M44 45 L49 50 L57 41" stroke="#5B21B6" stroke-width="3.5"
-            stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    </svg>
+        <img src="logo.png" alt="QueerSafeSpace logo" class="splash-logo" />
 
     <h1 class="splash-title">QueerSafeSpace</h1>
     <p class="splash-tagline">Because Safety Shouldn't Be A Privilege</p>
@@ -1441,8 +1423,7 @@ async function overpassNearby(tagPairs, lat, lon, radius, limit=20) {
   const lines = tagPairs.map(([k,v]) =>
     `  node["${k}"="${v}"](around:${radius},${lat},${lon});
   way["${k}"="${v}"](around:${radius},${lat},${lon});`
-  ).join('
-');
+  ).join('\n');
   const query = `[out:json][timeout:15];
 (
 ${lines}
