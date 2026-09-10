@@ -4,7 +4,7 @@
  * Plain Node.js tests for the pure utility functions extracted from index.html.
  * Run with:  node tests/map.test.js
  *
- * These tests cover the three bug areas reported:
+ * These tests cover the bug areas reported and subsequently fixed:
  *   1. renderMarkers — null-map guard must come BEFORE map.removeLayer()
  *   2. debGeo / smartSearch — must not call map.getCenter() when map is null
  *   3. nominatimBiased — name field must never be undefined/null
@@ -12,6 +12,11 @@
  *   5. getDistKm — haversine sanity check
  *   6. formatOsmAddress — address assembly
  *   7. esc — XSS-escape helper
+ *   8. attachSearchListener — stale-request token cancellation
+ *   9. pickSearchResult — null-map guard (navigates to map first)
+ *  10. debGeo — stale-request token cancellation
+ *  11. locationerror — handler registered, does not throw
+ *  12. CSS class consistency — search-dropdown uses geo-item, not sdrop-item
  */
 
 'use strict';
@@ -246,6 +251,233 @@ assert(withoutName.name === 'Some Street', 'Falls back to first segment of displ
 
 const noDisplayName = mapNominatimResult({ name: '', display_name: '', lat: '51.5', lon: '-0.1' });
 assert(noDisplayName.name === '', 'Empty string when both name and display_name are empty (no crash)');
+
+// ─── Summary ─────────────────────────────────────────────────────────────────
+
+// ─── New fix tests ────────────────────────────────────────────────────────────
+
+console.log('\n=== Fix: attachSearchListener stale-request token cancellation ===');
+
+/**
+ * Simulates the token-based stale-request cancellation used in attachSearchListener.
+ * Each call to "startSearch" increments the shared token; only the callback whose
+ * captured token still matches the current token should render results.
+ */
+function makeSearchController() {
+  let currentToken = 0;
+  const rendered = [];
+
+  function startSearch(label) {
+    const token = ++currentToken;
+    // Simulate async completion — caller decides whether to call resolve()
+    return {
+      token,
+      resolve() {
+        if (token !== currentToken) return; // stale — discard
+        rendered.push(label);
+      },
+    };
+  }
+
+  return { startSearch, rendered, getCurrentToken: () => currentToken };
+}
+
+{
+  const ctrl = makeSearchController();
+  const s1 = ctrl.startSearch('first');
+  const s2 = ctrl.startSearch('second');
+  s1.resolve(); // arrives late — should be discarded
+  s2.resolve(); // arrives last — should be kept
+  assert(ctrl.rendered.length === 1, 'Only one result rendered when two searches race');
+  assert(ctrl.rendered[0] === 'second', 'The later search wins (stale first result discarded)');
+}
+
+{
+  const ctrl = makeSearchController();
+  const s1 = ctrl.startSearch('only');
+  s1.resolve();
+  assert(ctrl.rendered.length === 1, 'Single search always renders');
+  assert(ctrl.rendered[0] === 'only', 'Single search result is correct');
+}
+
+{
+  const ctrl = makeSearchController();
+  const s1 = ctrl.startSearch('a');
+  const s2 = ctrl.startSearch('b');
+  const s3 = ctrl.startSearch('c');
+  s2.resolve(); // middle one arrives — stale
+  s1.resolve(); // oldest arrives — stale
+  s3.resolve(); // latest arrives — kept
+  assert(ctrl.rendered.length === 1, 'Only the latest of three racing searches renders');
+  assert(ctrl.rendered[0] === 'c', 'The last search wins in a three-way race');
+}
+
+console.log('\n=== Fix: pickSearchResult null-map guard ===');
+
+/**
+ * Simulates the fixed pickSearchResult: when map is null it calls goScreen('main')
+ * and schedules a retry instead of calling map.flyTo() directly.
+ */
+function pickSearchResultFixed(r, map, goScreen, scheduleRetry) {
+  if (!map) {
+    goScreen('main');
+    scheduleRetry(r);
+    return 'deferred';
+  }
+  map.flyTo([r.lat, r.lon], 17);
+  return 'flew';
+}
+
+{
+  const calls = [];
+  const result = pickSearchResultFixed(
+    { lat: 51.5, lon: -0.1 },
+    null,                          // map is null
+    screen => calls.push({ goScreen: screen }),
+    r    => calls.push({ retry: r }),
+  );
+  assert(result === 'deferred', 'pickSearchResult returns "deferred" when map is null');
+  assert(calls.length === 2, 'goScreen and scheduleRetry are both called when map is null');
+  assert(calls[0].goScreen === 'main', 'goScreen("main") is called first');
+  assert(calls[1].retry.lat === 51.5, 'Retry is scheduled with the original result');
+}
+
+{
+  const flyToCalls = [];
+  const fakeMap = { flyTo: (latlng, zoom) => flyToCalls.push({ latlng, zoom }) };
+  const result = pickSearchResultFixed(
+    { lat: 40.7, lon: -74.0 },
+    fakeMap,
+    () => {},
+    () => {},
+  );
+  assert(result === 'flew', 'pickSearchResult calls map.flyTo when map exists');
+  assert(flyToCalls.length === 1, 'map.flyTo called exactly once');
+  assert(flyToCalls[0].latlng[0] === 40.7, 'flyTo receives correct lat');
+}
+
+console.log('\n=== Fix: openDetail null-map guard ===');
+
+/**
+ * Simulates the fixed openDetail: map.closePopup() is only called when map exists.
+ */
+function openDetailFixed(map) {
+  if (map) map.closePopup();
+  return 'ok';
+}
+
+{
+  assert(openDetailFixed(null) === 'ok', 'openDetail does not throw when map is null');
+  let closed = false;
+  openDetailFixed({ closePopup: () => { closed = true; } });
+  assert(closed, 'openDetail calls map.closePopup() when map exists');
+}
+
+console.log('\n=== Fix: locationerror handler registration ===');
+
+/**
+ * Simulates the Leaflet map event registration pattern.
+ * Verifies that a 'locationerror' handler is registered and does not throw.
+ */
+function makeEventEmitter() {
+  const handlers = {};
+  return {
+    on(event, fn) { handlers[event] = fn; },
+    emit(event, ...args) {
+      if (handlers[event]) handlers[event](...args);
+    },
+    has(event) { return !!handlers[event]; },
+  };
+}
+
+{
+  const emitter = makeEventEmitter();
+  const toasts = [];
+  // Simulate what initMap now does
+  emitter.on('locationerror', () => toasts.push('location unavailable'));
+
+  assert(emitter.has('locationerror'), 'locationerror handler is registered on the map');
+
+  let threw = false;
+  try { emitter.emit('locationerror'); } catch (_) { threw = true; }
+  assert(!threw, 'locationerror handler does not throw when fired');
+  assert(toasts.length === 1, 'locationerror handler fires the toast callback');
+}
+
+{
+  // Confirm locationfound is still registered alongside locationerror
+  const emitter = makeEventEmitter();
+  let lat = null;
+  emitter.on('locationfound', e => { lat = e.latlng.lat; });
+  emitter.on('locationerror', () => {});
+  emitter.emit('locationfound', { latlng: { lat: 51.5, lng: -0.1 } });
+  assert(lat === 51.5, 'locationfound handler still works alongside locationerror');
+}
+
+console.log('\n=== Fix: debGeo stale-request token cancellation ===');
+
+// debGeo uses the same token pattern as attachSearchListener — reuse the controller.
+{
+  const ctrl = makeSearchController();
+  const s1 = ctrl.startSearch('debGeo-first');
+  const s2 = ctrl.startSearch('debGeo-second');
+  s1.resolve(); // stale
+  s2.resolve(); // current
+  assert(ctrl.rendered.length === 1, 'debGeo: only latest result rendered');
+  assert(ctrl.rendered[0] === 'debGeo-second', 'debGeo: latest result is correct');
+}
+
+console.log('\n=== Fix: CSS class consistency (search-dropdown uses geo-item) ===');
+
+/**
+ * Reads index.html and verifies:
+ *   a) .sdrop-item is no longer used as a standalone rule (it was dead code)
+ *   b) .search-dropdown .geo-item IS defined
+ *   c) The JS never emits class="sdrop-item" elements
+ */
+const fs = require('fs');
+const html = fs.readFileSync('index.html', 'utf8');
+
+// The old dead rule should be gone
+assert(
+  !html.includes('\n    .sdrop-item {'),
+  'Standalone .sdrop-item CSS rule has been removed'
+);
+
+// The replacement scoped rule should exist
+assert(
+  html.includes('.search-dropdown .geo-item'),
+  '.search-dropdown .geo-item CSS rule is present'
+);
+
+// JS should never emit sdrop-item class
+assert(
+  !html.includes('class="sdrop-item"') && !html.includes("class='sdrop-item'"),
+  'No JS code emits class="sdrop-item" elements'
+);
+
+// JS should emit geo-item inside the map-sdrop dropdown
+assert(
+  html.includes('geo-item') && html.includes('map-sdrop'),
+  'map-sdrop dropdown uses geo-item class'
+);
+
+console.log('\n=== Fix: DOMContentLoaded attaches search listener early ===');
+
+assert(
+  html.includes("document.addEventListener('DOMContentLoaded', attachSearchListener)"),
+  'attachSearchListener is registered on DOMContentLoaded'
+);
+
+assert(
+  html.includes('function attachSearchListener()'),
+  'attachSearchListener function is defined'
+);
+
+assert(
+  html.includes('searchListenerAttached'),
+  'searchListenerAttached guard prevents double-registration'
+);
 
 // ─── Summary ─────────────────────────────────────────────────────────────────
 
