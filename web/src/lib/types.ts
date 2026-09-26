@@ -62,6 +62,10 @@ export interface Location {
   longitude: number | null;
 }
 
+/** public_locations / public_ratings: the anonymous read views, minus user_id. */
+export type PublicLocation = Omit<Location, 'user_id' | 'identity'>;
+export type PublicRating = Omit<Rating, 'user_id'>;
+
 export type Space = Location & { ratings: RatingVote[] | null };
 export type SpaceDetail = Location & { ratings: Rating[] | null };
 
