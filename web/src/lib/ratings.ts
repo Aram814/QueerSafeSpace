@@ -1,0 +1,52 @@
+import type { OverallRating, RatingVote, SafetyRating } from './types';
+
+/**
+ * Majority-vote tally, ported from overallRating() in index.html.
+ * Ties resolve safe > not_safe > mixed, and no votes means 'unknown'.
+ */
+export function overallRating(ratings: RatingVote[] | null | undefined): OverallRating {
+  if (!ratings || !ratings.length) return 'unknown';
+  const c = countRatings(ratings);
+  const max = Math.max(c.safe, c.mixed, c.not_safe);
+  if (c.safe === max && c.safe > 0) return 'safe';
+  if (c.not_safe === max && c.not_safe > 0) return 'not_safe';
+  if (c.mixed > 0) return 'mixed';
+  return 'unknown';
+}
+
+export function countRatings(
+  ratings: RatingVote[] | null | undefined,
+): Record<SafetyRating, number> {
+  const c: Record<SafetyRating, number> = { safe: 0, mixed: 0, not_safe: 0 };
+  (ratings ?? []).forEach((r) => {
+    if (c[r.rating] !== undefined) c[r.rating]++;
+  });
+  return c;
+}
+
+export const PIN_COLORS: Record<OverallRating, string> = {
+  safe: '#22C55E',
+  mixed: '#FBBF24',
+  not_safe: '#EF4444',
+  unknown: '#9CA3AF',
+};
+
+export const RATING_LABELS: Record<OverallRating, string> = {
+  safe: '✅ Safe',
+  mixed: '⚠️ Mixed',
+  not_safe: '❌ Not Safe',
+  unknown: '❓ Unknown',
+};
+
+export type SpaceFilter = 'all' | 'safe' | 'mixed' | 'unsafe';
+
+/** The filter chips use 'unsafe' while the stored value is 'not_safe'. */
+export const FILTER_TO_RATING: Record<Exclude<SpaceFilter, 'all'>, SafetyRating> = {
+  safe: 'safe',
+  mixed: 'mixed',
+  unsafe: 'not_safe',
+};
+
+export function matchesFilter(rating: OverallRating, filter: SpaceFilter): boolean {
+  return filter === 'all' || rating === FILTER_TO_RATING[filter];
+}
