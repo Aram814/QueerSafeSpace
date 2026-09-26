@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.DS_Store
+
+# Local Supabase credentials — never commit
+.env
+.env.local
+web/.env
+web/.env.local
+*.tsbuildinfo
