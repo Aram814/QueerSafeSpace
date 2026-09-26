@@ -1,8 +1,53 @@
 import { supabase } from './supabase';
-import type { LocationCategory, SafetyRating, SafetyTag, Space, SpaceDetail } from './types';
+import type {
+  LocationCategory,
+  PublicLocation,
+  PublicRating,
+  Rating,
+  RatingVote,
+  SafetyRating,
+  SafetyTag,
+  Space,
+  SpaceDetail,
+} from './types';
+
+/**
+ * Signed-out reads go through public_locations / public_ratings, which project
+ * away user_id. The base tables are unreadable by `anon` on purpose, so this is
+ * the only anonymous path and it cannot expose an author.
+ */
+function asSpace(location: PublicLocation, ratings: RatingVote[]): Space {
+  return { ...location, user_id: null, identity: null, ratings };
+}
+
+async function loadSpacesAnonymously(): Promise<Space[]> {
+  const [locations, ratings] = await Promise.all([
+    supabase.from('public_locations').select('*'),
+    supabase.from('public_ratings').select('space_id, rating'),
+  ]);
+  if (locations.error) {
+    console.warn('Could not load spaces:', locations.error.message);
+    return [];
+  }
+
+  // The views have no FK metadata to embed through, so the votes are grouped
+  // client-side instead of with a nested select.
+  const votesBySpace = new Map<string, RatingVote[]>();
+  for (const row of (ratings.data ?? []) as Pick<PublicRating, 'space_id' | 'rating'>[]) {
+    const votes = votesBySpace.get(row.space_id) ?? [];
+    votes.push({ rating: row.rating });
+    votesBySpace.set(row.space_id, votes);
+  }
+
+  return ((locations.data ?? []) as PublicLocation[]).map((loc) =>
+    asSpace(loc, votesBySpace.get(loc.id) ?? []),
+  );
+}
 
 /** Ported from loadSpaces() in index.html. */
-export async function loadSpaces(): Promise<Space[]> {
+export async function loadSpaces(signedIn: boolean): Promise<Space[]> {
+  if (!signedIn) return loadSpacesAnonymously();
+
   const { data, error } = await supabase.from('locations').select('*, ratings(rating)');
   if (error) {
     console.warn('Could not load spaces:', error.message);
@@ -11,8 +56,27 @@ export async function loadSpaces(): Promise<Space[]> {
   return (data ?? []) as Space[];
 }
 
+async function loadSpaceDetailAnonymously(spaceId: string): Promise<SpaceDetail | null> {
+  const [location, ratings] = await Promise.all([
+    supabase.from('public_locations').select('*').eq('id', spaceId).single(),
+    supabase.from('public_ratings').select('*').eq('space_id', spaceId),
+  ]);
+  if (!location.data) return null;
+
+  const reviews: Rating[] = ((ratings.data ?? []) as PublicRating[]).map((r) => ({
+    ...r,
+    user_id: null,
+  }));
+  return { ...(location.data as PublicLocation), user_id: null, identity: null, ratings: reviews };
+}
+
 /** Ported from the detail query in openDetail(). */
-export async function loadSpaceDetail(spaceId: string): Promise<SpaceDetail | null> {
+export async function loadSpaceDetail(
+  spaceId: string,
+  signedIn: boolean,
+): Promise<SpaceDetail | null> {
+  if (!signedIn) return loadSpaceDetailAnonymously(spaceId);
+
   const { data } = await supabase
     .from('locations')
     .select('*, ratings(*)')

@@ -46,6 +46,9 @@ Ratings are never joined to `profiles` or auth data. The detail sheet renders a 
 colour, tags and comment only. `profiles` is readable by its owner alone at the RLS level, so
 there is no client path from a rating to a username.
 
+Signed-out visitors read through the `public_locations` / `public_ratings` views, which omit
+`user_id` entirely; the base tables are revoked from `anon`. Writing always requires a session.
+
 ## Manual Supabase dashboard checklist
 
 Migrations in `supabase/migrations/` have already been applied to project
@@ -58,8 +61,8 @@ Migrations in `supabase/migrations/` have already been applied to project
    - `ratings`: `safety_tags text[]`, unique `ratings_space_id_user_id_key`.
 2. **Confirm RLS policies** — Authentication → Policies: RLS enabled on `locations`,
    `ratings`, `profiles`; read for `authenticated` on locations/ratings; insert/update/delete
-   restricted to `auth.uid() = user_id`; `profiles` owner-only; `anon` has no privileges.
-   Anonymous browsing therefore shows an empty map until the user signs in.
+   restricted to `auth.uid() = user_id`; `profiles` owner-only; `anon` has no privileges on the
+   base tables, only SELECT on the `public_locations` / `public_ratings` views.
 3. **Enable OAuth providers** — Authentication → Providers: enable Google and Apple, add the
    client ID/secret, and add `http://localhost:5173` plus the deployed origin to the redirect
    allow-list. The Google/Apple buttons in `AuthOverlay` call `signInWithOAuth` and are marked

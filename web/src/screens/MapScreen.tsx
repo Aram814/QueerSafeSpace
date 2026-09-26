@@ -42,18 +42,23 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
   const centerRef = useRef(center);
   centerRef.current = center;
 
+  const signedIn = !!user;
+
   const refreshSpaces = useCallback(async () => {
-    setSpaces(await loadSpaces());
-  }, []);
+    setSpaces(await loadSpaces(signedIn));
+  }, [signedIn]);
 
   useEffect(() => {
     void refreshSpaces();
-  }, [refreshSpaces, user]);
+  }, [refreshSpaces]);
 
-  const openDetail = useCallback(async (spaceId: string) => {
-    const space = await loadSpaceDetail(spaceId);
-    if (space) setDetail(space);
-  }, []);
+  const openDetail = useCallback(
+    async (spaceId: string) => {
+      const space = await loadSpaceDetail(spaceId, signedIn);
+      if (space) setDetail(space);
+    },
+    [signedIn],
+  );
 
   const handleLocationError = useCallback(
     () => onToast('📍 Location unavailable — showing default view'),
@@ -204,7 +209,7 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
       {detail && (
         <SpaceDetailSheet
           space={detail}
-          isSignedIn={!!user}
+          isSignedIn={signedIn}
           onClose={() => setDetail(null)}
           onRate={() => openRate(detail.id)}
         />

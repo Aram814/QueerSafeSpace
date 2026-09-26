@@ -175,11 +175,31 @@ to the data even if a future permissive policy is added by mistake.
   rating for the upsert). It is a pseudonymous UUID, not an identity, now that `profiles` is
   closed. If you later want it fully hidden, expose `ratings` through a view that drops `user_id`
   and returns `is_mine boolean` instead; that is a follow-up, not part of this change.
-- **Guest ("Continue as guest") browsing in `index.html` stops working against the live database**,
-  because reads now require a signed-in user, as specified. `index.html` itself is untouched; if
-  anonymous map browsing should be preserved, add `GRANT SELECT` back to `anon` plus an
-  `anon`-scoped SELECT policy on `locations` **only** (never on `ratings.user_id` or `profiles`).
 - Anonymous *writes* to `locations` are gone, which was gap 3.
+
+## Anonymous read path (`20250926130000_public_read_views.sql`, applied)
+
+Revoking `anon` broke guest browsing, so read-only access is restored through two views that
+project away `user_id` instead of through table grants:
+
+| View | Columns | Granted to |
+| --- | --- | --- |
+| `public.public_locations` | everything on `locations` except `user_id` / `identity` | `anon`, `authenticated` (SELECT only) |
+| `public.public_ratings` | `id, space_id, rating, comment, safety_tags, created_at` | `anon`, `authenticated` (SELECT only) |
+
+The views are `security_invoker = off`, so they run as the owner and bypass RLS on the base
+tables — the **column list is what enforces anonymity here**, so never add an author column to
+them. The base tables remain revoked from `anon`; verified with the anon key:
+
+```
+GET /rest/v1/public_locations → 200 []
+GET /rest/v1/locations        → 42501 permission denied for table locations
+GET /rest/v1/profiles         → 42501 permission denied for table profiles
+```
+
+`web/src/lib/spaces.ts` reads the views when there is no session and the base tables when there
+is. `index.html` is untouched and still reads the base tables, so guest browsing there stays
+empty until it is pointed at the views.
 
 ## Reproducing the introspection
 
