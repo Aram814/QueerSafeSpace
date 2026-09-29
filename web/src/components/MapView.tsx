@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import L from 'leaflet';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import { DEFAULT_CENTER } from '../lib/geo';
@@ -11,6 +11,8 @@ interface Props {
   flyTo: { lat: number; lon: number; zoom: number } | null;
   onOpenDetail: (spaceId: string) => void;
   onUserLocated: (lat: number, lon: number) => void;
+  /** Fired on load and after every pan/zoom, so searches can bias to the visible area. */
+  onMapMove: (lat: number, lon: number, zoom: number) => void;
   onLocationError: () => void;
 }
 
@@ -36,21 +38,35 @@ function MapEffects({
   flyTo,
   onUserLocated,
   onLocationError,
-}: Pick<Props, 'flyTo' | 'onUserLocated' | 'onLocationError'>) {
+  onMapMove,
+}: Pick<Props, 'flyTo' | 'onUserLocated' | 'onLocationError' | 'onMapMove'>) {
   const map = useMap();
 
+  // Callbacks live in a ref so a parent re-render never re-runs map.locate()
+  // (which would re-centre the map mid-search).
+  const cbs = useRef({ onUserLocated, onLocationError, onMapMove });
+  cbs.current = { onUserLocated, onLocationError, onMapMove };
+
   useEffect(() => {
-    map.locate({ setView: true, maxZoom: 13 });
-    const located = (e: L.LocationEvent) => onUserLocated(e.latlng.lat, e.latlng.lng);
+    const located = (e: L.LocationEvent) => cbs.current.onUserLocated(e.latlng.lat, e.latlng.lng);
+    const failed = () => cbs.current.onLocationError();
+    const moved = () => {
+      const c = map.getCenter();
+      cbs.current.onMapMove(c.lat, c.lng, map.getZoom());
+    };
     map.on('locationfound', located);
-    map.on('locationerror', onLocationError);
+    map.on('locationerror', failed);
+    map.on('moveend', moved);
+    moved();
+    map.locate({ setView: true, maxZoom: 13 });
     const timer = setTimeout(() => map.invalidateSize(), 200);
     return () => {
       clearTimeout(timer);
       map.off('locationfound', located);
-      map.off('locationerror', onLocationError);
+      map.off('locationerror', failed);
+      map.off('moveend', moved);
     };
-  }, [map, onUserLocated, onLocationError]);
+  }, [map]);
 
   useEffect(() => {
     if (!flyTo) return;
@@ -67,6 +83,7 @@ export default function MapView({
   onOpenDetail,
   onUserLocated,
   onLocationError,
+  onMapMove,
 }: Props) {
   const visible = useMemo(
     () =>
@@ -90,7 +107,12 @@ export default function MapView({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         maxZoom={19}
       />
-      <MapEffects flyTo={flyTo} onUserLocated={onUserLocated} onLocationError={onLocationError} />
+      <MapEffects
+        flyTo={flyTo}
+        onUserLocated={onUserLocated}
+        onLocationError={onLocationError}
+        onMapMove={onMapMove}
+      />
 
       {visible.map(({ space, rating }) => {
         const total = space.ratings?.length ?? 0;

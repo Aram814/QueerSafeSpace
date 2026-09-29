@@ -37,10 +37,19 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
   const [pendingPlace, setPendingPlace] = useState<PlaceResult | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
 
-  // Searches bias towards the user's GPS position when it is available.
-  const center = userLocation ?? DEFAULT_CENTER;
-  const centerRef = useRef(center);
-  centerRef.current = center;
+  const mapViewRef = useRef<{ lat: number; lon: number; zoom: number } | null>(null);
+
+  // Where searches and new spaces are anchored. Like Apple/Google Maps this is the
+  // visible map once it is zoomed to city level; when zoomed far out (e.g. GPS has
+  // not resolved yet and the map still shows the whole US) prefer the GPS fix.
+  function currentCenter(): { lat: number; lon: number } {
+    const view = mapViewRef.current;
+    if (view && view.zoom >= 9) return view;
+    return userLocation ?? view ?? DEFAULT_CENTER;
+  }
+  const center = currentCenter();
+  const spacesRef = useRef<Space[]>([]);
+  spacesRef.current = spaces;
 
   const signedIn = !!user;
 
@@ -69,10 +78,51 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
     setUserLocation({ lat, lon });
   }, []);
 
-  const search = useCallback(
-    (q: string) => smartSearch(q, centerRef.current.lat, centerRef.current.lon),
-    [],
-  );
+  const handleMapMove = useCallback((lat: number, lon: number, zoom: number) => {
+    mapViewRef.current = { lat, lon, zoom };
+  }, []);
+
+  const userLocationRef = useRef(userLocation);
+  userLocationRef.current = userLocation;
+
+  // Anything on the map can be searched; places already in QueerSafeSpace are
+  // matched by name/address too, so they surface even if OSM search misses them.
+  const search = useCallback(async (q: string) => {
+    const view = mapViewRef.current;
+    const anchor =
+      view && view.zoom >= 9 ? view : (userLocationRef.current ?? view ?? DEFAULT_CENTER);
+    const needle = q.trim().toLowerCase();
+    const known = spacesRef.current
+      .filter(
+        (sp) =>
+          sp.latitude != null &&
+          sp.longitude != null &&
+          `${sp.name} ${sp.address}`.toLowerCase().includes(needle),
+      )
+      .map(
+        (sp): PlaceResult => ({
+          name: sp.name,
+          address: sp.address,
+          lat: sp.latitude as number,
+          lon: sp.longitude as number,
+          display_name: sp.name,
+          dist: getDistKm(anchor.lat, anchor.lon, sp.latitude as number, sp.longitude as number),
+        }),
+      )
+      .sort((a, b) => (a.dist ?? 0) - (b.dist ?? 0))
+      .slice(0, 5);
+
+    let found: PlaceResult[] = [];
+    try {
+      found = await smartSearch(q, anchor.lat, anchor.lon);
+    } catch (err) {
+      if (!known.length) throw err;
+    }
+    const seen = found.filter(
+      (r) => !known.some((k) => getDistKm(k.lat, k.lon, r.lat, r.lon) < 0.1),
+    );
+    return [...known, ...seen];
+  }, []);
 
   // Ported from pickSearchResult(): fly there, open the space if we already
   // know it, otherwise prime the add-space form with the picked place.
@@ -201,6 +251,7 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
             flyTo={flyTo}
             onOpenDetail={openDetail}
             onUserLocated={handleUserLocated}
+            onMapMove={handleMapMove}
             onLocationError={handleLocationError}
           />
         </div>

@@ -58,7 +58,43 @@ export const PLACE_TAGS: Record<string, [string, string][]> = {
   laundry: [['shop', 'laundry'], ['amenity', 'laundry']],
   gas: [['amenity', 'fuel']],
   parking: [['amenity', 'parking']],
+  bakery: [['shop', 'bakery']],
+  bookstore: [['shop', 'books']],
+  book: [['shop', 'books']],
+  dentist: [['amenity', 'dentist']],
+  vet: [['amenity', 'veterinary']],
+  'post office': [['amenity', 'post_office']],
+  thrift: [['shop', 'second_hand']],
+  clothing: [['shop', 'clothes']],
+  shopping: [['shop', 'mall'], ['shop', 'department_store'], ['shop', 'clothes']],
+  store: [['shop', 'department_store'], ['shop', 'supermarket'], ['shop', 'convenience']],
 };
+
+const hasTag = (k: string): boolean => Object.prototype.hasOwnProperty.call(PLACE_TAGS, k);
+
+/** Words that may accompany a category ("coffee shop", "churches near me"). */
+const FILLER_WORDS = new Set(['near', 'me', 'nearby', 'shop', 'shops', 'the', 'a', 'in', 'around', 'and']);
+
+/**
+ * Maps a query to OSM tag pairs only when it is *purely* a category
+ * ("cafe", "coffee shop", "churches near me"). A brand or address such as
+ * "walmart pharmacy" or "12 Main St" is not, and goes through name/address search.
+ */
+export function tagPairsFor(q: string): [string, string][] | undefined {
+  const lower = q.toLowerCase().trim();
+  if (hasTag(lower)) return PLACE_TAGS[lower];
+  const pairs: [string, string][] = [];
+  let matched = 0;
+  for (const word of lower.split(/\s+/)) {
+    if (FILLER_WORDS.has(word)) continue;
+    const key = [word, word.replace(/es$/, ''), word.replace(/s$/, '')].find((k) => hasTag(k),
+    );
+    if (!key) return undefined;
+    pairs.push(...PLACE_TAGS[key]);
+    matched++;
+  }
+  return matched ? pairs : undefined;
+}
 
 type OsmTags = Record<string, string | undefined>;
 
@@ -84,13 +120,72 @@ export function formatOsmAddress(tags: OsmTags): string {
   );
 }
 
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+];
+
+async function fetchJson<T>(url: string, init: RequestInit, timeoutMs: number): Promise<T> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...init, signal: ctrl.signal });
+    if (!res.ok) throw new Error(`${new URL(url).host} responded ${res.status}`);
+    return (await res.json()) as T;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Runs an Overpass query, falling through to a mirror on HTTP errors,
+ * non-JSON bodies and server-side timeouts (which arrive as HTTP 200 with a
+ * `remark` and no elements — indistinguishable from "no results" otherwise).
+ */
 async function overpass(query: string): Promise<OverpassElement[]> {
-  const res = await fetch('https://overpass-api.de/api/interpreter', {
-    method: 'POST',
-    body: `data=${encodeURIComponent(query)}`,
-  });
-  const { elements } = (await res.json()) as { elements: OverpassElement[] };
-  return elements ?? [];
+  let lastError: unknown;
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const data = await fetchJson<{ elements?: OverpassElement[]; remark?: string }>(
+        endpoint,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `data=${encodeURIComponent(query)}`,
+        },
+        15000,
+      );
+      if (!data.elements?.length && data.remark) throw new Error(data.remark);
+      return data.elements ?? [];
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError;
+}
+
+function toPlace(
+  el: OverpassElement,
+  lat: number,
+  lon: number,
+  fallbackName?: string,
+): PlaceResult | null {
+  const eLat = el.lat ?? el.center?.lat;
+  const eLon = el.lon ?? el.center?.lon;
+  const name = el.tags?.name ?? fallbackName;
+  if (eLat == null || eLon == null || !name) return null;
+  return {
+    name,
+    address: formatOsmAddress(el.tags ?? {}),
+    lat: eLat,
+    lon: eLon,
+    display_name: name,
+    dist: getDistKm(lat, lon, eLat, eLon),
+  };
+}
+
+function byDistance(a: PlaceResult, b: PlaceResult): number {
+  return (a.dist ?? 0) - (b.dist ?? 0);
 }
 
 export async function overpassNearby(
@@ -106,56 +201,34 @@ export async function overpassNearby(
         `  node["${k}"="${v}"](around:${radius},${lat},${lon});\n  way["${k}"="${v}"](around:${radius},${lat},${lon});`,
     )
     .join('\n');
-  const elements = await overpass(`[out:json][timeout:15];\n(\n${lines}\n);\nout center ${limit};`);
+  // Fetch more than `limit` so the distance sort below picks the truly closest.
+  const elements = await overpass(`[out:json][timeout:15];\n(\n${lines}\n);\nout center 100;`);
 
   return elements
-    .map((el): PlaceResult | null => {
-      const eLat = el.lat ?? el.center?.lat;
-      const eLon = el.lon ?? el.center?.lon;
-      const name = el.tags?.name;
-      if (!eLat || !eLon || !name) return null;
-      return {
-        name,
-        address: formatOsmAddress(el.tags ?? {}),
-        lat: eLat,
-        lon: eLon,
-        display_name: name,
-        dist: getDistKm(lat, lon, eLat, eLon),
-      };
-    })
+    .map((el) => toPlace(el, lat, lon))
     .filter((r): r is PlaceResult => r !== null)
-    .sort((a, b) => (a.dist ?? 0) - (b.dist ?? 0))
+    .sort(byDistance)
     .slice(0, limit);
 }
 
+/** Matches on `name` or `brand`, so "walmart" finds "Walmart Supercenter". */
 export async function overpassNameSearch(
   q: string,
   lat: number,
   lon: number,
   radius: number,
 ): Promise<PlaceResult[]> {
-  const safeQ = q.replace(/['"\\[\]()]/g, '');
+  const safeQ = q.replace(/['"\\[\]()|.*+?^${}]/g, '').trim();
+  if (!safeQ) return [];
+  const around = `(around:${radius},${lat},${lon})`;
   const elements = await overpass(
-    `[out:json][timeout:10];\n(\n  node["name"~"${safeQ}",i](around:${radius},${lat},${lon});\n  way["name"~"${safeQ}",i](around:${radius},${lat},${lon});\n);\nout center 15;`,
+    `[out:json][timeout:12];\n(\n  nwr["name"~"${safeQ}",i]${around};\n  nwr["brand"~"${safeQ}",i]${around};\n);\nout center 60;`,
   );
 
   return elements
-    .map((el): PlaceResult | null => {
-      const eLat = el.lat ?? el.center?.lat;
-      const eLon = el.lon ?? el.center?.lon;
-      if (!eLat || !eLon) return null;
-      const name = el.tags?.name ?? q;
-      return {
-        name,
-        address: formatOsmAddress(el.tags ?? {}),
-        lat: eLat,
-        lon: eLon,
-        display_name: name,
-        dist: getDistKm(lat, lon, eLat, eLon),
-      };
-    })
+    .map((el) => toPlace(el, lat, lon, q))
     .filter((r): r is PlaceResult => r !== null)
-    .sort((a, b) => (a.dist ?? 0) - (b.dist ?? 0))
+    .sort(byDistance)
     .slice(0, 15);
 }
 
@@ -166,17 +239,21 @@ interface NominatimResult {
   lon: string;
 }
 
-export async function nominatimBiased(
+async function nominatimQuery(
   q: string,
   lat: number,
   lon: number,
+  bounded: boolean,
 ): Promise<PlaceResult[]> {
-  const viewbox = `${lon - 0.8},${lat + 0.6},${lon + 0.8},${lat - 0.6}`;
+  const viewbox = `${lon - 0.5},${lat + 0.4},${lon + 0.5},${lat - 0.4}`;
   const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
     q,
-  )}&limit=8&addressdetails=1&viewbox=${viewbox}&bounded=0`;
-  const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
-  const data = (await res.json()) as NominatimResult[];
+  )}&limit=8&addressdetails=1&viewbox=${viewbox}&bounded=${bounded ? 1 : 0}`;
+  const data = await fetchJson<NominatimResult[]>(
+    url,
+    { headers: { 'Accept-Language': 'en' } },
+    10000,
+  );
   return data.map((r) => {
     const rLat = parseFloat(r.lat);
     const rLon = parseFloat(r.lon);
@@ -191,29 +268,79 @@ export async function nominatimBiased(
   });
 }
 
+/**
+ * Nominatim search biased to the area around (lat, lon): local matches only
+ * first, widening to a global search just when nothing local exists (e.g. the
+ * user typed a distant address).
+ */
+export async function nominatimBiased(
+  q: string,
+  lat: number,
+  lon: number,
+): Promise<PlaceResult[]> {
+  const local = await nominatimQuery(q, lat, lon, true);
+  if (local.length) return local.sort(byDistance);
+  return nominatimQuery(q, lat, lon, false);
+}
+
 export const DEFAULT_CENTER = { lat: 39.5, lon: -98.35 };
 
+/** Same place = same name (case/space-insensitive) within 150 m. */
+function dedupe(results: PlaceResult[]): PlaceResult[] {
+  const out: PlaceResult[] = [];
+  for (const r of results) {
+    const key = r.name.toLowerCase().replace(/\s+/g, ' ').trim();
+    const dup = out.some(
+      (o) =>
+        o.name.toLowerCase().replace(/\s+/g, ' ').trim() === key &&
+        getDistKm(o.lat, o.lon, r.lat, r.lon) < 0.15,
+    );
+    if (!dup) out.push(r);
+  }
+  return out;
+}
+
+/** Street addresses ("123 Main St") and comma-separated places go straight to geocoding. */
+export function looksLikeAddress(q: string): boolean {
+  return /^\d+\s+\S/.test(q.trim()) || q.includes(',');
+}
+
 /**
- * Ported from smartSearch(): tag lookup first, then a name search, then
- * Nominatim — each biased towards the given centre.
+ * Search anything — a category ("cafe"), a chain or venue name ("Walmart"),
+ * or an address — around (lat, lon). Categories use an Overpass tag search;
+ * names run an Overpass name/brand search and Nominatim in parallel so one
+ * slow or failing service can't blank the results. Rejects only when every
+ * service that was tried failed.
  */
 export async function smartSearch(
   q: string,
   lat: number,
   lon: number,
 ): Promise<PlaceResult[]> {
-  const lower = q.toLowerCase().trim();
-  const tagPairs =
-    PLACE_TAGS[lower] ??
-    Object.entries(PLACE_TAGS).find(([k]) => lower.includes(k) || k.includes(lower))?.[1];
+  const query = q.trim();
+  const tagPairs = tagPairsFor(query);
 
+  const tasks: Promise<PlaceResult[]>[] = [];
   if (tagPairs) {
-    const nearby = await overpassNearby(tagPairs, lat, lon, 8000, 20);
-    if (nearby.length) return nearby;
+    tasks.push(overpassNearby(tagPairs, lat, lon, 8000, 20));
+  } else {
+    if (!looksLikeAddress(query)) tasks.push(overpassNameSearch(query, lat, lon, 15000));
+    tasks.push(nominatimBiased(query, lat, lon));
   }
-  const byName = await overpassNameSearch(q, lat, lon, 12000);
-  if (byName.length) return byName;
-  return nominatimBiased(q, lat, lon);
+
+  let settled = await Promise.allSettled(tasks);
+  let results = settled.flatMap((s) => (s.status === 'fulfilled' ? s.value : []));
+
+  // A category with no nearby hits: retry as a plain name/address search.
+  if (tagPairs && results.length === 0) {
+    settled = [...settled, ...(await Promise.allSettled([nominatimBiased(query, lat, lon)]))];
+    results = settled.flatMap((s) => (s.status === 'fulfilled' ? s.value : []));
+  }
+
+  if (results.length === 0 && settled.every((s) => s.status === 'rejected')) {
+    throw (settled[0] as PromiseRejectedResult).reason;
+  }
+  return dedupe(results.sort(byDistance)).slice(0, 15);
 }
 
 export function formatDistance(dist: number | null): string {
