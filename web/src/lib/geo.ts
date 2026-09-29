@@ -314,26 +314,6 @@ export async function overpassNearby(
 }
 
 /**
- * Category search that widens only as needed: a dense area is answered by the
- * first small radius (which is guaranteed to include the nearest places, since
- * Overpass caps results in id order, not distance); rural areas keep widening.
- * `emit` is called with each radius's results so the UI can show them early.
- */
-async function categoryNearby(
-  tagPairs: [string, string][],
-  lat: number,
-  lon: number,
-  emit: (r: PlaceResult[]) => void,
-  signal?: AbortSignal,
-): Promise<void> {
-  for (const radius of [2500, 8000, 20000, 40000]) {
-    const found = await overpassNearby(tagPairs, lat, lon, radius, 40, signal);
-    emit(found);
-    if (found.length >= 12) return;
-  }
-}
-
-/**
  * Named places whose name (or brand) contains EVERY word, in any order, so
  * "first love" finds "First Love Christian Church" and "Love First Ministries".
  */
@@ -603,14 +583,21 @@ export async function smartSearch(
     sources.push(async (emit) => emit(await nominatimBiased(query, lat, lon, signal)));
   } else if (hasCategory && nameWords.length === 0) {
     // Pure category: coffee, grocery, smoke shop, "Dunnellon coffee".
-    sources.push((emit) => categoryNearby(parsed.pairs, center.lat, center.lon, emit, signal));
+    // Three independent radii, run together: the small one is guaranteed to include the nearest
+    // places (Overpass caps results in id order, not distance), the larger ones fill out the list
+    // for towns and rural areas, and one of them failing cannot wipe out the others.
+    for (const [radius, limit] of [[3000, 25], [12000, 40], [30000, 60]] as const) {
+      sources.push(async (emit) =>
+        emit(await overpassNearby(parsed.pairs, center.lat, center.lon, radius, limit, signal)),
+      );
+    }
     for (const [k, v] of parsed.pairs.slice(0, 3)) {
       sources.push(async (emit) =>
         emit(
           await photonSearch(parsed.categoryWords.join(' '), center.lat, center.lon, {
-            bboxDeg: 0.25,
+            bboxDeg: 0.35,
             osmTag: `${k}:${v}`,
-            limit: 15,
+            limit: 20,
             signal,
           }),
         ),
@@ -666,6 +653,9 @@ export async function smartSearch(
     ),
   );
   if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
+
+  // Handy when a search looks short: per-source result counts and any errors.
+  console.info('[QSS search]', query, { center, perSource: parts.map((r) => r.length), errors: errors.map(String) });
 
   let results = snapshot();
 
