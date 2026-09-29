@@ -24,6 +24,13 @@ const ALLOWED_ORIGIN = /^(https:\/\/(www\.)?queersafespace\.org|https:\/\/[a-z0-
 const QUERY_SHAPE = /^\[out:json\]\[timeout:\d{1,2}\];/;
 const MAX_QUERY_LENGTH = 4000;
 
+/** The readable part of an Overpass error page (they are XHTML; the reason follows "Error"). */
+function errorText(body) {
+  const plain = body.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const at = plain.search(/error/i);
+  return plain.slice(at >= 0 ? at : 0, (at >= 0 ? at : 0) + 300);
+}
+
 async function tryMirror(endpoint, query, signal) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), MIRROR_TIMEOUT_MS);
@@ -43,7 +50,7 @@ async function tryMirror(endpoint, query, signal) {
     });
     const text = await res.text();
     const host = new URL(endpoint).host;
-    if (!res.ok) throw new Error(`${host} responded ${res.status}: ${text.slice(0, 200).replace(/\s+/g, ' ')}`);
+    if (!res.ok) throw new Error(`${host} responded ${res.status}: ${errorText(text)}`);
     let data;
     try {
       data = JSON.parse(text);
@@ -121,6 +128,6 @@ export default async function handler(req, res) {
     return res.status(200).json(data);
   } catch (errors) {
     res.setHeader('Cache-Control', 'no-store');
-    return res.status(502).json({ error: 'All Overpass mirrors failed', details: errors });
+    return res.status(502).json({ error: 'All Overpass mirrors failed', details: errors, received: query.slice(0, 400) });
   }
 }
