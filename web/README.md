@@ -49,6 +49,24 @@ server-side (proper User-Agent, mirror fallback, edge caching) and only accepts
 mirrors, which is what happens under plain `npm run dev` (no server functions locally; use
 `vercel dev` to exercise the proxy). Vercel project settings: Root Directory `web`.
 
+## Place search (`api/places.js`)
+
+OpenStreetMap is missing many small businesses, so name and category search also asks
+Foursquare Places. `api/places.js` is a Vercel Function that calls it server-side so the key
+never reaches the browser; results are passed through, not stored.
+
+Setup (Vercel -> Project Settings -> Environment Variables, for Production **and** Preview):
+
+| Variable | Value |
+| --- | --- |
+| `FOURSQUARE_API_KEY` | A Places API service key from developer.foursquare.com. Server-only: do **not** prefix it with `VITE_`. |
+| `FOURSQUARE_API_BASE` | Optional. Defaults to `https://places-api.foursquare.com/places/search`. |
+| `FOURSQUARE_API_VERSION` | Optional. Sent as `X-Places-Api-Version` (default `2025-06-17`). |
+
+Redeploy after adding them. Without the key `/api/places` answers 503 and search falls back to
+the free OpenStreetMap sources. Check Foursquare's current terms for attribution and for how
+long results may be stored before publishing.
+
 ## Anonymity
 
 Ratings are never joined to `profiles` or auth data. The detail sheet renders a rating's date,

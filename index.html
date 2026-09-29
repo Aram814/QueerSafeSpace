@@ -1705,6 +1705,21 @@ out center 60;`, 10000, signal);
     .sort((a,b)=>a.dist-b.dist).slice(0,20);
 }
 
+/* Foursquare Places via our Vercel proxy (web/api/places.js): far better coverage of small
+   businesses than OpenStreetMap ("Ellianos Coffee", "Dunnellon Coffee Co"). The key never
+   reaches the browser. It rejects where the proxy or key is not configured, and the search then
+   simply relies on the free OpenStreetMap sources. */
+const PLACES_ENDPOINT = 'https://queer-safe-space.vercel.app/api/places';
+async function placesSearch(q, lat, lon, radiusM, signal) {
+  const url = `${PLACES_ENDPOINT}?q=${encodeURIComponent(q)}&lat=${r3(lat)}&lon=${r3(lon)}&radius=${radiusM}&limit=30`;
+  const data = await fetchJson(url, {}, 9000, signal);
+  return (data.results || []).map(p => ({
+    name: p.name, address: p.address, lat: p.lat, lon: p.lon,
+    display_name: p.address ? `${p.name}, ${p.address}` : p.name,
+    dist: getDistKm(lat, lon, p.lat, p.lon)
+  }));
+}
+
 /* Photon (Komoot's OSM search) is built for search-as-you-type: fast, typo tolerant,
    and indexes the city with the place. lat/lon bias ranking; a bbox hard-limits it,
    which keeps "First Love Church" from returning churches in other states. */
@@ -1890,6 +1905,8 @@ async function smartSearch(q, onUpdate, signal) {
       sources.push(async emit => emit(await photonSearch(parsed.categoryWords.join(' '), center.lat, center.lon,
         { bboxDeg:0.35, osmTag:`${k}:${v}`, limit:20, signal })));
     }
+    /* Commercial place database (see placesSearch): the main source for small businesses. */
+    sources.push(async emit => emit(await placesSearch(parsed.categoryWords.join(' '), center.lat, center.lon, 20000, signal)));
     /* Businesses that just have the words in their name ("Smoke Shop LLC"). */
     sources.push(async emit => emit(await photonSearch(parsed.categoryWords.join(' '), center.lat, center.lon,
       { bboxDeg:0.25, signal })));
@@ -1902,12 +1919,14 @@ async function smartSearch(q, onUpdate, signal) {
        plus a city as far as the parser can tell, but also just the shop's name. */
     const phrase = significant(parsed.words);
     if (phrase.length >= 2) {
+      sources.push(async emit => emit(await placesSearch(phrase.join(' '), center.lat, center.lon, 20000, signal)));
       sources.push(async emit => emit(await photonSearch(phrase.join(' '), center.lat, center.lon,
         { bboxDeg:0.4, signal })));
       sources.push(async emit => emit(await overpassNameSearch(phrase, center.lat, center.lon, 15000, signal)));
     }
   } else {
     const nameQuery = nameWords.concat(parsed.categoryWords).join(' ');
+    sources.push(async emit => emit(await placesSearch(nameQuery || query, center.lat, center.lon, 40000, signal)));
     sources.push(async emit => emit(await photonSearch(nameQuery || query, center.lat, center.lon,
       { bboxDeg: inPlace ? 0.3 : 0.4, signal })));
     sources.push(async emit => emit(await overpassNameSearch(nameWords.length ? nameWords : significant(parsed.words),
@@ -2029,10 +2048,13 @@ window.debGeo = function(val, boxId) {
   box.innerHTML = '<div class="geo-item loading">Searching…</div>';
   box.classList.add('open');
   const token = ++geoToken;
+  /* Abort the previous keystroke's in-flight requests. */
+  if (window.__geoAbort) window.__geoAbort.abort();
+  window.__geoAbort = new AbortController();
+  const signal = window.__geoAbort.signal;
   geoTimer = setTimeout(async () => {
-    try {
-      const { lat, lon } = searchAnchor();
-      const results = await nominatimBiased(val, lat, lon);
+    /* Same search as the map: any business, category or address, not just addresses. */
+    const render = results => {
       if (token !== geoToken) return;
       if (!results.length) { box.innerHTML = '<div class="geo-item loading">No results</div>'; return; }
       box.innerHTML = results.map((r,i) => `
@@ -2045,7 +2067,7 @@ window.debGeo = function(val, boxId) {
         el.addEventListener('click', () => {
           const res = window.__geoResults[+el.dataset.gi];
           addLoc = res;
-          document.getElementById('add-search').value = esc(res.name);
+          document.getElementById('add-search').value = res.name;
           document.getElementById('add-loc-txt').textContent = res.display_name||res.address||res.name;
           document.getElementById('add-loc-prev').classList.add('show');
           box.classList.remove('open');
@@ -2053,11 +2075,15 @@ window.debGeo = function(val, boxId) {
           if (!nameEl.value) nameEl.value = res.name||(res.display_name||'').split(',')[0];
         });
       });
+    };
+    try {
+      const results = await smartSearch(val, partial => { if (partial.length) render(partial); }, signal);
+      render(results);
     } catch(e) {
-      if (token !== geoToken) return;
+      if (token !== geoToken || (e && e.name === 'AbortError')) return;
       box.innerHTML = '<div class="geo-item loading">Search failed — try again</div>';
     }
-  }, 380);
+  }, 500);
 };
 
 /* ================================================================

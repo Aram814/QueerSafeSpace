@@ -191,6 +191,8 @@ const OVERPASS_ENDPOINTS = [
 /** A later mirror is only tried if the earlier ones are still silent after this long. */
 const HEDGE_MS = 2500;
 
+const PLACES_ENDPOINT = '/api/places';
+
 async function fetchJson<T>(
   url: string,
   init: RequestInit,
@@ -339,6 +341,42 @@ export async function overpassNameSearch(
     .filter((r): r is PlaceResult => r !== null)
     .sort(byDistance)
     .slice(0, 20);
+}
+
+interface ApiPlace {
+  name: string;
+  address: string;
+  lat: number;
+  lon: number;
+  category?: string;
+}
+
+/**
+ * Foursquare Places via our /api/places proxy (web/api/places.js): far better coverage of small
+ * businesses than OpenStreetMap ("Ellianos Coffee", "Dunnellon Coffee Co"). The key never reaches
+ * the browser. It rejects (503) where the proxy or key is not configured, and the search then
+ * simply relies on the free OpenStreetMap sources.
+ */
+export async function placesSearch(
+  q: string,
+  lat: number,
+  lon: number,
+  radiusM: number,
+  signal?: AbortSignal,
+): Promise<PlaceResult[]> {
+  const url = `${PLACES_ENDPOINT}?q=${encodeURIComponent(q)}&lat=${r3(lat)}&lon=${r3(lon)}&radius=${radiusM}&limit=30`;
+  const data = await fetchJson<{ results?: ApiPlace[] }>(url, {}, 9000, signal);
+  return (data.results ?? []).map(
+    (p) =>
+      ({
+        name: p.name,
+        address: p.address,
+        lat: p.lat,
+        lon: p.lon,
+        display_name: p.address ? `${p.name}, ${p.address}` : p.name,
+        dist: getDistKm(lat, lon, p.lat, p.lon),
+      }) satisfies PlaceResult,
+  );
 }
 
 interface PhotonFeature {
@@ -624,6 +662,10 @@ export async function smartSearch(
         ),
       );
     }
+    // Commercial place database (see placesSearch): the main source for small businesses.
+    sources.push(async (emit) =>
+      emit(await placesSearch(parsed.categoryWords.join(' '), center.lat, center.lon, 20000, signal)),
+    );
     // Businesses that just have the words in their name ("Smoke Shop LLC").
     sources.push(async (emit) =>
       emit(await photonSearch(parsed.categoryWords.join(' '), center.lat, center.lon, { bboxDeg: 0.25, signal })),
@@ -639,6 +681,7 @@ export async function smartSearch(
     // word plus a city as far as the parser can tell, but also just the shop's name.
     const phrase = significant(parsed.words);
     if (phrase.length >= 2) {
+      sources.push(async (emit) => emit(await placesSearch(phrase.join(' '), center.lat, center.lon, 20000, signal)));
       sources.push(async (emit) =>
         emit(await photonSearch(phrase.join(' '), center.lat, center.lon, { bboxDeg: 0.4, signal })),
       );
@@ -649,6 +692,7 @@ export async function smartSearch(
   } else {
     // A named business, optionally with a category and/or city: "First Love Church (Ocala)".
     const nameQuery = [...nameWords, ...parsed.categoryWords].join(' ');
+    sources.push(async (emit) => emit(await placesSearch(nameQuery || query, center.lat, center.lon, 40000, signal)));
     sources.push(async (emit) =>
       emit(await photonSearch(nameQuery || query, center.lat, center.lon, { bboxDeg: inPlace ? 0.3 : 0.4, signal })),
     );
