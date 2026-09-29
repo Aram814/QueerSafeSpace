@@ -193,6 +193,9 @@ const HEDGE_MS = 2500;
 
 const PLACES_ENDPOINT = '/api/places';
 
+/** Shown in the console log so a report says which version of the search ran. */
+const SEARCH_BUILD = 'places-1';
+
 async function fetchJson<T>(
   url: string,
   init: RequestInit,
@@ -245,11 +248,13 @@ function overpass(query: string, timeoutMs = 9000, signal?: AbortSignal): Promis
       pending++;
       const hedge = setTimeout(launch, HEDGE_MS);
       timers.add(hedge);
+      // Our proxy may itself need a few tries across the public servers, so it gets longer than a direct call.
+      const limit = endpoint.startsWith('/') ? Math.max(timeoutMs, 22000) : timeoutMs;
       // A plain GET is a CORS "simple request": no preflight and no Content-Type for a mirror to reject.
       fetchJson<{ elements?: OverpassElement[]; remark?: string }>(
         `${endpoint}?data=${encodeURIComponent(query)}`,
         {},
-        timeoutMs,
+        limit,
         ctrl.signal,
       )
         .then((data) => {
@@ -738,7 +743,7 @@ export async function smartSearch(
   if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
 
   // Handy when a search looks short: per-source result counts and any errors.
-  console.info('[QSS search]', query, { center, perSource: parts.map((r) => r.length), errors: errors.map(String) });
+  console.info('[QSS search]', query, { build: SEARCH_BUILD, sources: sources.length, center, perSource: parts.map((r) => r.length), errors: errors.map(String) });
 
   let results = snapshot();
 

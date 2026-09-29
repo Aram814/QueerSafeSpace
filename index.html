@@ -1645,7 +1645,9 @@ function overpass(query, timeoutMs = 9000, signal) {
       pending++;
       const hedge = setTimeout(launch, HEDGE_MS);
       timers.add(hedge);
-      fetchJson(endpoint + '?data=' + encodeURIComponent(query), {}, timeoutMs, ctrl.signal)
+      /* Our proxy may itself need a few tries across the public servers, so it gets longer than a direct call. */
+      const limit = endpoint.includes('/api/overpass') ? Math.max(timeoutMs, 22000) : timeoutMs;
+      fetchJson(endpoint + '?data=' + encodeURIComponent(query), {}, limit, ctrl.signal)
         .then(data => {
           if (!(data.elements && data.elements.length) && data.remark) throw new Error(data.remark);
           finish(() => resolve(data.elements || []));
@@ -1710,6 +1712,8 @@ out center 60;`, 10000, signal);
    reaches the browser. It rejects where the proxy or key is not configured, and the search then
    simply relies on the free OpenStreetMap sources. */
 const PLACES_ENDPOINT = 'https://queer-safe-space.vercel.app/api/places';
+/* Shown in the console log so a report says which version of the search ran. */
+const SEARCH_BUILD = 'places-1';
 async function placesSearch(q, lat, lon, radiusM, signal) {
   const url = `${PLACES_ENDPOINT}?q=${encodeURIComponent(q)}&lat=${r3(lat)}&lon=${r3(lon)}&radius=${radiusM}&limit=30`;
   const data = await fetchJson(url, {}, 9000, signal);
@@ -1972,7 +1976,7 @@ async function smartSearch(q, onUpdate, signal) {
   if (signal && signal.aborted) throw new DOMException('aborted', 'AbortError');
 
   /* Handy when a search looks short: per-source result counts and any errors. */
-  console.info('[QSS search]', query, { center, perSource: parts.map(r => r.length), errors: errors.map(String) });
+  console.info('[QSS search]', query, { build: SEARCH_BUILD, sources: sources.length, center, perSource: parts.map(r => r.length), errors: errors.map(String) });
 
   let results = snapshot();
   /* Nothing local for a name or address: look worldwide (never for categories). */
