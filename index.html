@@ -1120,6 +1120,7 @@ let mapReady   = false;
 let searchListenerAttached = false;
 const LOCATE_OPTIONS = { setView:false, enableHighAccuracy:false, timeout:20000, maximumAge:10*60*1000 };
 let locationToastShown = false;
+let locateRetried = false;   /* transient failures (macOS kCLErrorLocationUnknown, timeouts) are retried once quietly */
 let mapInteracted = false;   /* set once the user pans/zooms or a search flies the map */
 
 /* ================================================================
@@ -1327,10 +1328,16 @@ function initMap() {
   /* Capture user GPS for search biasing */
   map.on('locationfound', e => {
     userLat = e.latlng.lat; userLon = e.latlng.lng;
+    locateRetried = false;
     if (!mapInteracted) map.setView(e.latlng, 13);
   });
   /* locationerror: keep default view, show a subtle toast so the user knows GPS was denied */
   map.on('locationerror', e => {
+    if (e.code !== 1 && !locateRetried) {
+      locateRetried = true;
+      setTimeout(() => map.locate(LOCATE_OPTIONS), 4000);
+      return;
+    }
     if (locationToastShown) return;
     locationToastShown = true;
     toast(e.code === 1 ? '📍 Location is blocked for this site — allow it in your browser settings'
@@ -2031,7 +2038,7 @@ window.recenterOnMe = function() {
   if (!map) return;
   mapInteracted = true;
   if (userLat && userLon) map.flyTo([userLat, userLon], 15, { animate:true, duration:0.7 });
-  else { locationToastShown = false; map.locate({ ...LOCATE_OPTIONS, setView:true, maxZoom:15 }); }
+  else { locationToastShown = false; locateRetried = false; map.locate({ ...LOCATE_OPTIONS, setView:true, maxZoom:15 }); }
 };
 
 function pickSearchResult(r) {
