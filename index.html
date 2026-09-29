@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="icon" type="image/png" href="logo.png">
   <title>QueerSafeSpace — Because Safety Shouldn't Be A Privilege</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -189,6 +190,13 @@
       position: relative; overflow: hidden;
     }
     #map { position: absolute; inset: 0; z-index: 1; }
+    .recenter-btn {
+      position: absolute; right: 12px; bottom: 96px; z-index: 1000;
+      width: 44px; height: 44px; border: none; border-radius: 50%;
+      background: #fff; color: var(--primary, #7c3aed);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
 
     /* ── Bottom bar: legend + crisis button ── */
     .bottom-bar {
@@ -715,6 +723,9 @@
     <!-- Map -->
     <div class="map-area">
       <div id="map"></div>
+      <button class="recenter-btn" onclick="window.recenterOnMe()" title="Recenter on my location" aria-label="Recenter on my location">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
     </div>
 
   </div><!-- /.main-body -->
@@ -1107,6 +1118,9 @@ let geoTimer   = null;
 let geoToken   = 0;   /* stale-request cancellation for debGeo */
 let mapReady   = false;
 let searchListenerAttached = false;
+const LOCATE_OPTIONS = { setView:false, enableHighAccuracy:false, timeout:20000, maximumAge:10*60*1000 };
+let locationToastShown = false;
+let mapInteracted = false;   /* set once the user pans/zooms or a search flies the map */
 
 /* ================================================================
    SCREEN MANAGEMENT
@@ -1298,7 +1312,12 @@ function initMap() {
   }).addTo(map);
 
   L.control.zoom({ position: 'bottomright' }).addTo(map);
-  map.locate({ setView: true, maxZoom: 13 });
+  /* GPS can answer seconds after the user has searched or panned; only the first fix may
+     move the map, and only if nothing else has (else it bounces back after a search flyTo). */
+  /* Coarse (Wi-Fi/cell) fixes are fine for city-level search and much faster than GPS; the default
+     10 s timeout is too short on desktop browsers, which then report "unavailable". */
+  map.locate(LOCATE_OPTIONS);
+  map.on('dragstart zoomstart', () => { mapInteracted = true; });
 
   mapReady = true;
   /* Ensure tiles fill the container after CSS layout settles */
@@ -1306,9 +1325,18 @@ function initMap() {
   loadSpaces();
 
   /* Capture user GPS for search biasing */
-  map.on('locationfound', e => { userLat = e.latlng.lat; userLon = e.latlng.lng; });
+  map.on('locationfound', e => {
+    userLat = e.latlng.lat; userLon = e.latlng.lng;
+    if (!mapInteracted) map.setView(e.latlng, 13);
+  });
   /* locationerror: keep default view, show a subtle toast so the user knows GPS was denied */
-  map.on('locationerror', () => toast('📍 Location unavailable — showing default view'));
+  map.on('locationerror', e => {
+    if (locationToastShown) return;
+    locationToastShown = true;
+    toast(e.code === 1 ? '📍 Location is blocked for this site — allow it in your browser settings'
+        : e.code === 3 ? '📍 Location timed out — showing default view. Tap ⌖ to retry'
+        : '📍 Location unavailable — showing default view');
+  });
 
   attachSearchListener();
 }
@@ -1329,6 +1357,7 @@ function attachSearchListener() {
   /* Stale-request cancellation: each keypress gets a unique token;
      only the response whose token matches the latest one is rendered. */
   let currentSearchToken = 0;
+  let searchAbort = null;
   let st;
 
   inp.addEventListener('input', () => {
@@ -1338,42 +1367,49 @@ function attachSearchListener() {
     drop.innerHTML = '<div class="geo-item loading">Searching nearby\u2026</div>';
     drop.classList.add('open');
     const token = ++currentSearchToken;
+    /* Abort the previous keystroke's in-flight requests so the shared free servers aren't flooded. */
+    if (searchAbort) searchAbort.abort();
+    searchAbort = new AbortController();
+    const signal = searchAbort.signal;
     st = setTimeout(async () => {
       try {
-        const results = await smartSearch(q);
-        /* Discard if a newer search has already started */
-        if (token !== currentSearchToken) return;
-        if (!results.length) {
-          drop.innerHTML = '<div class="geo-item loading">No places found nearby</div>';
-          return;
-        }
-        drop.innerHTML = results.map((r, i) => {
-          const inQSS = spaces.some(sp => getDistKm(r.lat, r.lon, sp.latitude, sp.longitude) < 0.1);
-          const distTxt = r.dist != null
-            ? (r.dist < 1 ? Math.round(r.dist * 1000) + 'm' : r.dist.toFixed(1) + 'km') : '';
-          return `<div class="geo-item" data-idx="${i}">
-            <div class="geo-name">${esc(r.name)}</div>
-            <div class="geo-addr">
-              <span>${esc(r.address || '')}</span>
-              ${inQSS ? '<span class="geo-in-qss">\u2705 In QSS</span>' : ''}
-              ${distTxt ? `<span class="geo-dist">${distTxt}</span>` : ''}
-            </div>
-          </div>`;
-        }).join('');
-        window.__srResults = results;
-        drop.querySelectorAll('.geo-item[data-idx]').forEach(el => {
-          el.addEventListener('click', () => {
-            const r = window.__srResults[+el.dataset.idx];
-            inp.value = r.name;
-            drop.classList.remove('open');
-            pickSearchResult(r);
+        const render = results => {
+          if (token !== currentSearchToken) return;   /* discard if a newer search started */
+          if (!results.length) {
+            drop.innerHTML = '<div class="geo-item loading">No places found nearby</div>';
+            return;
+          }
+          drop.innerHTML = results.map((r, i) => {
+            const inQSS = spaces.some(sp => getDistKm(r.lat, r.lon, sp.latitude, sp.longitude) < 0.1);
+            const distTxt = r.dist != null
+              ? (r.dist < 1 ? Math.round(r.dist * 1000) + 'm' : r.dist.toFixed(1) + 'km') : '';
+            return `<div class="geo-item" data-idx="${i}">
+              <div class="geo-name">${esc(r.name)}</div>
+              <div class="geo-addr">
+                <span>${esc(r.address || '')}</span>
+                ${inQSS ? '<span class="geo-in-qss">\u2705 In QSS</span>' : ''}
+                ${distTxt ? `<span class="geo-dist">${distTxt}</span>` : ''}
+              </div>
+            </div>`;
+          }).join('');
+          window.__srResults = results;
+          drop.querySelectorAll('.geo-item[data-idx]').forEach(el => {
+            el.addEventListener('click', () => {
+              const r = window.__srResults[+el.dataset.idx];
+              inp.value = r.name;
+              drop.classList.remove('open');
+              pickSearchResult(r);
+            });
           });
-        });
+        };
+        /* Interim results render as each source answers; the final call settles the list. */
+        const results = await smartSearch(q, partial => { if (partial.length) render(partial); }, signal);
+        render(results);
       } catch (e) {
-        if (token !== currentSearchToken) return;
+        if (token !== currentSearchToken || (e && e.name === 'AbortError')) return;
         drop.innerHTML = '<div class="geo-item loading">Search failed \u2014 try again</div>';
       }
-    }, 450);
+    }, 500);
   });
 
   document.addEventListener('click', e => {
@@ -1460,8 +1496,8 @@ window.setFilter = function(f, btn) {
    SMART SEARCH — Overpass + Nominatim, location-biased
 ================================================================ */
 const PLACE_TAGS = {
-  cafe:        [['amenity','cafe']],
-  coffee:      [['amenity','cafe']],
+  cafe:        [['amenity','cafe'],['cuisine','coffee_shop']],
+  coffee:      [['amenity','cafe'],['cuisine','coffee_shop'],['shop','coffee']],
   restaurant:  [['amenity','restaurant']],
   food:        [['amenity','restaurant'],['amenity','fast_food']],
   'fast food': [['amenity','fast_food']],
@@ -1485,7 +1521,8 @@ const PLACE_TAGS = {
   bank:        [['amenity','bank']],
   atm:         [['amenity','atm']],
   supermarket: [['shop','supermarket']],
-  grocery:     [['shop','supermarket'],['shop','convenience'],['shop','grocery']],
+  grocery:     [['shop','supermarket'],['shop','grocery'],['shop','greengrocer']],
+  convenience: [['shop','convenience']],
   mall:        [['shop','mall'],['amenity','marketplace']],
   theater:     [['amenity','theatre']],
   theatre:     [['amenity','theatre']],
@@ -1503,6 +1540,40 @@ const PLACE_TAGS = {
   laundry:     [['shop','laundry'],['amenity','laundry']],
   gas:         [['amenity','fuel']],
   parking:     [['amenity','parking']],
+  bakery:      [['shop','bakery']],
+  bookstore:   [['shop','books']],
+  book:        [['shop','books']],
+  dentist:     [['amenity','dentist']],
+  vet:         [['amenity','veterinary']],
+  'post office': [['amenity','post_office']],
+  thrift:      [['shop','second_hand']],
+  clothing:    [['shop','clothes']],
+  smoke:       [['shop','tobacco'],['shop','e-cigarette']],
+  vape:        [['shop','e-cigarette'],['shop','tobacco']],
+  tobacco:     [['shop','tobacco']],
+  cbd:         [['shop','cannabis'],['shop','e-cigarette']],
+  liquor:      [['shop','alcohol']],
+  pizza:       [['cuisine','pizza']],
+  burger:      [['cuisine','burger']],
+  'ice cream': [['cuisine','ice_cream'],['amenity','ice_cream']],
+  brewery:     [['craft','brewery'],['microbrewery','yes']],
+  pet:         [['shop','pet']],
+  florist:     [['shop','florist']],
+  flowers:     [['shop','florist']],
+  hardware:    [['shop','doityourself'],['shop','hardware']],
+  tattoo:      [['shop','tattoo']],
+  nails:       [['shop','beauty']],
+  spa:         [['leisure','spa'],['shop','beauty']],
+  'car wash':  [['amenity','car_wash']],
+  carwash:     [['amenity','car_wash']],
+  mechanic:    [['shop','car_repair']],
+  'convenience store': [['shop','convenience']],
+  bookshop:    [['shop','books']],
+  museum:      [['tourism','museum']],
+  beach:       [['natural','beach']],
+  playground:  [['leisure','playground']],
+  'thrift store': [['shop','second_hand']],
+  shopping:    [['shop','mall'],['shop','department_store'],['shop','clothes']],
 };
 
 function getDistKm(lat1, lon1, lat2, lon2) {
@@ -1522,55 +1593,147 @@ function formatOsmAddress(tags) {
   return p.join(', ') || tags.amenity || tags.shop || tags.leisure || tags.tourism || '';
 }
 
-async function overpassNearby(tagPairs, lat, lon, radius, limit=20) {
+/* Our own proxy (web/api/overpass.js, deployed on Vercel) goes first: the public servers
+   reject or drop many direct browser requests (overpass-api.de answers a header-less 406
+   that browsers report as a CORS error). The proxy sends a proper User-Agent and caches
+   answers. The direct mirrors are the fallback, e.g. until the proxy is deployed. */
+const OVERPASS_ENDPOINTS = [
+  'https://queer-safe-space.vercel.app/api/overpass',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter'
+];
+/* A later mirror is only tried if the earlier ones are still silent after this long. */
+const HEDGE_MS = 2500;
+
+async function fetchJson(url, init, timeoutMs, outer) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  const onOuterAbort = () => ctrl.abort();
+  if (outer) outer.addEventListener('abort', onOuterAbort);
+  try {
+    const res = await fetch(url, { ...init, signal: ctrl.signal });
+    if (!res.ok) throw new Error(new URL(url).host + ' responded ' + res.status);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+    if (outer) outer.removeEventListener('abort', onOuterAbort);
+  }
+}
+
+/* "Hedged" Overpass query: the first mirror goes out immediately, the next only if
+   the first fails or stays silent for HEDGE_MS. Firing every mirror on every
+   keystroke gets the client rate-limited, which then looks like "no results". A
+   server-side timeout (HTTP 200 + `remark` + no elements) counts as a failed
+   mirror. A plain GET is a CORS "simple request" (no preflight, no Content-Type). */
+function overpass(query, timeoutMs = 9000, signal) {
+  return new Promise((resolve, reject) => {
+    const ctrl = new AbortController();
+    const errors = [];
+    const timers = new Set();
+    let next = 0, pending = 0, done = false;
+    const finish = fn => {
+      if (done) return;
+      done = true;
+      timers.forEach(clearTimeout);
+      ctrl.abort();
+      fn();
+    };
+    if (signal) signal.addEventListener('abort', () => finish(() => reject(new DOMException('aborted', 'AbortError'))));
+    const launch = () => {
+      if (done || next >= OVERPASS_ENDPOINTS.length) return;
+      const endpoint = OVERPASS_ENDPOINTS[next++];
+      pending++;
+      const hedge = setTimeout(launch, HEDGE_MS);
+      timers.add(hedge);
+      fetchJson(endpoint + '?data=' + encodeURIComponent(query), {}, timeoutMs, ctrl.signal)
+        .then(data => {
+          if (!(data.elements && data.elements.length) && data.remark) throw new Error(data.remark);
+          finish(() => resolve(data.elements || []));
+        })
+        .catch(err => {
+          errors.push(err);
+          pending--;
+          clearTimeout(hedge);
+          if (next < OVERPASS_ENDPOINTS.length) launch();
+          else if (pending === 0) finish(() => reject(errors[0]));
+        });
+    };
+    launch();
+  });
+}
+
+function osmToPlace(el, lat, lon) {
+  const eLat = el.lat ?? el.center?.lat;
+  const eLon = el.lon ?? el.center?.lon;
+  const name = el.tags?.name;
+  if (eLat == null || eLon == null || !name) return null;
+  return { name, address:formatOsmAddress(el.tags || {}), lat:eLat, lon:eLon,
+           display_name:name, dist:getDistKm(lat,lon,eLat,eLon) };
+}
+
+/* Named places matching any of the tag pairs within `radius` metres of a point. */
+/* ~110 m grid: identical searches from nearby points then share one cached proxy response. */
+const r3 = n => Math.round(n * 1000) / 1000;
+
+async function overpassNearby(tagPairs, lat, lon, radius, limit = 25, signal) {
   const lines = tagPairs.map(([k,v]) =>
-    `  node["${k}"="${v}"](around:${radius},${lat},${lon});
-  way["${k}"="${v}"](around:${radius},${lat},${lon});`
-  ).join('\n');
-  const query = `[out:json][timeout:15];
+    `  nwr["${k}"="${v}"]["name"](around:${radius},${r3(lat)},${r3(lon)});`).join('\n');
+  const elements = await overpass(`[out:json][timeout:8];
 (
 ${lines}
 );
-out center ${limit};`;
-  const res = await fetch('https://overpass-api.de/api/interpreter',
-    { method:'POST', body:`data=${encodeURIComponent(query)}` });
-  const { elements } = await res.json();
-  return elements.map(el => {
-    const eLat = el.lat ?? el.center?.lat;
-    const eLon = el.lon ?? el.center?.lon;
-    if (!eLat || !el.tags?.name) return null;
-    return { name:el.tags.name, address:formatOsmAddress(el.tags), lat:eLat, lon:eLon,
-             display_name:el.tags.name, dist:getDistKm(lat,lon,eLat,eLon) };
-  }).filter(Boolean).sort((a,b)=>a.dist-b.dist).slice(0,limit);
+out center 150;`, 9000, signal);
+  return elements.map(el => osmToPlace(el, lat, lon)).filter(Boolean)
+    .sort((a,b)=>a.dist-b.dist).slice(0,limit);
 }
 
-async function overpassNameSearch(q, lat, lon, radius) {
-  const safeQ = q.replace(/['"\\[\]()]/g,'');
-  const query = `[out:json][timeout:10];
+/* Named places whose name (or brand) contains EVERY word, in any order, so
+   "first love" finds "First Love Christian Church". */
+async function overpassNameSearch(words, lat, lon, radius, signal) {
+  const clean = words.map(w => w.replace(/[^\p{L}\p{N}]/gu,'')).filter(w => w.length >= 2);
+  if (!clean.length) return [];
+  const around = `(around:${radius},${r3(lat)},${r3(lon)})`;
+  const chain = key => clean.map(w => `["${key}"~"${w}",i]`).join('');
+  const elements = await overpass(`[out:json][timeout:10];
 (
-  node["name"~"${safeQ}",i](around:${radius},${lat},${lon});
-  way["name"~"${safeQ}",i](around:${radius},${lat},${lon});
+  nwr${chain('name')}${around};
+  nwr${chain('brand')}${around};
 );
-out center 15;`;
-  const res = await fetch('https://overpass-api.de/api/interpreter',
-    { method:'POST', body:`data=${encodeURIComponent(query)}` });
-  const { elements } = await res.json();
-  return elements.map(el => {
-    const eLat = el.lat ?? el.center?.lat;
-    const eLon = el.lon ?? el.center?.lon;
-    if (!eLat) return null;
-    return { name:el.tags.name||q, address:formatOsmAddress(el.tags), lat:eLat, lon:eLon,
-             display_name:el.tags.name||q, dist:getDistKm(lat,lon,eLat,eLon) };
-  }).filter(Boolean).sort((a,b)=>a.dist-b.dist).slice(0,15);
+out center 60;`, 10000, signal);
+  return elements.map(el => osmToPlace(el, lat, lon)).filter(Boolean)
+    .sort((a,b)=>a.dist-b.dist).slice(0,20);
 }
 
-async function nominatimBiased(q, lat, lon) {
-  const vb = `${lon-0.8},${lat+0.6},${lon+0.8},${lat-0.6}`;
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=8&addressdetails=1&viewbox=${vb}&bounded=0`;
-  const res = await fetch(url, { headers:{'Accept-Language':'en', 'User-Agent':'QueerSafeSpace/1.0'} });
-  const data = await res.json();
+/* Photon (Komoot's OSM search) is built for search-as-you-type: fast, typo tolerant,
+   and indexes the city with the place. lat/lon bias ranking; a bbox hard-limits it,
+   which keeps "First Love Church" from returning churches in other states. */
+async function photonSearch(q, lat, lon, opts = {}) {
+  const { bboxDeg, osmTag, limit = 10, signal } = opts;
+  let url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=${limit}&lang=en&lat=${lat}&lon=${lon}`;
+  if (bboxDeg) url += `&bbox=${lon-bboxDeg},${lat-bboxDeg},${lon+bboxDeg},${lat+bboxDeg}`;
+  if (osmTag) url += `&osm_tag=${encodeURIComponent(osmTag)}`;
+  const data = await fetchJson(url, {}, 8000, signal);
+  return (data.features || []).map(f => {
+    const p = f.properties || {};
+    const [fLon, fLat] = f.geometry.coordinates;
+    const street = [p.housenumber, p.street].filter(Boolean).join(' ');
+    const address = [street, p.city, p.state].filter(Boolean).join(', ');
+    const name = p.name || street || address;
+    return { name, address, lat:fLat, lon:fLon,
+             display_name: address ? `${name}, ${address}` : name,
+             dist:getDistKm(lat,lon,fLat,fLon) };
+  });
+}
+
+async function nominatimQuery(q, lat, lon, bounded, signal) {
+  const vb = `${lon-0.5},${lat+0.4},${lon+0.5},${lat-0.4}`;
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=8&addressdetails=1&viewbox=${vb}&bounded=${bounded?1:0}`;
+  const data = await fetchJson(url, { headers:{'Accept-Language':'en'} }, 10000, signal);
+  /* Street-address hits have no `name`; use "2529 North Magnolia Avenue", not the first comma chunk ("2529"). */
+  const nameOf = r => r.name ||
+    (r.address && r.address.house_number && r.address.road ? `${r.address.house_number} ${r.address.road}` : (r.display_name||'').split(',')[0]);
   return data.map(r => ({
-    name: r.name || (r.display_name||'').split(',')[0],
+    name: nameOf(r),
     address: r.display_name,
     lat: parseFloat(r.lat), lon: parseFloat(r.lon),
     display_name: r.display_name,
@@ -1578,30 +1741,251 @@ async function nominatimBiased(q, lat, lon) {
   }));
 }
 
-async function smartSearch(q) {
-  const lower = q.toLowerCase().trim();
-  const center = map ? map.getCenter() : null;
-  const lat = userLat || (center ? center.lat : 39.5);
-  const lon = userLon || (center ? center.lng : -98.35);
-  const tagPairs = PLACE_TAGS[lower] ||
-    Object.entries(PLACE_TAGS).find(([k]) => lower.includes(k)||k.includes(lower))?.[1];
-  if (tagPairs) {
-    const r = await overpassNearby(tagPairs, lat, lon, 8000, 20);
-    if (r.length) return r;
-  }
-  const r2 = await overpassNameSearch(q, lat, lon, 12000);
-  if (r2.length) return r2;
-  return await nominatimBiased(q, lat, lon);
+/* Local matches first; widen to a global search only when nothing local exists. */
+async function nominatimBiased(q, lat, lon, signal) {
+  const local = await nominatimQuery(q, lat, lon, true, signal);
+  if (local.length) return local.sort((a,b)=>a.dist-b.dist);
+  return nominatimQuery(q, lat, lon, false, signal);
 }
+
+const FILLER_WORDS = new Set(['near','me','nearby','shop','shops','store','stores','the','a','in','around','and']);
+const hasTag = k => Object.prototype.hasOwnProperty.call(PLACE_TAGS, k);
+
+/* Splits a query into category words and the rest, so "coffee" is a category,
+   "First Love Church" is a name plus a category, and "Dunnellon coffee" is a place
+   plus a category. */
+function parseQuery(q) {
+  const tokens = q.toLowerCase().replace(/[^\p{L}\p{N}\s'-]/gu,' ').split(/\s+/).filter(Boolean);
+  let pairs = [];
+  const categoryWords = [], restWords = [], words = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const w = tokens[i];
+    const two = tokens[i+1] ? w + ' ' + tokens[i+1] : '';
+    if (two && hasTag(two)) {
+      pairs.push(...PLACE_TAGS[two]);
+      categoryWords.push(w, tokens[i+1]); words.push(w, tokens[i+1]);
+      i++; continue;
+    }
+    if (FILLER_WORDS.has(w)) continue;
+    words.push(w);
+    const key = [w, w.replace(/es$/,''), w.replace(/s$/,'')].find(hasTag);
+    if (key) { pairs.push(...PLACE_TAGS[key]); categoryWords.push(w); }
+    else restWords.push(w);
+  }
+  const seen = new Set();
+  pairs = pairs.filter(([k,v]) => !seen.has(k+'='+v) && seen.add(k+'='+v));
+  return { pairs, categoryWords, restWords, words };
+}
+
+function looksLikeAddress(q) { return /^\d+\s+\S/.test(q.trim()) || q.includes(','); }
+
+const normName = n => n.toLowerCase().replace(/\s+/g,' ').trim();
+
+/* Same place = same name (case/space-insensitive) within 150 m. */
+function dedupePlaces(results) {
+  const out = [];
+  for (const r of results) {
+    if (!out.some(o => normName(o.name) === normName(r.name) && getDistKm(o.lat,o.lon,r.lat,r.lon) < 0.15)) out.push(r);
+  }
+  return out;
+}
+
+/* Where searches are anchored: the visible map once it is city-level (like
+   Apple/Google Maps); when zoomed far out (GPS not resolved yet) prefer the GPS fix. */
+function searchAnchor() {
+  const c = map ? map.getCenter() : null;
+  const z = map ? map.getZoom() : 0;
+  if (c && z >= 9) return { lat:c.lat, lon:c.lng };
+  if (userLat && userLon) return { lat:userLat, lon:userLon };
+  return c ? { lat:c.lat, lon:c.lng } : { lat:39.5, lon:-98.35 };
+}
+
+/* "Dunnellon coffee" / "First Love Church Ocala": look for a city among the words at
+   either edge of the query. Only an exact name match on a Photon place counts, so
+   ordinary name words are never mistaken for a location. */
+async function resolvePlace(words, restWords, lat, lon, signal) {
+  const candidates = [];
+  for (const len of [2, 1]) {
+    for (const c of [words.slice(-len), words.slice(0, len)]) {
+      if (c.length === len && c.every(w => restWords.includes(w))) candidates.push(c);
+    }
+  }
+  const unique = candidates.filter((c,i) => candidates.findIndex(o => o.join(' ') === c.join(' ')) === i);
+  const settled = await Promise.allSettled(unique.map(c =>
+    photonSearch(c.join(' '), lat, lon, { osmTag:'place', limit:5, signal })
+      .then(r => ({ c, hit: r.find(p => normName(p.name) === c.join(' ')) }))));
+  for (const s of settled) {
+    if (s.status === 'fulfilled' && s.value.hit) return { lat:s.value.hit.lat, lon:s.value.hit.lon, words:s.value.c };
+  }
+  return null;
+}
+
+const searchCache = new Map();
+const SEARCH_CACHE_MS = 5 * 60 * 1000;
+/* Beyond this from the search centre a name match is another town/state, not "nearby". */
+const LOCAL_KM = 80;
+
+/* Search anything: a category ("coffee", "smoke shop"), a business name ("First Love
+   Church"), a place plus either ("Dunnellon coffee") or an address.
+   Results are local by default (near the map/GPS, or near a city named in the query);
+   a worldwide lookup runs only when nothing local is found, and never for categories
+   (where it returns counties and shops that merely have the word in their name).
+   onUpdate fires as each source lands. Results are ALWAYS nearest first. */
+async function smartSearch(q, onUpdate, signal) {
+  const query = q.trim();
+  const { lat, lon } = searchAnchor();
+  const cacheKey = query.toLowerCase() + '|' + lat.toFixed(2) + ',' + lon.toFixed(2);
+  const hit = searchCache.get(cacheKey);
+  if (hit && Date.now() - hit.at < SEARCH_CACHE_MS) { if (onUpdate) onUpdate(hit.results); return hit.results; }
+
+  const parsed = parseQuery(query);
+  const isAddress = looksLikeAddress(query);
+  const hasCategory = !isAddress && parsed.pairs.length > 0;
+
+  let center = { lat, lon };
+  let nameWords = parsed.restWords;
+  let inPlace = false;
+  if (hasCategory && parsed.restWords.length) {
+    const place = await resolvePlace(parsed.words, parsed.restWords, lat, lon, signal);
+    if (place) {
+      center = place; inPlace = true;
+      nameWords = parsed.restWords.filter(w => !place.words.includes(w));
+    }
+  }
+  const sortKm = r => getDistKm(center.lat, center.lon, r.lat, r.lon);
+
+  const sources = [];
+  if (isAddress) {
+    /* Commas and "FL 34475" trip up Photon's phrase matching; Nominatim is strongest
+       on structured addresses, so both run. */
+    sources.push(async emit => emit(await photonSearch(query.replace(/,/g,' '), lat, lon, { signal })));
+    sources.push(async emit => emit(await nominatimBiased(query, lat, lon, signal)));
+  } else if (hasCategory && nameWords.length === 0) {
+    /* Three independent radii, run together: the small one is guaranteed to include the nearest
+       places (Overpass caps results in id order, not distance), the larger ones fill out the list
+       for towns and rural areas, and one of them failing cannot wipe out the others. */
+    for (const [radius, limit] of [[3000, 25], [12000, 40], [30000, 60]]) {
+      sources.push(async emit => emit(await overpassNearby(parsed.pairs, center.lat, center.lon, radius, limit, signal)));
+    }
+    for (const [k, v] of parsed.pairs.slice(0, 3)) {
+      sources.push(async emit => emit(await photonSearch(parsed.categoryWords.join(' '), center.lat, center.lon,
+        { bboxDeg:0.35, osmTag:`${k}:${v}`, limit:20, signal })));
+    }
+    /* Businesses that just have the words in their name ("Smoke Shop LLC"). */
+    sources.push(async emit => emit(await photonSearch(parsed.categoryWords.join(' '), center.lat, center.lon,
+      { bboxDeg:0.25, signal })));
+  } else {
+    const nameQuery = nameWords.concat(parsed.categoryWords).join(' ');
+    sources.push(async emit => emit(await photonSearch(nameQuery || query, center.lat, center.lon,
+      { bboxDeg: inPlace ? 0.3 : 0.4, signal })));
+    sources.push(async emit => emit(await overpassNameSearch(nameWords.length ? nameWords : parsed.words,
+      center.lat, center.lon, 15000, signal)));
+  }
+
+  /* Places already in QueerSafeSpace match by name/address too, so they surface even if
+     OSM search misses them. They are merged and sorted with everything else: a QSS place
+     is only first if it is the nearest. */
+  const needle = query.toLowerCase();
+  const known = spaces
+    .filter(sp => sp.latitude != null && sp.longitude != null &&
+      `${sp.name} ${sp.address||''}`.toLowerCase().includes(needle))
+    .map(sp => ({ name:sp.name, address:sp.address||'', lat:sp.latitude, lon:sp.longitude,
+                  display_name:sp.name, dist:getDistKm(lat,lon,sp.latitude,sp.longitude) }))
+    .sort((a,b)=>a.dist-b.dist).slice(0,5);
+
+  const parts = sources.map(() => []);
+  const errors = [];
+  /* Words a result must contain to count as a match: the business-name words (not the
+     category, which OSM names often omit, and not the city, which is in the address). */
+  const matchWords = nameWords.length ? nameWords : (parsed.words.length ? parsed.words : [query.toLowerCase()]);
+  const filterByName = !isAddress && !(hasCategory && nameWords.length === 0);
+  const matches = r => { const hay = `${r.name} ${r.address}`.toLowerCase(); return matchWords.every(w => hay.includes(w)); };
+
+  const snapshot = () => {
+    let all = parts.flat();
+    if (!isAddress) {
+      const local = all.filter(r => sortKm(r) <= LOCAL_KM);
+      if (local.length || inPlace || hasCategory) all = local;
+    }
+    /* Drop partial name matches ("other churches in Ocala") whenever a real match exists... */
+    if (filterByName && all.some(matches)) all = all.filter(matches);
+    all = all.map(r => ({ ...r, dist:getDistKm(lat,lon,r.lat,r.lon) }))
+             .filter(r => !known.some(k => getDistKm(k.lat,k.lon,r.lat,r.lon) < 0.1));
+    /* ...then ALWAYS nearest first. */
+    return dedupePlaces(known.concat(all).sort((a,b)=>a.dist-b.dist)).slice(0,25);
+  };
+
+  if (known.length && onUpdate) onUpdate(known);
+  await Promise.all(sources.map((source, i) =>
+    source(r => { parts[i] = r; if (onUpdate) onUpdate(snapshot()); }).catch(e => { errors.push(e); })));
+  if (signal && signal.aborted) throw new DOMException('aborted', 'AbortError');
+
+  /* Handy when a search looks short: per-source result counts and any errors. */
+  console.info('[QSS search]', query, { center, perSource: parts.map(r => r.length), errors: errors.map(String) });
+
+  let results = snapshot();
+  /* Nothing local for a name or address: look worldwide (never for categories). */
+  if (!results.length && !hasCategory) {
+    try {
+      const wide = await photonSearch(query.replace(/,/g,' '), lat, lon, { signal });
+      results = dedupePlaces(wide.map(r => ({ ...r, dist:getDistKm(lat,lon,r.lat,r.lon) }))
+        .sort((a,b)=>a.dist-b.dist)).slice(0,25);
+      if (!results.length) results = dedupePlaces(await nominatimBiased(query, lat, lon, signal)).slice(0,15);
+    } catch (e) { errors.push(e); }
+  }
+  if (!results.length && errors.length >= sources.length) throw errors[0];
+  if (results.length) searchCache.set(cacheKey, { at: Date.now(), results });
+  return results;
+}
+
+let searchPinMarker = null;
+function clearSearchPin() { if (searchPinMarker) { map.removeLayer(searchPinMarker); searchPinMarker = null; } }
+
+/* Adds a marker for a searched place that isn't in QueerSafeSpace yet. */
+function showSearchPin(r) {
+  clearSearchPin();
+  const icon = L.divIcon({
+    className: '',
+    html: '<div style="width:30px;height:30px;background:#111827;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,0.35)"></div>',
+    iconSize: [30,30], iconAnchor: [15,30], popupAnchor: [0,-32]
+  });
+  searchPinMarker = L.marker([r.lat, r.lon], { icon }).addTo(map);
+  searchPinMarker.bindPopup(`<div class="map-popup"><div class="map-popup-name">${esc(r.name)}</div>
+    <div class="map-popup-rating">${esc(r.address || 'Not in QueerSafeSpace yet')}</div>
+    <button class="map-popup-btn" onclick="window.addFromSearchPin()">Add to QueerSafeSpace</button></div>`);
+  setTimeout(() => searchPinMarker && searchPinMarker.openPopup(), 750);
+}
+
+/* openAddSpace() resets the form, so re-apply the searched place afterwards. */
+window.addFromSearchPin = function() {
+  const place = addLoc;
+  window.openAddSpace();
+  if (!place || !user) return;
+  addLoc = place;
+  document.getElementById('add-search').value = place.name || '';
+  document.getElementById('add-loc-txt').textContent = place.display_name || place.address || place.name;
+  document.getElementById('add-loc-prev').classList.add('show');
+  const nameEl = document.getElementById('add-name');
+  if (!nameEl.value) nameEl.value = place.name || '';
+};
+
+window.recenterOnMe = function() {
+  if (!map) return;
+  mapInteracted = true;
+  if (userLat && userLon) map.flyTo([userLat, userLon], 15, { animate:true, duration:0.7 });
+  else { locationToastShown = false; map.locate({ ...LOCATE_OPTIONS, setView:true, maxZoom:15 }); }
+};
 
 function pickSearchResult(r) {
   /* Guard: if the map screen hasn't been visited yet, navigate there first */
   if (!map) { goScreen('main'); setTimeout(() => pickSearchResult(r), 200); return; }
+  mapInteracted = true;
   map.flyTo([r.lat, r.lon], 17, { animate:true, duration:0.7 });
   const nearby = spaces.find(sp => getDistKm(r.lat,r.lon,sp.latitude,sp.longitude) < 0.1);
-  if (nearby) { setTimeout(() => openDetail(nearby.id), 500); }
+  if (nearby) { clearSearchPin(); setTimeout(() => openDetail(nearby.id), 500); }
   else {
     addLoc = { lat:r.lat, lon:r.lon, display_name:r.address||r.name, name:r.name };
+    showSearchPin(r);
     setTimeout(() => toast(`📍 "${r.name}" isn't in QueerSafeSpace yet — tap + to add it!`), 500);
   }
 }
@@ -1615,9 +1999,7 @@ window.debGeo = function(val, boxId) {
   const token = ++geoToken;
   geoTimer = setTimeout(async () => {
     try {
-      const center = map ? map.getCenter() : null;
-      const lat = userLat || (center ? center.lat : 39.5);
-      const lon = userLon || (center ? center.lng : -98.35);
+      const { lat, lon } = searchAnchor();
       const results = await nominatimBiased(val, lat, lon);
       if (token !== geoToken) return;
       if (!results.length) { box.innerHTML = '<div class="geo-item loading">No results</div>'; return; }

@@ -35,12 +35,22 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
   const [rateSpaceId, setRateSpaceId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [pendingPlace, setPendingPlace] = useState<PlaceResult | null>(null);
+  const [recenterTick, setRecenterTick] = useState(0);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
 
-  // Searches bias towards the user's GPS position when it is available.
-  const center = userLocation ?? DEFAULT_CENTER;
-  const centerRef = useRef(center);
-  centerRef.current = center;
+  const mapViewRef = useRef<{ lat: number; lon: number; zoom: number } | null>(null);
+
+  // Where searches and new spaces are anchored. Like Apple/Google Maps this is the
+  // visible map once it is zoomed to city level; when zoomed far out (e.g. GPS has
+  // not resolved yet and the map still shows the whole US) prefer the GPS fix.
+  function currentCenter(): { lat: number; lon: number } {
+    const view = mapViewRef.current;
+    if (view && view.zoom >= 9) return view;
+    return userLocation ?? view ?? DEFAULT_CENTER;
+  }
+  const center = currentCenter();
+  const spacesRef = useRef<Space[]>([]);
+  spacesRef.current = spaces;
 
   const signedIn = !!user;
 
@@ -60,8 +70,20 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
     [signedIn],
   );
 
+  // Say why location failed, once per attempt (a recenter click starts a new attempt).
+  const locationToastShown = useRef(false);
   const handleLocationError = useCallback(
-    () => onToast('📍 Location unavailable — showing default view'),
+    (code?: number) => {
+      if (locationToastShown.current) return;
+      locationToastShown.current = true;
+      onToast(
+        code === 1
+          ? '📍 Location is blocked for this site — allow it in your browser settings'
+          : code === 3
+            ? '📍 Location timed out — showing default view. Tap ⌖ to retry'
+            : '📍 Location unavailable — showing default view',
+      );
+    },
     [onToast],
   );
 
@@ -69,10 +91,62 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
     setUserLocation({ lat, lon });
   }, []);
 
-  const search = useCallback(
-    (q: string) => smartSearch(q, centerRef.current.lat, centerRef.current.lon),
-    [],
-  );
+  const handleMapMove = useCallback((lat: number, lon: number, zoom: number) => {
+    mapViewRef.current = { lat, lon, zoom };
+  }, []);
+
+  const userLocationRef = useRef(userLocation);
+  userLocationRef.current = userLocation;
+
+  // Anything on the map can be searched; places already in QueerSafeSpace are
+  // matched by name/address too, so they surface even if OSM search misses them.
+  const search = useCallback(async (q: string, onPartial: (r: PlaceResult[]) => void, signal: AbortSignal) => {
+    const view = mapViewRef.current;
+    const anchor =
+      view && view.zoom >= 9 ? view : (userLocationRef.current ?? view ?? DEFAULT_CENTER);
+    const needle = q.trim().toLowerCase();
+    const known = spacesRef.current
+      .filter(
+        (sp) =>
+          sp.latitude != null &&
+          sp.longitude != null &&
+          `${sp.name} ${sp.address}`.toLowerCase().includes(needle),
+      )
+      .map(
+        (sp): PlaceResult => ({
+          name: sp.name,
+          address: sp.address,
+          lat: sp.latitude as number,
+          lon: sp.longitude as number,
+          display_name: sp.name,
+          dist: getDistKm(anchor.lat, anchor.lon, sp.latitude as number, sp.longitude as number),
+        }),
+      )
+      .sort((a, b) => (a.dist ?? 0) - (b.dist ?? 0))
+      .slice(0, 5);
+
+    // Merge and sort together: a QueerSafeSpace place is only first if it is the nearest.
+    const withKnown = (found: PlaceResult[]): PlaceResult[] =>
+      [
+        ...known,
+        ...found.filter((r) => !known.some((k) => getDistKm(k.lat, k.lon, r.lat, r.lon) < 0.1)),
+      ].sort((a, b) => (a.dist ?? 0) - (b.dist ?? 0));
+    if (known.length) onPartial(known);
+
+    let found: PlaceResult[] = [];
+    try {
+      found = await smartSearch(
+        q,
+        anchor.lat,
+        anchor.lon,
+        (partial) => onPartial(withKnown(partial)),
+        signal,
+      );
+    } catch (err) {
+      if (!known.length) throw err;
+    }
+    return withKnown(found);
+  }, []);
 
   // Ported from pickSearchResult(): fly there, open the space if we already
   // know it, otherwise prime the add-space form with the picked place.
@@ -85,6 +159,7 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
         getDistKm(result.lat, result.lon, sp.latitude, sp.longitude) < 0.1,
     );
     if (nearby) {
+      setPendingPlace(null);
       void openDetail(nearby.id);
     } else {
       setPendingPlace(result);
@@ -118,7 +193,10 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
         <PlaceSearch
           placeholder="Search cafes, parks, Walmart…"
           value={query}
-          onValueChange={setQuery}
+          onValueChange={(v) => {
+            setQuery(v);
+            if (!v.trim()) setPendingPlace(null);
+          }}
           search={search}
           onPick={(result) => {
             setQuery(result.name);
@@ -195,12 +273,31 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
         </aside>
 
         <div className="map-area">
+          <button
+            className="recenter-btn"
+            title="Recenter on my location"
+            aria-label="Recenter on my location"
+            onClick={() => {
+              locationToastShown.current = false;
+              setRecenterTick((t) => t + 1);
+            }}
+          >
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="2" />
+              <path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </button>
           <MapView
             spaces={spaces}
             filter={filter}
             flyTo={flyTo}
             onOpenDetail={openDetail}
             onUserLocated={handleUserLocated}
+            onMapMove={handleMapMove}
+            userLocation={userLocation}
+            recenterTick={recenterTick}
+            searchPin={pendingPlace}
+            onAddSearchPin={openAddSpace}
             onLocationError={handleLocationError}
           />
         </div>
@@ -239,6 +336,7 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
           onSubmitted={async (space) => {
             setAddOpen(false);
             setPendingPlace(null);
+            setQuery('');
             onToast('🏳️‍🌈 Space added! Thank you!');
             await refreshSpaces();
             if (space.latitude != null && space.longitude != null) {
