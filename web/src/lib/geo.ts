@@ -15,8 +15,8 @@ export function getDistKm(lat1: number, lon1: number, lat2: number, lon2: number
 
 /** Colloquial search term -> OpenStreetMap tag pairs. Ported from PLACE_TAGS. */
 export const PLACE_TAGS: Record<string, [string, string][]> = {
-  cafe: [['amenity', 'cafe'], ['cuisine', 'coffee_shop']],
-  coffee: [['amenity', 'cafe'], ['cuisine', 'coffee_shop'], ['shop', 'coffee']],
+  cafe: [['amenity', 'cafe'], ['cuisine', '~coffee']],
+  coffee: [['amenity', 'cafe'], ['cuisine', '~coffee'], ['shop', 'coffee']],
   restaurant: [['amenity', 'restaurant']],
   food: [['amenity', 'restaurant'], ['amenity', 'fast_food']],
   'fast food': [['amenity', 'fast_food']],
@@ -303,7 +303,8 @@ export async function overpassNearby(
   signal?: AbortSignal,
 ): Promise<PlaceResult[]> {
   const lines = tagPairs
-    .map(([k, v]) => `  nwr["${k}"="${v}"]["name"](around:${radius},${r3(lat)},${r3(lon)});`)
+    // A value starting with "~" is a regex ("~coffee" also matches "coffee_shop;donut", "coffee;tea").
+    .map(([k, v]) => `  nwr["${k}"${v.startsWith('~') ? `~"${v.slice(1)}",i` : `="${v}"`}]["name"](around:${radius},${r3(lat)},${r3(lon)});`)
     .join('\n');
   const elements = await overpass(`[out:json][timeout:8];\n(\n${lines}\n);\nout center 150;`, 9000, signal);
   return elements
@@ -611,7 +612,7 @@ export async function smartSearch(
         emit(await overpassNearby(parsed.pairs, center.lat, center.lon, radius, limit, signal)),
       );
     }
-    for (const [k, v] of parsed.pairs.slice(0, 3)) {
+    for (const [k, v] of parsed.pairs.filter(([, val]) => !val.startsWith('~')).slice(0, 3)) {
       sources.push(async (emit) =>
         emit(
           await photonSearch(parsed.categoryWords.join(' '), center.lat, center.lon, {
@@ -627,6 +628,13 @@ export async function smartSearch(
     sources.push(async (emit) =>
       emit(await photonSearch(parsed.categoryWords.join(' '), center.lat, center.lon, { bboxDeg: 0.25, signal })),
     );
+    // Anything with the category word in its name, whatever it is tagged as ("Ellianos Coffee"
+    // may be fast_food, not cafe).
+    if (significant(parsed.categoryWords).length) {
+      sources.push(async (emit) =>
+        emit(await overpassNameSearch(significant(parsed.categoryWords), center.lat, center.lon, 12000, signal)),
+      );
+    }
     // The whole query may itself be a business name: "Dunnellon Coffee Co" is a category
     // word plus a city as far as the parser can tell, but also just the shop's name.
     const phrase = significant(parsed.words);
