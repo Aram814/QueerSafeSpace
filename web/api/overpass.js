@@ -117,7 +117,10 @@ export default async function handler(req, res) {
   }
   if (req.method !== 'GET') return res.status(405).json({ error: 'GET only' });
 
-  const query = typeof req.query?.data === 'string' ? req.query.data : '';
+  let query = typeof req.query?.data === 'string' ? req.query.data.trim() : '';
+  // A hand-typed URL can lose its trailing `;` on the way in (the app percent-encodes it as %3B);
+  // Overpass needs every statement terminated.
+  if (query && !/[;}]$/.test(query)) query += ';';
   if (!query || query.length > MAX_QUERY_LENGTH || !QUERY_SHAPE.test(query)) {
     return res.status(400).json({ error: 'Expected an Overpass JSON query in ?data=' });
   }
