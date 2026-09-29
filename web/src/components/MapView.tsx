@@ -13,6 +13,13 @@ interface Props {
   onUserLocated: (lat: number, lon: number) => void;
   /** Fired on load and after every pan/zoom, so searches can bias to the visible area. */
   onMapMove: (lat: number, lon: number, zoom: number) => void;
+  /** Last known GPS fix, if any. */
+  userLocation: { lat: number; lon: number } | null;
+  /** Bump to recentre on the user. */
+  recenterTick: number;
+  /** A searched-for place that is not (yet) in QueerSafeSpace; shown as a marker. */
+  searchPin: { lat: number; lon: number; name: string; address: string } | null;
+  onAddSearchPin: () => void;
   onLocationError: () => void;
 }
 
@@ -39,7 +46,12 @@ function MapEffects({
   onUserLocated,
   onLocationError,
   onMapMove,
-}: Pick<Props, 'flyTo' | 'onUserLocated' | 'onLocationError' | 'onMapMove'>) {
+  userLocation,
+  recenterTick,
+}: Pick<
+  Props,
+  'flyTo' | 'onUserLocated' | 'onLocationError' | 'onMapMove' | 'userLocation' | 'recenterTick'
+>) {
   const map = useMap();
 
   // Callbacks live in a ref so a parent re-render never re-runs map.locate()
@@ -89,7 +101,60 @@ function MapEffects({
     map.flyTo([flyTo.lat, flyTo.lon], flyTo.zoom, { animate: true, duration: 0.7 });
   }, [map, flyTo]);
 
+  const lastTick = useRef(recenterTick);
+  useEffect(() => {
+    if (recenterTick === lastTick.current) return;
+    lastTick.current = recenterTick;
+    interacted.current = true;
+    if (userLocation) {
+      map.flyTo([userLocation.lat, userLocation.lon], 15, { animate: true, duration: 0.7 });
+    } else {
+      map.locate({ setView: true, maxZoom: 15 });
+    }
+  }, [map, recenterTick, userLocation]);
+
   return null;
+}
+
+const searchPinIcon = L.divIcon({
+  className: '',
+  html: '<div style="width:30px;height:30px;background:#111827;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,0.35)"></div>',
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+  popupAnchor: [0, -32],
+});
+
+const userDotIcon = L.divIcon({
+  className: '',
+  html: '<div style="width:16px;height:16px;background:#3b82f6;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 4px rgba(59,130,246,0.25)"></div>',
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+});
+
+function SearchPinMarker({
+  pin,
+  onAdd,
+}: {
+  pin: NonNullable<Props['searchPin']>;
+  onAdd: () => void;
+}) {
+  const ref = useRef<L.Marker>(null);
+  useEffect(() => {
+    ref.current?.openPopup();
+  }, [pin]);
+  return (
+    <Marker ref={ref} position={[pin.lat, pin.lon]} icon={searchPinIcon}>
+      <Popup>
+        <div className="map-popup">
+          <div className="map-popup-name">{pin.name}</div>
+          <div className="map-popup-rating">{pin.address || 'Not in QueerSafeSpace yet'}</div>
+          <button className="map-popup-btn" onClick={onAdd}>
+            Add to QueerSafeSpace
+          </button>
+        </div>
+      </Popup>
+    </Marker>
+  );
 }
 
 export default function MapView({
@@ -100,6 +165,10 @@ export default function MapView({
   onUserLocated,
   onLocationError,
   onMapMove,
+  userLocation,
+  recenterTick,
+  searchPin,
+  onAddSearchPin,
 }: Props) {
   const visible = useMemo(
     () =>
@@ -128,7 +197,18 @@ export default function MapView({
         onUserLocated={onUserLocated}
         onLocationError={onLocationError}
         onMapMove={onMapMove}
+        userLocation={userLocation}
+        recenterTick={recenterTick}
       />
+      {userLocation && (
+        <Marker
+          position={[userLocation.lat, userLocation.lon]}
+          icon={userDotIcon}
+          interactive={false}
+          keyboard={false}
+        />
+      )}
+      {searchPin && <SearchPinMarker pin={searchPin} onAdd={onAddSearchPin} />}
 
       {visible.map(({ space, rating }) => {
         const total = space.ratings?.length ?? 0;

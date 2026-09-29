@@ -35,6 +35,7 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
   const [rateSpaceId, setRateSpaceId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [pendingPlace, setPendingPlace] = useState<PlaceResult | null>(null);
+  const [recenterTick, setRecenterTick] = useState(0);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
 
   const mapViewRef = useRef<{ lat: number; lon: number; zoom: number } | null>(null);
@@ -87,7 +88,7 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
 
   // Anything on the map can be searched; places already in QueerSafeSpace are
   // matched by name/address too, so they surface even if OSM search misses them.
-  const search = useCallback(async (q: string, onPartial: (r: PlaceResult[]) => void) => {
+  const search = useCallback(async (q: string, onPartial: (r: PlaceResult[]) => void, signal: AbortSignal) => {
     const view = mapViewRef.current;
     const anchor =
       view && view.zoom >= 9 ? view : (userLocationRef.current ?? view ?? DEFAULT_CENTER);
@@ -112,16 +113,22 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
       .sort((a, b) => (a.dist ?? 0) - (b.dist ?? 0))
       .slice(0, 5);
 
-    const withKnown = (found: PlaceResult[]): PlaceResult[] => [
-      ...known,
-      ...found.filter((r) => !known.some((k) => getDistKm(k.lat, k.lon, r.lat, r.lon) < 0.1)),
-    ];
+    // Merge and sort together: a QueerSafeSpace place is only first if it is the nearest.
+    const withKnown = (found: PlaceResult[]): PlaceResult[] =>
+      [
+        ...known,
+        ...found.filter((r) => !known.some((k) => getDistKm(k.lat, k.lon, r.lat, r.lon) < 0.1)),
+      ].sort((a, b) => (a.dist ?? 0) - (b.dist ?? 0));
     if (known.length) onPartial(known);
 
     let found: PlaceResult[] = [];
     try {
-      found = await smartSearch(q, anchor.lat, anchor.lon, (partial) =>
-        onPartial(withKnown(partial)),
+      found = await smartSearch(
+        q,
+        anchor.lat,
+        anchor.lon,
+        (partial) => onPartial(withKnown(partial)),
+        signal,
       );
     } catch (err) {
       if (!known.length) throw err;
@@ -140,6 +147,7 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
         getDistKm(result.lat, result.lon, sp.latitude, sp.longitude) < 0.1,
     );
     if (nearby) {
+      setPendingPlace(null);
       void openDetail(nearby.id);
     } else {
       setPendingPlace(result);
@@ -173,7 +181,10 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
         <PlaceSearch
           placeholder="Search cafes, parks, Walmart…"
           value={query}
-          onValueChange={setQuery}
+          onValueChange={(v) => {
+            setQuery(v);
+            if (!v.trim()) setPendingPlace(null);
+          }}
           search={search}
           onPick={(result) => {
             setQuery(result.name);
@@ -250,6 +261,17 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
         </aside>
 
         <div className="map-area">
+          <button
+            className="recenter-btn"
+            title="Recenter on my location"
+            aria-label="Recenter on my location"
+            onClick={() => setRecenterTick((t) => t + 1)}
+          >
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="2" />
+              <path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </button>
           <MapView
             spaces={spaces}
             filter={filter}
@@ -257,6 +279,10 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
             onOpenDetail={openDetail}
             onUserLocated={handleUserLocated}
             onMapMove={handleMapMove}
+            userLocation={userLocation}
+            recenterTick={recenterTick}
+            searchPin={pendingPlace}
+            onAddSearchPin={openAddSpace}
             onLocationError={handleLocationError}
           />
         </div>
@@ -295,6 +321,7 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
           onSubmitted={async (space) => {
             setAddOpen(false);
             setPendingPlace(null);
+            setQuery('');
             onToast('🏳️‍🌈 Space added! Thank you!');
             await refreshSpaces();
             if (space.latitude != null && space.longitude != null) {

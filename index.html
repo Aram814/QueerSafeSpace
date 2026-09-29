@@ -189,6 +189,13 @@
       position: relative; overflow: hidden;
     }
     #map { position: absolute; inset: 0; z-index: 1; }
+    .recenter-btn {
+      position: absolute; right: 12px; bottom: 96px; z-index: 1000;
+      width: 44px; height: 44px; border: none; border-radius: 50%;
+      background: #fff; color: var(--primary, #7c3aed);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
 
     /* ── Bottom bar: legend + crisis button ── */
     .bottom-bar {
@@ -715,6 +722,9 @@
     <!-- Map -->
     <div class="map-area">
       <div id="map"></div>
+      <button class="recenter-btn" onclick="window.recenterOnMe()" title="Recenter on my location" aria-label="Recenter on my location">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
     </div>
 
   </div><!-- /.main-body -->
@@ -1336,6 +1346,7 @@ function attachSearchListener() {
   /* Stale-request cancellation: each keypress gets a unique token;
      only the response whose token matches the latest one is rendered. */
   let currentSearchToken = 0;
+  let searchAbort = null;
   let st;
 
   inp.addEventListener('input', () => {
@@ -1345,6 +1356,10 @@ function attachSearchListener() {
     drop.innerHTML = '<div class="geo-item loading">Searching nearby\u2026</div>';
     drop.classList.add('open');
     const token = ++currentSearchToken;
+    /* Abort the previous keystroke's in-flight requests so the shared free servers aren't flooded. */
+    if (searchAbort) searchAbort.abort();
+    searchAbort = new AbortController();
+    const signal = searchAbort.signal;
     st = setTimeout(async () => {
       try {
         const render = results => {
@@ -1377,13 +1392,13 @@ function attachSearchListener() {
           });
         };
         /* Interim results render as each source answers; the final call settles the list. */
-        const results = await smartSearch(q, partial => { if (partial.length) render(partial); });
+        const results = await smartSearch(q, partial => { if (partial.length) render(partial); }, signal);
         render(results);
       } catch (e) {
-        if (token !== currentSearchToken) return;
+        if (token !== currentSearchToken || (e && e.name === 'AbortError')) return;
         drop.innerHTML = '<div class="geo-item loading">Search failed \u2014 try again</div>';
       }
-    }, 300);
+    }, 500);
   });
 
   document.addEventListener('click', e => {
@@ -1522,6 +1537,31 @@ const PLACE_TAGS = {
   'post office': [['amenity','post_office']],
   thrift:      [['shop','second_hand']],
   clothing:    [['shop','clothes']],
+  smoke:       [['shop','tobacco'],['shop','e-cigarette']],
+  vape:        [['shop','e-cigarette'],['shop','tobacco']],
+  tobacco:     [['shop','tobacco']],
+  cbd:         [['shop','cannabis'],['shop','e-cigarette']],
+  liquor:      [['shop','alcohol']],
+  pizza:       [['cuisine','pizza']],
+  burger:      [['cuisine','burger']],
+  'ice cream': [['cuisine','ice_cream'],['amenity','ice_cream']],
+  brewery:     [['craft','brewery'],['microbrewery','yes']],
+  pet:         [['shop','pet']],
+  florist:     [['shop','florist']],
+  flowers:     [['shop','florist']],
+  hardware:    [['shop','doityourself'],['shop','hardware']],
+  tattoo:      [['shop','tattoo']],
+  nails:       [['shop','beauty']],
+  spa:         [['leisure','spa'],['shop','beauty']],
+  'car wash':  [['amenity','car_wash']],
+  carwash:     [['amenity','car_wash']],
+  mechanic:    [['shop','car_repair']],
+  'convenience store': [['shop','convenience']],
+  bookshop:    [['shop','books']],
+  museum:      [['tourism','museum']],
+  beach:       [['natural','beach']],
+  playground:  [['leisure','playground']],
+  'thrift store': [['shop','second_hand']],
   shopping:    [['shop','mall'],['shop','department_store'],['shop','clothes']],
 };
 
@@ -1542,89 +1582,132 @@ function formatOsmAddress(tags) {
   return p.join(', ') || tags.amenity || tags.shop || tags.leisure || tags.tourism || '';
 }
 
+/* overpass-api.de answers some browser requests with a header-less 406 (surfacing as a
+   CORS error), so it goes last. */
 const OVERPASS_ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
-  'https://overpass.private.coffee/api/interpreter'
+  'https://overpass.private.coffee/api/interpreter',
+  'https://overpass-api.de/api/interpreter'
 ];
+/* A later mirror is only tried if the earlier ones are still silent after this long. */
+const HEDGE_MS = 2500;
 
 async function fetchJson(url, init, timeoutMs, outer) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  if (outer) outer.addEventListener('abort', () => ctrl.abort());
+  const onOuterAbort = () => ctrl.abort();
+  if (outer) outer.addEventListener('abort', onOuterAbort);
   try {
     const res = await fetch(url, { ...init, signal: ctrl.signal });
     if (!res.ok) throw new Error(new URL(url).host + ' responded ' + res.status);
     return await res.json();
-  } finally { clearTimeout(timer); }
+  } finally {
+    clearTimeout(timer);
+    if (outer) outer.removeEventListener('abort', onOuterAbort);
+  }
 }
 
-/* Races every Overpass mirror and takes the first good answer, then aborts the
-   rest: public instances are individually slow or rate-limited, so waiting on
-   one (or trying them in turn) is what made search feel dead. A server-side
-   timeout (HTTP 200 + `remark` + no elements) counts as a failure for that
-   mirror, not as "no results". */
-async function overpass(query, timeoutMs = 9000) {
-  const ctrl = new AbortController();
-  const attempts = OVERPASS_ENDPOINTS.map(async endpoint => {
-    const data = await fetchJson(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'data=' + encodeURIComponent(query)
-    }, timeoutMs, ctrl.signal);
-    if (!(data.elements && data.elements.length) && data.remark) throw new Error(data.remark);
-    return data.elements || [];
+/* "Hedged" Overpass query: the first mirror goes out immediately, the next only if
+   the first fails or stays silent for HEDGE_MS. Firing every mirror on every
+   keystroke gets the client rate-limited, which then looks like "no results". A
+   server-side timeout (HTTP 200 + `remark` + no elements) counts as a failed
+   mirror. A plain GET is a CORS "simple request" (no preflight, no Content-Type). */
+function overpass(query, timeoutMs = 9000, signal) {
+  return new Promise((resolve, reject) => {
+    const ctrl = new AbortController();
+    const errors = [];
+    const timers = new Set();
+    let next = 0, pending = 0, done = false;
+    const finish = fn => {
+      if (done) return;
+      done = true;
+      timers.forEach(clearTimeout);
+      ctrl.abort();
+      fn();
+    };
+    if (signal) signal.addEventListener('abort', () => finish(() => reject(new DOMException('aborted', 'AbortError'))));
+    const launch = () => {
+      if (done || next >= OVERPASS_ENDPOINTS.length) return;
+      const endpoint = OVERPASS_ENDPOINTS[next++];
+      pending++;
+      const hedge = setTimeout(launch, HEDGE_MS);
+      timers.add(hedge);
+      fetchJson(endpoint + '?data=' + encodeURIComponent(query), {}, timeoutMs, ctrl.signal)
+        .then(data => {
+          if (!(data.elements && data.elements.length) && data.remark) throw new Error(data.remark);
+          finish(() => resolve(data.elements || []));
+        })
+        .catch(err => {
+          errors.push(err);
+          pending--;
+          clearTimeout(hedge);
+          if (next < OVERPASS_ENDPOINTS.length) launch();
+          else if (pending === 0) finish(() => reject(errors[0]));
+        });
+    };
+    launch();
   });
-  try { return await Promise.any(attempts); } finally { ctrl.abort(); }
 }
 
-function osmToPlace(el, lat, lon, fallbackName) {
+function osmToPlace(el, lat, lon) {
   const eLat = el.lat ?? el.center?.lat;
   const eLon = el.lon ?? el.center?.lon;
-  const name = el.tags?.name || fallbackName;
+  const name = el.tags?.name;
   if (eLat == null || eLon == null || !name) return null;
   return { name, address:formatOsmAddress(el.tags || {}), lat:eLat, lon:eLon,
            display_name:name, dist:getDistKm(lat,lon,eLat,eLon) };
 }
 
-/* Overpass returns elements in id order, not by distance, so a big radius in a
-   dense area can cap out before reaching the nearest ones. smartSearch runs a
-   small radius (guaranteed to include the closest) alongside a larger one. */
-async function overpassNearby(tagPairs, lat, lon, radius, limit=20) {
+/* Named places matching any of the tag pairs within `radius` metres of a point. */
+async function overpassNearby(tagPairs, lat, lon, radius, limit = 25, signal) {
   const lines = tagPairs.map(([k,v]) =>
     `  nwr["${k}"="${v}"]["name"](around:${radius},${lat},${lon});`).join('\n');
   const elements = await overpass(`[out:json][timeout:8];
 (
 ${lines}
 );
-out center 80;`);
+out center 100;`, 9000, signal);
   return elements.map(el => osmToPlace(el, lat, lon)).filter(Boolean)
     .sort((a,b)=>a.dist-b.dist).slice(0,limit);
 }
 
-/* Matches `name` or `brand`, so "walmart" finds "Walmart Supercenter". */
-async function overpassNameSearch(q, lat, lon, radius) {
-  const safeQ = q.replace(/['"\\[\]()|.*+?^${}]/g,'').trim();
-  if (!safeQ) return [];
-  const around = `(around:${radius},${lat},${lon})`;
-  const elements = await overpass(`[out:json][timeout:10];
-(
-  nwr["name"~"${safeQ}",i]${around};
-  nwr["brand"~"${safeQ}",i]${around};
-);
-out center 60;`, 10000);
-  return elements.map(el => osmToPlace(el, lat, lon, q)).filter(Boolean)
-    .sort((a,b)=>a.dist-b.dist).slice(0,15);
+/* Category search that widens only as needed: a dense area is answered by the first
+   small radius (guaranteed to include the nearest places, since Overpass caps results
+   in id order, not distance); rural areas keep widening. */
+async function categoryNearby(tagPairs, lat, lon, emit, signal) {
+  for (const radius of [1500, 5000, 15000, 30000]) {
+    const found = await overpassNearby(tagPairs, lat, lon, radius, 25, signal);
+    emit(found);
+    if (found.length >= 8) return;
+  }
 }
 
-/* Photon (Komoot's OSM search) is built for search-as-you-type: fast, typo
-   tolerant, and indexes the city with the place, so "First Love Church ocala"
-   works as one phrase. lat/lon bias ranking; bboxDeg optionally restricts
-   results to a box that many degrees around the point. */
-async function photonSearch(q, lat, lon, bboxDeg) {
-  let url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=10&lang=en&lat=${lat}&lon=${lon}`;
+/* Named places whose name (or brand) contains EVERY word, in any order, so
+   "first love" finds "First Love Christian Church". */
+async function overpassNameSearch(words, lat, lon, radius, signal) {
+  const clean = words.map(w => w.replace(/[^\p{L}\p{N}]/gu,'')).filter(w => w.length >= 2);
+  if (!clean.length) return [];
+  const around = `(around:${radius},${lat},${lon})`;
+  const chain = key => clean.map(w => `["${key}"~"${w}",i]`).join('');
+  const elements = await overpass(`[out:json][timeout:10];
+(
+  nwr${chain('name')}${around};
+  nwr${chain('brand')}${around};
+);
+out center 60;`, 10000, signal);
+  return elements.map(el => osmToPlace(el, lat, lon)).filter(Boolean)
+    .sort((a,b)=>a.dist-b.dist).slice(0,20);
+}
+
+/* Photon (Komoot's OSM search) is built for search-as-you-type: fast, typo tolerant,
+   and indexes the city with the place. lat/lon bias ranking; a bbox hard-limits it,
+   which keeps "First Love Church" from returning churches in other states. */
+async function photonSearch(q, lat, lon, opts = {}) {
+  const { bboxDeg, osmTag, limit = 10, signal } = opts;
+  let url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=${limit}&lang=en&lat=${lat}&lon=${lon}`;
   if (bboxDeg) url += `&bbox=${lon-bboxDeg},${lat-bboxDeg},${lon+bboxDeg},${lat+bboxDeg}`;
-  const data = await fetchJson(url, {}, 8000);
+  if (osmTag) url += `&osm_tag=${encodeURIComponent(osmTag)}`;
+  const data = await fetchJson(url, {}, 8000, signal);
   return (data.features || []).map(f => {
     const p = f.properties || {};
     const [fLon, fLat] = f.geometry.coordinates;
@@ -1637,10 +1720,10 @@ async function photonSearch(q, lat, lon, bboxDeg) {
   });
 }
 
-async function nominatimQuery(q, lat, lon, bounded) {
+async function nominatimQuery(q, lat, lon, bounded, signal) {
   const vb = `${lon-0.5},${lat+0.4},${lon+0.5},${lat-0.4}`;
   const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=8&addressdetails=1&viewbox=${vb}&bounded=${bounded?1:0}`;
-  const data = await fetchJson(url, { headers:{'Accept-Language':'en'} }, 10000);
+  const data = await fetchJson(url, { headers:{'Accept-Language':'en'} }, 10000, signal);
   /* Street-address hits have no `name`; use "2529 North Magnolia Avenue", not the first comma chunk ("2529"). */
   const nameOf = r => r.name ||
     (r.address && r.address.house_number && r.address.road ? `${r.address.house_number} ${r.address.road}` : (r.display_name||'').split(',')[0]);
@@ -1653,41 +1736,51 @@ async function nominatimQuery(q, lat, lon, bounded) {
   }));
 }
 
-/* Local matches first; widen to a global search only when nothing local exists
-   (e.g. the user typed a distant address). */
-async function nominatimBiased(q, lat, lon) {
-  const local = await nominatimQuery(q, lat, lon, true);
+/* Local matches first; widen to a global search only when nothing local exists. */
+async function nominatimBiased(q, lat, lon, signal) {
+  const local = await nominatimQuery(q, lat, lon, true, signal);
   if (local.length) return local.sort((a,b)=>a.dist-b.dist);
-  return nominatimQuery(q, lat, lon, false);
+  return nominatimQuery(q, lat, lon, false, signal);
 }
 
 const FILLER_WORDS = new Set(['near','me','nearby','shop','shops','store','stores','the','a','in','around','and']);
+const hasTag = k => Object.prototype.hasOwnProperty.call(PLACE_TAGS, k);
 
-/* Returns OSM tag pairs only when the query is *purely* a category
-   ("cafe", "coffee shop", "churches near me"); brands and addresses are not. */
-function tagPairsFor(q) {
-  const lower = q.toLowerCase().trim();
-  const has = k => Object.prototype.hasOwnProperty.call(PLACE_TAGS, k);
-  if (has(lower)) return PLACE_TAGS[lower];
-  const pairs = [];
-  let matched = 0;
-  for (const word of lower.split(/\s+/)) {
-    if (FILLER_WORDS.has(word)) continue;
-    const key = [word, word.replace(/es$/,''), word.replace(/s$/,'')].find(has);
-    if (!key) return undefined;
-    pairs.push(...PLACE_TAGS[key]);
-    matched++;
+/* Splits a query into category words and the rest, so "coffee" is a category,
+   "First Love Church" is a name plus a category, and "Dunnellon coffee" is a place
+   plus a category. */
+function parseQuery(q) {
+  const tokens = q.toLowerCase().replace(/[^\p{L}\p{N}\s'-]/gu,' ').split(/\s+/).filter(Boolean);
+  let pairs = [];
+  const categoryWords = [], restWords = [], words = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const w = tokens[i];
+    const two = tokens[i+1] ? w + ' ' + tokens[i+1] : '';
+    if (two && hasTag(two)) {
+      pairs.push(...PLACE_TAGS[two]);
+      categoryWords.push(w, tokens[i+1]); words.push(w, tokens[i+1]);
+      i++; continue;
+    }
+    if (FILLER_WORDS.has(w)) continue;
+    words.push(w);
+    const key = [w, w.replace(/es$/,''), w.replace(/s$/,'')].find(hasTag);
+    if (key) { pairs.push(...PLACE_TAGS[key]); categoryWords.push(w); }
+    else restWords.push(w);
   }
-  return matched ? pairs : undefined;
+  const seen = new Set();
+  pairs = pairs.filter(([k,v]) => !seen.has(k+'='+v) && seen.add(k+'='+v));
+  return { pairs, categoryWords, restWords, words };
 }
 
 function looksLikeAddress(q) { return /^\d+\s+\S/.test(q.trim()) || q.includes(','); }
 
+const normName = n => n.toLowerCase().replace(/\s+/g,' ').trim();
+
+/* Same place = same name (case/space-insensitive) within 150 m. */
 function dedupePlaces(results) {
-  const norm = n => n.toLowerCase().replace(/\s+/g,' ').trim();
   const out = [];
   for (const r of results) {
-    if (!out.some(o => norm(o.name) === norm(r.name) && getDistKm(o.lat,o.lon,r.lat,r.lon) < 0.15)) out.push(r);
+    if (!out.some(o => normName(o.name) === normName(r.name) && getDistKm(o.lat,o.lon,r.lat,r.lon) < 0.15)) out.push(r);
   }
   return out;
 }
@@ -1702,41 +1795,86 @@ function searchAnchor() {
   return c ? { lat:c.lat, lon:c.lng } : { lat:39.5, lon:-98.35 };
 }
 
+/* "Dunnellon coffee" / "First Love Church Ocala": look for a city among the words at
+   either edge of the query. Only an exact name match on a Photon place counts, so
+   ordinary name words are never mistaken for a location. */
+async function resolvePlace(words, restWords, lat, lon, signal) {
+  const candidates = [];
+  for (const len of [2, 1]) {
+    for (const c of [words.slice(-len), words.slice(0, len)]) {
+      if (c.length === len && c.every(w => restWords.includes(w))) candidates.push(c);
+    }
+  }
+  const unique = candidates.filter((c,i) => candidates.findIndex(o => o.join(' ') === c.join(' ')) === i);
+  const settled = await Promise.allSettled(unique.map(c =>
+    photonSearch(c.join(' '), lat, lon, { osmTag:'place', limit:5, signal })
+      .then(r => ({ c, hit: r.find(p => normName(p.name) === c.join(' ')) }))));
+  for (const s of settled) {
+    if (s.status === 'fulfilled' && s.value.hit) return { lat:s.value.hit.lat, lon:s.value.hit.lon, words:s.value.c };
+  }
+  return null;
+}
+
 const searchCache = new Map();
 const SEARCH_CACHE_MS = 5 * 60 * 1000;
+/* Beyond this from the search centre a name match is another town/state, not "nearby". */
+const LOCAL_KM = 80;
 
-/* Search anything: a category, a chain/venue name ("First Love Church ocala") or
-   an address. Every source runs in parallel and onUpdate fires as each one lands,
-   so the first results show when the fastest service answers, not the slowest.
-   Rejects only if every service tried failed. */
-async function smartSearch(q, onUpdate) {
+/* Search anything: a category ("coffee", "smoke shop"), a business name ("First Love
+   Church"), a place plus either ("Dunnellon coffee") or an address.
+   Results are local by default (near the map/GPS, or near a city named in the query);
+   a worldwide lookup runs only when nothing local is found, and never for categories
+   (where it returns counties and shops that merely have the word in their name).
+   onUpdate fires as each source lands. Results are ALWAYS nearest first. */
+async function smartSearch(q, onUpdate, signal) {
   const query = q.trim();
   const { lat, lon } = searchAnchor();
   const cacheKey = query.toLowerCase() + '|' + lat.toFixed(2) + ',' + lon.toFixed(2);
   const hit = searchCache.get(cacheKey);
   if (hit && Date.now() - hit.at < SEARCH_CACHE_MS) { if (onUpdate) onUpdate(hit.results); return hit.results; }
 
-  const tagPairs = tagPairsFor(query);
-  const words = query.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu,' ').split(/\s+/).filter(Boolean);
-  const tasks = [];
-  if (tagPairs) {
-    tasks.push(overpassNearby(tagPairs, lat, lon, 2000, 20));
-    tasks.push(overpassNearby(tagPairs, lat, lon, 8000, 40));
-  } else {
-    tasks.push(photonSearch(query, lat, lon, 0.3));
-    tasks.push(photonSearch(query, lat, lon));
-    if (looksLikeAddress(query)) {
-      /* Commas and "FL 34475" trip up Photon's phrase matching; Nominatim is strongest on
-         structured addresses, so it runs alongside rather than only as a fallback. */
-      tasks.push(photonSearch(query.replace(/,/g,' '), lat, lon));
-      tasks.push(nominatimBiased(query, lat, lon));
-    } else {
-      tasks.push(overpassNameSearch(query, lat, lon, 10000));
+  const parsed = parseQuery(query);
+  const isAddress = looksLikeAddress(query);
+  const hasCategory = !isAddress && parsed.pairs.length > 0;
+
+  let center = { lat, lon };
+  let nameWords = parsed.restWords;
+  let inPlace = false;
+  if (hasCategory && parsed.restWords.length) {
+    const place = await resolvePlace(parsed.words, parsed.restWords, lat, lon, signal);
+    if (place) {
+      center = place; inPlace = true;
+      nameWords = parsed.restWords.filter(w => !place.words.includes(w));
     }
   }
+  const sortKm = r => getDistKm(center.lat, center.lon, r.lat, r.lon);
 
-  /* Places already in QueerSafeSpace match by name/address too, so they surface
-     even if OSM search misses them. */
+  const sources = [];
+  if (isAddress) {
+    /* Commas and "FL 34475" trip up Photon's phrase matching; Nominatim is strongest
+       on structured addresses, so both run. */
+    sources.push(async emit => emit(await photonSearch(query.replace(/,/g,' '), lat, lon, { signal })));
+    sources.push(async emit => emit(await nominatimBiased(query, lat, lon, signal)));
+  } else if (hasCategory && nameWords.length === 0) {
+    sources.push(emit => categoryNearby(parsed.pairs, center.lat, center.lon, emit, signal));
+    for (const [k, v] of parsed.pairs.slice(0, 3)) {
+      sources.push(async emit => emit(await photonSearch(parsed.categoryWords.join(' '), center.lat, center.lon,
+        { bboxDeg:0.25, osmTag:`${k}:${v}`, limit:15, signal })));
+    }
+    /* Businesses that just have the words in their name ("Smoke Shop LLC"). */
+    sources.push(async emit => emit(await photonSearch(parsed.categoryWords.join(' '), center.lat, center.lon,
+      { bboxDeg:0.25, signal })));
+  } else {
+    const nameQuery = nameWords.concat(parsed.categoryWords).join(' ');
+    sources.push(async emit => emit(await photonSearch(nameQuery || query, center.lat, center.lon,
+      { bboxDeg: inPlace ? 0.3 : 0.4, signal })));
+    sources.push(async emit => emit(await overpassNameSearch(nameWords.length ? nameWords : parsed.words,
+      center.lat, center.lon, inPlace ? 25000 : 30000, signal)));
+  }
+
+  /* Places already in QueerSafeSpace match by name/address too, so they surface even if
+     OSM search misses them. They are merged and sorted with everything else: a QSS place
+     is only first if it is the nearest. */
   const needle = query.toLowerCase();
   const known = spaces
     .filter(sp => sp.latitude != null && sp.longitude != null &&
@@ -1745,28 +1883,85 @@ async function smartSearch(q, onUpdate) {
                   display_name:sp.name, dist:getDistKm(lat,lon,sp.latitude,sp.longitude) }))
     .sort((a,b)=>a.dist-b.dist).slice(0,5);
 
-  const all = [];
+  const parts = sources.map(() => []);
   const errors = [];
-  /* Results containing every query word (name or address) outrank partial matches. */
-  const full = r => { const hay = `${r.name} ${r.address}`.toLowerCase(); return words.every(w => hay.includes(w)); };
+  /* Words a result must contain to count as a match: the business-name words (not the
+     category, which OSM names often omit, and not the city, which is in the address). */
+  const matchWords = nameWords.length ? nameWords : (parsed.words.length ? parsed.words : [query.toLowerCase()]);
+  const filterByName = !isAddress && !(hasCategory && nameWords.length === 0);
+  const matches = r => { const hay = `${r.name} ${r.address}`.toLowerCase(); return matchWords.every(w => hay.includes(w)); };
+
   const snapshot = () => {
-    const sorted = all.slice().sort((a,b)=>a.dist-b.dist);
-    const ranked = tagPairs ? sorted : sorted.filter(full).concat(sorted.filter(r => !full(r)));
-    const osm = dedupePlaces(ranked).filter(r => !known.some(k => getDistKm(k.lat,k.lon,r.lat,r.lon) < 0.1));
-    return known.concat(osm).slice(0,15);
+    let all = parts.flat();
+    if (!isAddress) {
+      const local = all.filter(r => sortKm(r) <= LOCAL_KM);
+      if (local.length || inPlace || hasCategory) all = local;
+    }
+    /* Drop partial name matches ("other churches in Ocala") whenever a real match exists... */
+    if (filterByName && all.some(matches)) all = all.filter(matches);
+    all = all.map(r => ({ ...r, dist:getDistKm(lat,lon,r.lat,r.lon) }))
+             .filter(r => !known.some(k => getDistKm(k.lat,k.lon,r.lat,r.lon) < 0.1));
+    /* ...then ALWAYS nearest first. */
+    return dedupePlaces(known.concat(all).sort((a,b)=>a.dist-b.dist)).slice(0,15);
   };
-  const run = p => p.then(r => { all.push(...r); if (onUpdate) onUpdate(snapshot()); }, e => { errors.push(e); });
 
   if (known.length && onUpdate) onUpdate(known);
-  await Promise.all(tasks.map(run));
-  /* Nothing usable from the primary services: fall back to Nominatim. */
-  if (!all.length) await run(nominatimBiased(query, lat, lon));
-  if (!all.length && !known.length && errors.length >= tasks.length) throw errors[0];
+  await Promise.all(sources.map((source, i) =>
+    source(r => { parts[i] = r; if (onUpdate) onUpdate(snapshot()); }).catch(e => { errors.push(e); })));
+  if (signal && signal.aborted) throw new DOMException('aborted', 'AbortError');
 
-  const results = snapshot();
+  let results = snapshot();
+  /* Nothing local for a name or address: look worldwide (never for categories). */
+  if (!results.length && !hasCategory) {
+    try {
+      const wide = await photonSearch(query.replace(/,/g,' '), lat, lon, { signal });
+      results = dedupePlaces(wide.map(r => ({ ...r, dist:getDistKm(lat,lon,r.lat,r.lon) }))
+        .sort((a,b)=>a.dist-b.dist)).slice(0,15);
+      if (!results.length) results = dedupePlaces(await nominatimBiased(query, lat, lon, signal)).slice(0,15);
+    } catch (e) { errors.push(e); }
+  }
+  if (!results.length && errors.length >= sources.length) throw errors[0];
   if (results.length) searchCache.set(cacheKey, { at: Date.now(), results });
   return results;
 }
+
+let searchPinMarker = null;
+function clearSearchPin() { if (searchPinMarker) { map.removeLayer(searchPinMarker); searchPinMarker = null; } }
+
+/* Adds a marker for a searched place that isn't in QueerSafeSpace yet. */
+function showSearchPin(r) {
+  clearSearchPin();
+  const icon = L.divIcon({
+    className: '',
+    html: '<div style="width:30px;height:30px;background:#111827;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,0.35)"></div>',
+    iconSize: [30,30], iconAnchor: [15,30], popupAnchor: [0,-32]
+  });
+  searchPinMarker = L.marker([r.lat, r.lon], { icon }).addTo(map);
+  searchPinMarker.bindPopup(`<div class="map-popup"><div class="map-popup-name">${esc(r.name)}</div>
+    <div class="map-popup-rating">${esc(r.address || 'Not in QueerSafeSpace yet')}</div>
+    <button class="map-popup-btn" onclick="window.addFromSearchPin()">Add to QueerSafeSpace</button></div>`);
+  setTimeout(() => searchPinMarker && searchPinMarker.openPopup(), 750);
+}
+
+/* openAddSpace() resets the form, so re-apply the searched place afterwards. */
+window.addFromSearchPin = function() {
+  const place = addLoc;
+  window.openAddSpace();
+  if (!place || !user) return;
+  addLoc = place;
+  document.getElementById('add-search').value = place.name || '';
+  document.getElementById('add-loc-txt').textContent = place.display_name || place.address || place.name;
+  document.getElementById('add-loc-prev').classList.add('show');
+  const nameEl = document.getElementById('add-name');
+  if (!nameEl.value) nameEl.value = place.name || '';
+};
+
+window.recenterOnMe = function() {
+  if (!map) return;
+  mapInteracted = true;
+  if (userLat && userLon) map.flyTo([userLat, userLon], 15, { animate:true, duration:0.7 });
+  else map.locate({ setView:true, maxZoom:15 });
+};
 
 function pickSearchResult(r) {
   /* Guard: if the map screen hasn't been visited yet, navigate there first */
@@ -1774,9 +1969,10 @@ function pickSearchResult(r) {
   mapInteracted = true;
   map.flyTo([r.lat, r.lon], 17, { animate:true, duration:0.7 });
   const nearby = spaces.find(sp => getDistKm(r.lat,r.lon,sp.latitude,sp.longitude) < 0.1);
-  if (nearby) { setTimeout(() => openDetail(nearby.id), 500); }
+  if (nearby) { clearSearchPin(); setTimeout(() => openDetail(nearby.id), 500); }
   else {
     addLoc = { lat:r.lat, lon:r.lon, display_name:r.address||r.name, name:r.name };
+    showSearchPin(r);
     setTimeout(() => toast(`📍 "${r.name}" isn't in QueerSafeSpace yet — tap + to add it!`), 500);
   }
 }
