@@ -20,7 +20,8 @@ interface Props {
   /** A searched-for place that is not (yet) in QueerSafeSpace; shown as a marker. */
   searchPin: { lat: number; lon: number; name: string; address: string } | null;
   onAddSearchPin: () => void;
-  onLocationError: () => void;
+  /** `code` is the browser's GeolocationPositionError code: 1 denied, 2 unavailable, 3 timed out. */
+  onLocationError: (code?: number) => void;
 }
 
 /** Ported from the divIcon in renderMarkers(). */
@@ -40,6 +41,15 @@ function pinIcon(color: string): L.DivIcon {
     popupAnchor: [0, -30],
   });
 }
+
+// Coarse (Wi-Fi/cell) fixes are fine for city-level search and are much faster than GPS; the
+// default 10 s timeout is too short on desktop browsers, which then report "unavailable".
+const LOCATE_OPTIONS: L.LocateOptions = {
+  setView: false,
+  enableHighAccuracy: false,
+  timeout: 20000,
+  maximumAge: 10 * 60 * 1000,
+};
 
 function MapEffects({
   flyTo,
@@ -72,7 +82,7 @@ function MapEffects({
     const touched = () => {
       interacted.current = true;
     };
-    const failed = () => cbs.current.onLocationError();
+    const failed = (e: L.ErrorEvent) => cbs.current.onLocationError(e.code);
     const moved = () => {
       const c = map.getCenter();
       cbs.current.onMapMove(c.lat, c.lng, map.getZoom());
@@ -83,7 +93,7 @@ function MapEffects({
     map.on('dragstart', touched);
     map.on('zoomstart', touched);
     moved();
-    map.locate({ setView: false });
+    map.locate(LOCATE_OPTIONS);
     const timer = setTimeout(() => map.invalidateSize(), 200);
     return () => {
       clearTimeout(timer);
@@ -109,7 +119,7 @@ function MapEffects({
     if (userLocation) {
       map.flyTo([userLocation.lat, userLocation.lon], 15, { animate: true, duration: 0.7 });
     } else {
-      map.locate({ setView: true, maxZoom: 15 });
+      map.locate({ ...LOCATE_OPTIONS, setView: true, maxZoom: 15 });
     }
   }, [map, recenterTick, userLocation]);
 

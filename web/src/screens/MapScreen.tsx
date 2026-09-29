@@ -70,8 +70,20 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
     [signedIn],
   );
 
+  // Say why location failed, once per attempt (a recenter click starts a new attempt).
+  const locationToastShown = useRef(false);
   const handleLocationError = useCallback(
-    () => onToast('📍 Location unavailable — showing default view'),
+    (code?: number) => {
+      if (locationToastShown.current) return;
+      locationToastShown.current = true;
+      onToast(
+        code === 1
+          ? '📍 Location is blocked for this site — allow it in your browser settings'
+          : code === 3
+            ? '📍 Location timed out — showing default view. Tap ⌖ to retry'
+            : '📍 Location unavailable — showing default view',
+      );
+    },
     [onToast],
   );
 
@@ -265,7 +277,10 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
             className="recenter-btn"
             title="Recenter on my location"
             aria-label="Recenter on my location"
-            onClick={() => setRecenterTick((t) => t + 1)}
+            onClick={() => {
+              locationToastShown.current = false;
+              setRecenterTick((t) => t + 1);
+            }}
           >
             <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
               <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="2" />

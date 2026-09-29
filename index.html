@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="icon" type="image/png" href="logo.png">
   <title>QueerSafeSpace — Because Safety Shouldn't Be A Privilege</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -1117,6 +1118,8 @@ let geoTimer   = null;
 let geoToken   = 0;   /* stale-request cancellation for debGeo */
 let mapReady   = false;
 let searchListenerAttached = false;
+const LOCATE_OPTIONS = { setView:false, enableHighAccuracy:false, timeout:20000, maximumAge:10*60*1000 };
+let locationToastShown = false;
 let mapInteracted = false;   /* set once the user pans/zooms or a search flies the map */
 
 /* ================================================================
@@ -1311,7 +1314,9 @@ function initMap() {
   L.control.zoom({ position: 'bottomright' }).addTo(map);
   /* GPS can answer seconds after the user has searched or panned; only the first fix may
      move the map, and only if nothing else has (else it bounces back after a search flyTo). */
-  map.locate({ setView: false });
+  /* Coarse (Wi-Fi/cell) fixes are fine for city-level search and much faster than GPS; the default
+     10 s timeout is too short on desktop browsers, which then report "unavailable". */
+  map.locate(LOCATE_OPTIONS);
   map.on('dragstart zoomstart', () => { mapInteracted = true; });
 
   mapReady = true;
@@ -1325,7 +1330,13 @@ function initMap() {
     if (!mapInteracted) map.setView(e.latlng, 13);
   });
   /* locationerror: keep default view, show a subtle toast so the user knows GPS was denied */
-  map.on('locationerror', () => toast('📍 Location unavailable — showing default view'));
+  map.on('locationerror', e => {
+    if (locationToastShown) return;
+    locationToastShown = true;
+    toast(e.code === 1 ? '📍 Location is blocked for this site — allow it in your browser settings'
+        : e.code === 3 ? '📍 Location timed out — showing default view. Tap ⌖ to retry'
+        : '📍 Location unavailable — showing default view');
+  });
 
   attachSearchListener();
 }
@@ -1960,7 +1971,7 @@ window.recenterOnMe = function() {
   if (!map) return;
   mapInteracted = true;
   if (userLat && userLon) map.flyTo([userLat, userLon], 15, { animate:true, duration:0.7 });
-  else map.locate({ setView:true, maxZoom:15 });
+  else { locationToastShown = false; map.locate({ ...LOCATE_OPTIONS, setView:true, maxZoom:15 }); }
 };
 
 function pickSearchResult(r) {
