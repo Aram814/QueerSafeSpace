@@ -40,6 +40,15 @@ Behaviour ported 1:1 from `index.html`: `overallRating` majority-vote tally, `PI
 rating), `submitRating` (upsert on `space_id,user_id`), email auth, and the
 splash → auth → map flow.
 
+## Search proxy (`api/overpass.js`)
+
+Category and name search use the public Overpass API, which rejects or drops many direct
+browser requests. `api/overpass.js` is a Vercel Function that forwards those queries
+server-side (proper User-Agent, mirror fallback, edge caching) and only accepts
+`[out:json]` queries. The client tries `/api/overpass` first and falls back to the public
+mirrors, which is what happens under plain `npm run dev` (no server functions locally; use
+`vercel dev` to exercise the proxy). Vercel project settings: Root Directory `web`.
+
 ## Anonymity
 
 Ratings are never joined to `profiles` or auth data. The detail sheet renders a rating's date,

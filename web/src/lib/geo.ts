@@ -177,9 +177,12 @@ export function formatOsmAddress(tags: OsmTags): string {
   );
 }
 
-// overpass-api.de answers some browser requests with a header-less 406 (surfacing as a CORS
-// error), so it goes last.
+// Our own /api/overpass proxy (web/api/overpass.js) goes first: the public servers reject or
+// drop many direct browser requests (overpass-api.de answers a header-less 406 that browsers
+// report as a CORS error), and the proxy sends a proper User-Agent and caches answers. The
+// direct mirrors are the fallback for local `vite dev`, where there are no server functions.
 const OVERPASS_ENDPOINTS = [
+  '/api/overpass',
   'https://overpass.kumi.systems/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
   'https://overpass-api.de/api/interpreter',
@@ -200,7 +203,7 @@ async function fetchJson<T>(
   outer?.addEventListener('abort', onOuterAbort);
   try {
     const res = await fetch(url, { ...init, signal: ctrl.signal });
-    if (!res.ok) throw new Error(`${new URL(url).host} responded ${res.status}`);
+    if (!res.ok) throw new Error(`${new URL(url, 'http://local').host} responded ${res.status}`);
     return (await res.json()) as T;
   } finally {
     clearTimeout(timer);
@@ -288,6 +291,9 @@ function byDistance(a: PlaceResult, b: PlaceResult): number {
 }
 
 /** Named places matching any of the tag pairs within `radius` metres of a point. */
+/** ~110 m grid: identical searches from nearby points then share one cached proxy response. */
+const r3 = (n: number): number => Math.round(n * 1000) / 1000;
+
 export async function overpassNearby(
   tagPairs: [string, string][],
   lat: number,
@@ -297,9 +303,9 @@ export async function overpassNearby(
   signal?: AbortSignal,
 ): Promise<PlaceResult[]> {
   const lines = tagPairs
-    .map(([k, v]) => `  nwr["${k}"="${v}"]["name"](around:${radius},${lat},${lon});`)
+    .map(([k, v]) => `  nwr["${k}"="${v}"]["name"](around:${radius},${r3(lat)},${r3(lon)});`)
     .join('\n');
-  const elements = await overpass(`[out:json][timeout:8];\n(\n${lines}\n);\nout center 100;`, 9000, signal);
+  const elements = await overpass(`[out:json][timeout:8];\n(\n${lines}\n);\nout center 150;`, 9000, signal);
   return elements
     .map((el) => toPlace(el, lat, lon))
     .filter((r): r is PlaceResult => r !== null)
@@ -320,10 +326,10 @@ async function categoryNearby(
   emit: (r: PlaceResult[]) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  for (const radius of [1500, 5000, 15000, 30000]) {
-    const found = await overpassNearby(tagPairs, lat, lon, radius, 25, signal);
+  for (const radius of [2500, 8000, 20000, 40000]) {
+    const found = await overpassNearby(tagPairs, lat, lon, radius, 40, signal);
     emit(found);
-    if (found.length >= 8) return;
+    if (found.length >= 12) return;
   }
 }
 
@@ -340,7 +346,7 @@ export async function overpassNameSearch(
 ): Promise<PlaceResult[]> {
   const clean = words.map((w) => w.replace(/[^\p{L}\p{N}]/gu, '')).filter((w) => w.length >= 2);
   if (!clean.length) return [];
-  const around = `(around:${radius},${lat},${lon})`;
+  const around = `(around:${radius},${r3(lat)},${r3(lon)})`;
   const chain = (key: string) => clean.map((w) => `["${key}"~"${w}",i]`).join('');
   const elements = await overpass(
     `[out:json][timeout:10];\n(\n  nwr${chain('name')}${around};\n  nwr${chain('brand')}${around};\n);\nout center 60;`,
@@ -621,7 +627,7 @@ export async function smartSearch(
       emit(await photonSearch(nameQuery || query, center.lat, center.lon, { bboxDeg: inPlace ? 0.3 : 0.4, signal })),
     );
     sources.push(async (emit) =>
-      emit(await overpassNameSearch(nameWords.length ? nameWords : parsed.words, center.lat, center.lon, inPlace ? 25000 : 30000, signal)),
+      emit(await overpassNameSearch(nameWords.length ? nameWords : parsed.words, center.lat, center.lon, 15000, signal)),
     );
   }
 
@@ -646,7 +652,7 @@ export async function smartSearch(
     const sorted = all
       .map((r) => ({ ...r, dist: getDistKm(lat, lon, r.lat, r.lon) }))
       .sort(byDistance);
-    return dedupe(sorted).slice(0, 15);
+    return dedupe(sorted).slice(0, 25);
   };
 
   await Promise.all(
@@ -671,7 +677,7 @@ export async function smartSearch(
       const fallback = wide
         .map((r) => ({ ...r, dist: getDistKm(lat, lon, r.lat, r.lon) }))
         .sort(byDistance);
-      results = dedupe(fallback).slice(0, 15);
+      results = dedupe(fallback).slice(0, 25);
       if (!results.length) {
         results = dedupe(await nominatimBiased(query, lat, lon, signal)).slice(0, 15);
       }

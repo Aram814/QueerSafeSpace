@@ -1593,9 +1593,12 @@ function formatOsmAddress(tags) {
   return p.join(', ') || tags.amenity || tags.shop || tags.leisure || tags.tourism || '';
 }
 
-/* overpass-api.de answers some browser requests with a header-less 406 (surfacing as a
-   CORS error), so it goes last. */
+/* Our own proxy (web/api/overpass.js, deployed on Vercel) goes first: the public servers
+   reject or drop many direct browser requests (overpass-api.de answers a header-less 406
+   that browsers report as a CORS error). The proxy sends a proper User-Agent and caches
+   answers. The direct mirrors are the fallback, e.g. until the proxy is deployed. */
 const OVERPASS_ENDPOINTS = [
+  'https://queer-safe-space.vercel.app/api/overpass',
   'https://overpass.kumi.systems/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
   'https://overpass-api.de/api/interpreter'
@@ -1670,14 +1673,17 @@ function osmToPlace(el, lat, lon) {
 }
 
 /* Named places matching any of the tag pairs within `radius` metres of a point. */
+/* ~110 m grid: identical searches from nearby points then share one cached proxy response. */
+const r3 = n => Math.round(n * 1000) / 1000;
+
 async function overpassNearby(tagPairs, lat, lon, radius, limit = 25, signal) {
   const lines = tagPairs.map(([k,v]) =>
-    `  nwr["${k}"="${v}"]["name"](around:${radius},${lat},${lon});`).join('\n');
+    `  nwr["${k}"="${v}"]["name"](around:${radius},${r3(lat)},${r3(lon)});`).join('\n');
   const elements = await overpass(`[out:json][timeout:8];
 (
 ${lines}
 );
-out center 100;`, 9000, signal);
+out center 150;`, 9000, signal);
   return elements.map(el => osmToPlace(el, lat, lon)).filter(Boolean)
     .sort((a,b)=>a.dist-b.dist).slice(0,limit);
 }
@@ -1686,10 +1692,10 @@ out center 100;`, 9000, signal);
    small radius (guaranteed to include the nearest places, since Overpass caps results
    in id order, not distance); rural areas keep widening. */
 async function categoryNearby(tagPairs, lat, lon, emit, signal) {
-  for (const radius of [1500, 5000, 15000, 30000]) {
-    const found = await overpassNearby(tagPairs, lat, lon, radius, 25, signal);
+  for (const radius of [2500, 8000, 20000, 40000]) {
+    const found = await overpassNearby(tagPairs, lat, lon, radius, 40, signal);
     emit(found);
-    if (found.length >= 8) return;
+    if (found.length >= 12) return;
   }
 }
 
@@ -1698,7 +1704,7 @@ async function categoryNearby(tagPairs, lat, lon, emit, signal) {
 async function overpassNameSearch(words, lat, lon, radius, signal) {
   const clean = words.map(w => w.replace(/[^\p{L}\p{N}]/gu,'')).filter(w => w.length >= 2);
   if (!clean.length) return [];
-  const around = `(around:${radius},${lat},${lon})`;
+  const around = `(around:${radius},${r3(lat)},${r3(lon)})`;
   const chain = key => clean.map(w => `["${key}"~"${w}",i]`).join('');
   const elements = await overpass(`[out:json][timeout:10];
 (
@@ -1880,7 +1886,7 @@ async function smartSearch(q, onUpdate, signal) {
     sources.push(async emit => emit(await photonSearch(nameQuery || query, center.lat, center.lon,
       { bboxDeg: inPlace ? 0.3 : 0.4, signal })));
     sources.push(async emit => emit(await overpassNameSearch(nameWords.length ? nameWords : parsed.words,
-      center.lat, center.lon, inPlace ? 25000 : 30000, signal)));
+      center.lat, center.lon, 15000, signal)));
   }
 
   /* Places already in QueerSafeSpace match by name/address too, so they surface even if
@@ -1913,7 +1919,7 @@ async function smartSearch(q, onUpdate, signal) {
     all = all.map(r => ({ ...r, dist:getDistKm(lat,lon,r.lat,r.lon) }))
              .filter(r => !known.some(k => getDistKm(k.lat,k.lon,r.lat,r.lon) < 0.1));
     /* ...then ALWAYS nearest first. */
-    return dedupePlaces(known.concat(all).sort((a,b)=>a.dist-b.dist)).slice(0,15);
+    return dedupePlaces(known.concat(all).sort((a,b)=>a.dist-b.dist)).slice(0,25);
   };
 
   if (known.length && onUpdate) onUpdate(known);
@@ -1927,7 +1933,7 @@ async function smartSearch(q, onUpdate, signal) {
     try {
       const wide = await photonSearch(query.replace(/,/g,' '), lat, lon, { signal });
       results = dedupePlaces(wide.map(r => ({ ...r, dist:getDistKm(lat,lon,r.lat,r.lon) }))
-        .sort((a,b)=>a.dist-b.dist)).slice(0,15);
+        .sort((a,b)=>a.dist-b.dist)).slice(0,25);
       if (!results.length) results = dedupePlaces(await nominatimBiased(query, lat, lon, signal)).slice(0,15);
     } catch (e) { errors.push(e); }
   }
