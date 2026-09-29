@@ -1496,8 +1496,8 @@ window.setFilter = function(f, btn) {
    SMART SEARCH — Overpass + Nominatim, location-biased
 ================================================================ */
 const PLACE_TAGS = {
-  cafe:        [['amenity','cafe'],['cuisine','coffee_shop']],
-  coffee:      [['amenity','cafe'],['cuisine','coffee_shop'],['shop','coffee']],
+  cafe:        [['amenity','cafe'],['cuisine','~coffee']],
+  coffee:      [['amenity','cafe'],['cuisine','~coffee'],['shop','coffee']],
   restaurant:  [['amenity','restaurant']],
   food:        [['amenity','restaurant'],['amenity','fast_food']],
   'fast food': [['amenity','fast_food']],
@@ -1645,7 +1645,9 @@ function overpass(query, timeoutMs = 9000, signal) {
       pending++;
       const hedge = setTimeout(launch, HEDGE_MS);
       timers.add(hedge);
-      fetchJson(endpoint + '?data=' + encodeURIComponent(query), {}, timeoutMs, ctrl.signal)
+      /* Our proxy may itself need a few tries across the public servers, so it gets longer than a direct call. */
+      const limit = endpoint.includes('/api/overpass') ? Math.max(timeoutMs, 22000) : timeoutMs;
+      fetchJson(endpoint + '?data=' + encodeURIComponent(query), {}, limit, ctrl.signal)
         .then(data => {
           if (!(data.elements && data.elements.length) && data.remark) throw new Error(data.remark);
           finish(() => resolve(data.elements || []));
@@ -1676,8 +1678,9 @@ function osmToPlace(el, lat, lon) {
 const r3 = n => Math.round(n * 1000) / 1000;
 
 async function overpassNearby(tagPairs, lat, lon, radius, limit = 25, signal) {
+  /* A value starting with "~" is a regex ("~coffee" also matches "coffee_shop;donut", "coffee;tea"). */
   const lines = tagPairs.map(([k,v]) =>
-    `  nwr["${k}"="${v}"]["name"](around:${radius},${r3(lat)},${r3(lon)});`).join('\n');
+    `  nwr["${k}"${v.startsWith('~') ? `~"${v.slice(1)}",i` : `="${v}"`}]["name"](around:${radius},${r3(lat)},${r3(lon)});`).join('\n');
   const elements = await overpass(`[out:json][timeout:8];
 (
 ${lines}
@@ -1702,6 +1705,23 @@ async function overpassNameSearch(words, lat, lon, radius, signal) {
 out center 60;`, 10000, signal);
   return elements.map(el => osmToPlace(el, lat, lon)).filter(Boolean)
     .sort((a,b)=>a.dist-b.dist).slice(0,20);
+}
+
+/* Foursquare Places via our Vercel proxy (web/api/places.js): far better coverage of small
+   businesses than OpenStreetMap ("Ellianos Coffee", "Dunnellon Coffee Co"). The key never
+   reaches the browser. It rejects where the proxy or key is not configured, and the search then
+   simply relies on the free OpenStreetMap sources. */
+const PLACES_ENDPOINT = 'https://queer-safe-space.vercel.app/api/places';
+/* Shown in the console log so a report says which version of the search ran. */
+const SEARCH_BUILD = 'places-1';
+async function placesSearch(q, lat, lon, radiusM, signal) {
+  const url = `${PLACES_ENDPOINT}?q=${encodeURIComponent(q)}&lat=${r3(lat)}&lon=${r3(lon)}&radius=${radiusM}&limit=30`;
+  const data = await fetchJson(url, {}, 9000, signal);
+  return (data.results || []).map(p => ({
+    name: p.name, address: p.address, lat: p.lat, lon: p.lon,
+    display_name: p.address ? `${p.name}, ${p.address}` : p.name,
+    dist: getDistKm(lat, lon, p.lat, p.lon)
+  }));
 }
 
 /* Photon (Komoot's OSM search) is built for search-as-you-type: fast, typo tolerant,
@@ -1777,6 +1797,21 @@ function parseQuery(q) {
   return { pairs, categoryWords, restWords, words };
 }
 
+/* "11223 N Williams St # A, Dunnellon, FL 34432" -> unit designators removed ("# A", "Apt 4",
+   "Suite 200"), which geocoders match against nothing and which sink the whole lookup. */
+function normalizeAddress(q) {
+  return q
+    .replace(/#\s*[\w-]+/g, ' ')
+    .replace(/\b(apt|apartment|suite|ste|unit|bldg)\b\.?\s*[\w-]+/gi, ' ')
+    .replace(/\s*,\s*(,\s*)+/g, ', ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s+,/g, ',')
+    .trim();
+}
+
+/* Words of 1-2 letters ("co", "of", "a") match nearly every name, so they never drive a search. */
+const significant = words => words.filter(w => w.length >= 3);
+
 function looksLikeAddress(q) { return /^\d+\s+\S/.test(q.trim()) || q.includes(','); }
 
 const normName = n => n.toLowerCase().replace(/\s+/g,' ').trim();
@@ -1843,23 +1878,26 @@ async function smartSearch(q, onUpdate, signal) {
   const hasCategory = !isAddress && parsed.pairs.length > 0;
 
   let center = { lat, lon };
-  let nameWords = parsed.restWords;
+  let nameWords = significant(parsed.restWords);
   let inPlace = false;
   if (hasCategory && parsed.restWords.length) {
     const place = await resolvePlace(parsed.words, parsed.restWords, lat, lon, signal);
     if (place) {
       center = place; inPlace = true;
-      nameWords = parsed.restWords.filter(w => !place.words.includes(w));
+      nameWords = significant(parsed.restWords.filter(w => !place.words.includes(w)));
     }
   }
   const sortKm = r => getDistKm(center.lat, center.lon, r.lat, r.lon);
 
   const sources = [];
   if (isAddress) {
-    /* Commas and "FL 34475" trip up Photon's phrase matching; Nominatim is strongest
-       on structured addresses, so both run. */
-    sources.push(async emit => emit(await photonSearch(query.replace(/,/g,' '), lat, lon, { signal })));
-    sources.push(async emit => emit(await nominatimBiased(query, lat, lon, signal)));
+    /* Unit numbers ("# A") and ZIP codes trip up phrase matching; Nominatim is strongest on
+       structured addresses. Several spellings of the same address run together. */
+    const addr = normalizeAddress(query);
+    const noZip = addr.replace(/\b\d{5}(-\d{4})?\b/g, ' ').replace(/\s+/g, ' ').trim();
+    sources.push(async emit => emit(await photonSearch(addr.replace(/,/g,' '), lat, lon, { signal })));
+    sources.push(async emit => emit(await photonSearch(noZip.replace(/,/g,' '), lat, lon, { signal })));
+    sources.push(async emit => emit(await nominatimBiased(addr, lat, lon, signal)));
   } else if (hasCategory && nameWords.length === 0) {
     /* Three independent radii, run together: the small one is guaranteed to include the nearest
        places (Overpass caps results in id order, not distance), the larger ones fill out the list
@@ -1867,18 +1905,35 @@ async function smartSearch(q, onUpdate, signal) {
     for (const [radius, limit] of [[3000, 25], [12000, 40], [30000, 60]]) {
       sources.push(async emit => emit(await overpassNearby(parsed.pairs, center.lat, center.lon, radius, limit, signal)));
     }
-    for (const [k, v] of parsed.pairs.slice(0, 3)) {
+    for (const [k, v] of parsed.pairs.filter(([, val]) => !val.startsWith('~')).slice(0, 3)) {
       sources.push(async emit => emit(await photonSearch(parsed.categoryWords.join(' '), center.lat, center.lon,
         { bboxDeg:0.35, osmTag:`${k}:${v}`, limit:20, signal })));
     }
+    /* Commercial place database (see placesSearch): the main source for small businesses. */
+    sources.push(async emit => emit(await placesSearch(parsed.categoryWords.join(' '), center.lat, center.lon, 20000, signal)));
     /* Businesses that just have the words in their name ("Smoke Shop LLC"). */
     sources.push(async emit => emit(await photonSearch(parsed.categoryWords.join(' '), center.lat, center.lon,
       { bboxDeg:0.25, signal })));
+    /* Anything with the category word in its name, whatever it is tagged as ("Ellianos Coffee"
+       may be fast_food, not cafe). */
+    if (significant(parsed.categoryWords).length) {
+      sources.push(async emit => emit(await overpassNameSearch(significant(parsed.categoryWords), center.lat, center.lon, 12000, signal)));
+    }
+    /* The whole query may itself be a business name: "Dunnellon Coffee Co" is a category word
+       plus a city as far as the parser can tell, but also just the shop's name. */
+    const phrase = significant(parsed.words);
+    if (phrase.length >= 2) {
+      sources.push(async emit => emit(await placesSearch(phrase.join(' '), center.lat, center.lon, 20000, signal)));
+      sources.push(async emit => emit(await photonSearch(phrase.join(' '), center.lat, center.lon,
+        { bboxDeg:0.4, signal })));
+      sources.push(async emit => emit(await overpassNameSearch(phrase, center.lat, center.lon, 15000, signal)));
+    }
   } else {
     const nameQuery = nameWords.concat(parsed.categoryWords).join(' ');
+    sources.push(async emit => emit(await placesSearch(nameQuery || query, center.lat, center.lon, 40000, signal)));
     sources.push(async emit => emit(await photonSearch(nameQuery || query, center.lat, center.lon,
       { bboxDeg: inPlace ? 0.3 : 0.4, signal })));
-    sources.push(async emit => emit(await overpassNameSearch(nameWords.length ? nameWords : parsed.words,
+    sources.push(async emit => emit(await overpassNameSearch(nameWords.length ? nameWords : significant(parsed.words),
       center.lat, center.lon, 15000, signal)));
   }
 
@@ -1921,7 +1976,10 @@ async function smartSearch(q, onUpdate, signal) {
   if (signal && signal.aborted) throw new DOMException('aborted', 'AbortError');
 
   /* Handy when a search looks short: per-source result counts and any errors. */
-  console.info('[QSS search]', query, { center, perSource: parts.map(r => r.length), errors: errors.map(String) });
+  /* One plain string so it can be copied and pasted whole from the console. */
+  console.info('[QSS search]', JSON.stringify({ query, build: SEARCH_BUILD,
+    center: { lat: r3(center.lat), lon: r3(center.lon) },
+    perSource: parts.map(r => r.length), errors: errors.map(String) }));
 
   let results = snapshot();
   /* Nothing local for a name or address: look worldwide (never for categories). */
@@ -1997,10 +2055,13 @@ window.debGeo = function(val, boxId) {
   box.innerHTML = '<div class="geo-item loading">Searching…</div>';
   box.classList.add('open');
   const token = ++geoToken;
+  /* Abort the previous keystroke's in-flight requests. */
+  if (window.__geoAbort) window.__geoAbort.abort();
+  window.__geoAbort = new AbortController();
+  const signal = window.__geoAbort.signal;
   geoTimer = setTimeout(async () => {
-    try {
-      const { lat, lon } = searchAnchor();
-      const results = await nominatimBiased(val, lat, lon);
+    /* Same search as the map: any business, category or address, not just addresses. */
+    const render = results => {
       if (token !== geoToken) return;
       if (!results.length) { box.innerHTML = '<div class="geo-item loading">No results</div>'; return; }
       box.innerHTML = results.map((r,i) => `
@@ -2013,7 +2074,7 @@ window.debGeo = function(val, boxId) {
         el.addEventListener('click', () => {
           const res = window.__geoResults[+el.dataset.gi];
           addLoc = res;
-          document.getElementById('add-search').value = esc(res.name);
+          document.getElementById('add-search').value = res.name;
           document.getElementById('add-loc-txt').textContent = res.display_name||res.address||res.name;
           document.getElementById('add-loc-prev').classList.add('show');
           box.classList.remove('open');
@@ -2021,11 +2082,15 @@ window.debGeo = function(val, boxId) {
           if (!nameEl.value) nameEl.value = res.name||(res.display_name||'').split(',')[0];
         });
       });
+    };
+    try {
+      const results = await smartSearch(val, partial => { if (partial.length) render(partial); }, signal);
+      render(results);
     } catch(e) {
-      if (token !== geoToken) return;
+      if (token !== geoToken || (e && e.name === 'AbortError')) return;
       box.innerHTML = '<div class="geo-item loading">Search failed — try again</div>';
     }
-  }, 380);
+  }, 500);
 };
 
 /* ================================================================

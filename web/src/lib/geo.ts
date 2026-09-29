@@ -15,8 +15,8 @@ export function getDistKm(lat1: number, lon1: number, lat2: number, lon2: number
 
 /** Colloquial search term -> OpenStreetMap tag pairs. Ported from PLACE_TAGS. */
 export const PLACE_TAGS: Record<string, [string, string][]> = {
-  cafe: [['amenity', 'cafe'], ['cuisine', 'coffee_shop']],
-  coffee: [['amenity', 'cafe'], ['cuisine', 'coffee_shop'], ['shop', 'coffee']],
+  cafe: [['amenity', 'cafe'], ['cuisine', '~coffee']],
+  coffee: [['amenity', 'cafe'], ['cuisine', '~coffee'], ['shop', 'coffee']],
   restaurant: [['amenity', 'restaurant']],
   food: [['amenity', 'restaurant'], ['amenity', 'fast_food']],
   'fast food': [['amenity', 'fast_food']],
@@ -191,6 +191,11 @@ const OVERPASS_ENDPOINTS = [
 /** A later mirror is only tried if the earlier ones are still silent after this long. */
 const HEDGE_MS = 2500;
 
+const PLACES_ENDPOINT = '/api/places';
+
+/** Shown in the console log so a report says which version of the search ran. */
+const SEARCH_BUILD = 'places-1';
+
 async function fetchJson<T>(
   url: string,
   init: RequestInit,
@@ -243,11 +248,13 @@ function overpass(query: string, timeoutMs = 9000, signal?: AbortSignal): Promis
       pending++;
       const hedge = setTimeout(launch, HEDGE_MS);
       timers.add(hedge);
+      // Our proxy may itself need a few tries across the public servers, so it gets longer than a direct call.
+      const limit = endpoint.startsWith('/') ? Math.max(timeoutMs, 22000) : timeoutMs;
       // A plain GET is a CORS "simple request": no preflight and no Content-Type for a mirror to reject.
       fetchJson<{ elements?: OverpassElement[]; remark?: string }>(
         `${endpoint}?data=${encodeURIComponent(query)}`,
         {},
-        timeoutMs,
+        limit,
         ctrl.signal,
       )
         .then((data) => {
@@ -303,7 +310,8 @@ export async function overpassNearby(
   signal?: AbortSignal,
 ): Promise<PlaceResult[]> {
   const lines = tagPairs
-    .map(([k, v]) => `  nwr["${k}"="${v}"]["name"](around:${radius},${r3(lat)},${r3(lon)});`)
+    // A value starting with "~" is a regex ("~coffee" also matches "coffee_shop;donut", "coffee;tea").
+    .map(([k, v]) => `  nwr["${k}"${v.startsWith('~') ? `~"${v.slice(1)}",i` : `="${v}"`}]["name"](around:${radius},${r3(lat)},${r3(lon)});`)
     .join('\n');
   const elements = await overpass(`[out:json][timeout:8];\n(\n${lines}\n);\nout center 150;`, 9000, signal);
   return elements
@@ -338,6 +346,42 @@ export async function overpassNameSearch(
     .filter((r): r is PlaceResult => r !== null)
     .sort(byDistance)
     .slice(0, 20);
+}
+
+interface ApiPlace {
+  name: string;
+  address: string;
+  lat: number;
+  lon: number;
+  category?: string;
+}
+
+/**
+ * Foursquare Places via our /api/places proxy (web/api/places.js): far better coverage of small
+ * businesses than OpenStreetMap ("Ellianos Coffee", "Dunnellon Coffee Co"). The key never reaches
+ * the browser. It rejects (503) where the proxy or key is not configured, and the search then
+ * simply relies on the free OpenStreetMap sources.
+ */
+export async function placesSearch(
+  q: string,
+  lat: number,
+  lon: number,
+  radiusM: number,
+  signal?: AbortSignal,
+): Promise<PlaceResult[]> {
+  const url = `${PLACES_ENDPOINT}?q=${encodeURIComponent(q)}&lat=${r3(lat)}&lon=${r3(lon)}&radius=${radiusM}&limit=30`;
+  const data = await fetchJson<{ results?: ApiPlace[] }>(url, {}, 9000, signal);
+  return (data.results ?? []).map(
+    (p) =>
+      ({
+        name: p.name,
+        address: p.address,
+        lat: p.lat,
+        lon: p.lon,
+        display_name: p.address ? `${p.name}, ${p.address}` : p.name,
+        dist: getDistKm(lat, lon, p.lat, p.lon),
+      }) satisfies PlaceResult,
+  );
 }
 
 interface PhotonFeature {
@@ -478,6 +522,23 @@ export function looksLikeAddress(q: string): boolean {
   return /^\d+\s+\S/.test(q.trim()) || q.includes(',');
 }
 
+/**
+ * "11223 N Williams St # A, Dunnellon, FL 34432" -> unit designators removed ("# A", "Apt 4",
+ * "Suite 200"), which geocoders match against nothing and which sink the whole lookup.
+ */
+export function normalizeAddress(q: string): string {
+  return q
+    .replace(/#\s*[\w-]+/g, ' ')
+    .replace(/\b(apt|apartment|suite|ste|unit|bldg)\b\.?\s*[\w-]+/gi, ' ')
+    .replace(/\s*,\s*(,\s*)+/g, ', ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s+,/g, ',')
+    .trim();
+}
+
+/** Words of 1-2 letters ("co", "of", "a") match nearly every name, so they never drive a search. */
+const significant = (words: string[]): string[] => words.filter((w) => w.length >= 3);
+
 /** Results containing every query word (in name or address) outrank partial matches. */
 function matchesAllWords(r: PlaceResult, words: string[]): boolean {
   const hay = `${r.name} ${r.address}`.toLowerCase();
@@ -563,24 +624,27 @@ export async function smartSearch(
 
   // A city named in the query becomes the search centre.
   let center = { lat, lon };
-  let nameWords = parsed.restWords;
+  let nameWords = significant(parsed.restWords);
   let inPlace = false;
   if (hasCategory && parsed.restWords.length) {
     const place = await resolvePlace(parsed.words, parsed.restWords, lat, lon, signal);
     if (place) {
       center = place;
       inPlace = true;
-      nameWords = parsed.restWords.filter((w) => !place.words.includes(w));
+      nameWords = significant(parsed.restWords.filter((w) => !place.words.includes(w)));
     }
   }
   const sortKm = (r: PlaceResult): number => getDistKm(center.lat, center.lon, r.lat, r.lon);
 
   const sources: Source[] = [];
   if (isAddress) {
-    // Commas and "FL 34475" trip up Photon's phrase matching; Nominatim is strongest on
-    // structured addresses, so both run.
-    sources.push(async (emit) => emit(await photonSearch(query.replace(/,/g, ' '), lat, lon, { signal })));
-    sources.push(async (emit) => emit(await nominatimBiased(query, lat, lon, signal)));
+    // Unit numbers ("# A") and ZIP codes trip up phrase matching; Nominatim is strongest on
+    // structured addresses. Several spellings of the same address run together.
+    const addr = normalizeAddress(query);
+    const noZip = addr.replace(/\b\d{5}(-\d{4})?\b/g, ' ').replace(/\s+/g, ' ').trim();
+    sources.push(async (emit) => emit(await photonSearch(addr.replace(/,/g, ' '), lat, lon, { signal })));
+    sources.push(async (emit) => emit(await photonSearch(noZip.replace(/,/g, ' '), lat, lon, { signal })));
+    sources.push(async (emit) => emit(await nominatimBiased(addr, lat, lon, signal)));
   } else if (hasCategory && nameWords.length === 0) {
     // Pure category: coffee, grocery, smoke shop, "Dunnellon coffee".
     // Three independent radii, run together: the small one is guaranteed to include the nearest
@@ -591,7 +655,7 @@ export async function smartSearch(
         emit(await overpassNearby(parsed.pairs, center.lat, center.lon, radius, limit, signal)),
       );
     }
-    for (const [k, v] of parsed.pairs.slice(0, 3)) {
+    for (const [k, v] of parsed.pairs.filter(([, val]) => !val.startsWith('~')).slice(0, 3)) {
       sources.push(async (emit) =>
         emit(
           await photonSearch(parsed.categoryWords.join(' '), center.lat, center.lon, {
@@ -603,18 +667,42 @@ export async function smartSearch(
         ),
       );
     }
+    // Commercial place database (see placesSearch): the main source for small businesses.
+    sources.push(async (emit) =>
+      emit(await placesSearch(parsed.categoryWords.join(' '), center.lat, center.lon, 20000, signal)),
+    );
     // Businesses that just have the words in their name ("Smoke Shop LLC").
     sources.push(async (emit) =>
       emit(await photonSearch(parsed.categoryWords.join(' '), center.lat, center.lon, { bboxDeg: 0.25, signal })),
     );
+    // Anything with the category word in its name, whatever it is tagged as ("Ellianos Coffee"
+    // may be fast_food, not cafe).
+    if (significant(parsed.categoryWords).length) {
+      sources.push(async (emit) =>
+        emit(await overpassNameSearch(significant(parsed.categoryWords), center.lat, center.lon, 12000, signal)),
+      );
+    }
+    // The whole query may itself be a business name: "Dunnellon Coffee Co" is a category
+    // word plus a city as far as the parser can tell, but also just the shop's name.
+    const phrase = significant(parsed.words);
+    if (phrase.length >= 2) {
+      sources.push(async (emit) => emit(await placesSearch(phrase.join(' '), center.lat, center.lon, 20000, signal)));
+      sources.push(async (emit) =>
+        emit(await photonSearch(phrase.join(' '), center.lat, center.lon, { bboxDeg: 0.4, signal })),
+      );
+      sources.push(async (emit) =>
+        emit(await overpassNameSearch(phrase, center.lat, center.lon, 15000, signal)),
+      );
+    }
   } else {
     // A named business, optionally with a category and/or city: "First Love Church (Ocala)".
     const nameQuery = [...nameWords, ...parsed.categoryWords].join(' ');
+    sources.push(async (emit) => emit(await placesSearch(nameQuery || query, center.lat, center.lon, 40000, signal)));
     sources.push(async (emit) =>
       emit(await photonSearch(nameQuery || query, center.lat, center.lon, { bboxDeg: inPlace ? 0.3 : 0.4, signal })),
     );
     sources.push(async (emit) =>
-      emit(await overpassNameSearch(nameWords.length ? nameWords : parsed.words, center.lat, center.lon, 15000, signal)),
+      emit(await overpassNameSearch(nameWords.length ? nameWords : significant(parsed.words), center.lat, center.lon, 15000, signal)),
     );
   }
 
@@ -655,7 +743,17 @@ export async function smartSearch(
   if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
 
   // Handy when a search looks short: per-source result counts and any errors.
-  console.info('[QSS search]', query, { center, perSource: parts.map((r) => r.length), errors: errors.map(String) });
+  // One plain string so it can be copied and pasted whole from the console.
+  console.info(
+    '[QSS search]',
+    JSON.stringify({
+      query,
+      build: SEARCH_BUILD,
+      center: { lat: r3(center.lat), lon: r3(center.lon) },
+      perSource: parts.map((r) => r.length),
+      errors: errors.map(String),
+    }),
+  );
 
   let results = snapshot();
 

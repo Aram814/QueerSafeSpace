@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { nominatimBiased } from '../lib/geo';
+import { smartSearch } from '../lib/geo';
 import { submitSpace } from '../lib/spaces';
 import type { PlaceResult, SafetyRating } from '../lib/types';
 import PlaceSearch from './PlaceSearch';
@@ -41,8 +41,10 @@ export default function AddSpaceSheet({
   const [notes, setNotes] = useState('');
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
+  // Same search as the map: any business, category or address, not just addresses.
   const search = useCallback(
-    (q: string) => nominatimBiased(q, center.lat, center.lon),
+    (q: string, onPartial: (r: PlaceResult[]) => void, signal: AbortSignal) =>
+      smartSearch(q, center.lat, center.lon, onPartial, signal),
     [center.lat, center.lon],
   );
 
