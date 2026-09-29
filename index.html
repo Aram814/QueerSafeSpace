@@ -2359,14 +2359,23 @@ window.showLegal = function(type) {
   document.getElementById('legal-title').textContent =
     type === 'privacy' ? 'Privacy Policy' : 'Terms & Conditions';
   document.getElementById('legal-body').innerHTML = type === 'privacy' ? `
-    <h3>Effective Date: September 13, 2025</h3>
+    <h3>Effective Date: September 29, 2026</h3>
     <p>QueerSafeSpace respects your privacy and is committed to protecting your personal information.</p>
     <h3>What We Collect</h3>
     <p>We collect account info (email, password hash), optional location data when you add spaces, and basic usage data to improve the app.</p>
     <h3>Anonymity</h3>
     <p>Your contributions are anonymous. We never sell your data or share it with advertisers.</p>
     <h3>Location Data</h3>
-    <p>Location is used only to center the map and to place spaces you submit. We do not track your movement.</p>
+    <p>If you allow it, your device location is used to center the map and to find places near you. We do not store it or link it to your account, and we do not track your movement. The only locations we save are the places you choose to submit.</p>
+    <h3>Searching for Places</h3>
+    <p>When you search, the text you type and an approximate location (the area of the map you are viewing or near you, rounded to about 100 metres) are sent to services that find places. We do not add your name, email or account to these requests.</p>
+    <ul>
+      <li><strong>Foursquare</strong> supplies business listings. Your search text and approximate location go to Foursquare through our server, so Foursquare does not receive your IP address from us.</li>
+      <li><strong>OpenStreetMap-based services</strong> (Overpass, Photon and Nominatim) supply map and address data. Some of these requests go through our server and some go straight from your browser, in which case the service can see your IP address, as with any website.</li>
+      <li><strong>Map tiles</strong> are loaded directly from OpenStreetMap, which can also see your IP address.</li>
+      <li><strong>Our hosting provider</strong> (Vercel) delivers this site and runs our search server, and may keep standard server logs such as IP addresses.</li>
+    </ul>
+    <p>These providers have their own privacy policies. If you would rather not share your location, block it in your browser settings; you can still search by typing a place or address.</p>
     <h3>Data Storage</h3>
     <p>Data is stored securely via Supabase. You can request account deletion by contacting us.</p>
     <h3>Contact</h3>
