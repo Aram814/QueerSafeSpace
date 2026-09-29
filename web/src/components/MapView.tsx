@@ -73,16 +73,28 @@ function MapEffects({
   // first fix may move the map, and only if nothing else has (otherwise the map
   // "bounces back" to the user's location after flying to a search result).
   const interacted = useRef(false);
+  // "Position unavailable" (macOS CoreLocation kCLErrorLocationUnknown) and timeouts are often
+  // transient, so retry once quietly before telling the user.
+  const locateRetried = useRef(false);
 
   useEffect(() => {
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
     const located = (e: L.LocationEvent) => {
+      locateRetried.current = false;
       if (!interacted.current) map.setView(e.latlng, 13);
       cbs.current.onUserLocated(e.latlng.lat, e.latlng.lng);
     };
     const touched = () => {
       interacted.current = true;
     };
-    const failed = (e: L.ErrorEvent) => cbs.current.onLocationError(e.code);
+    const failed = (e: L.ErrorEvent) => {
+      if (e.code !== 1 && !locateRetried.current) {
+        locateRetried.current = true;
+        retryTimer = setTimeout(() => map.locate(LOCATE_OPTIONS), 4000);
+        return;
+      }
+      cbs.current.onLocationError(e.code);
+    };
     const moved = () => {
       const c = map.getCenter();
       cbs.current.onMapMove(c.lat, c.lng, map.getZoom());
@@ -97,6 +109,7 @@ function MapEffects({
     const timer = setTimeout(() => map.invalidateSize(), 200);
     return () => {
       clearTimeout(timer);
+      clearTimeout(retryTimer);
       map.off('locationfound', located);
       map.off('locationerror', failed);
       map.off('moveend', moved);
@@ -116,6 +129,7 @@ function MapEffects({
     if (recenterTick === lastTick.current) return;
     lastTick.current = recenterTick;
     interacted.current = true;
+    locateRetried.current = false;
     if (userLocation) {
       map.flyTo([userLocation.lat, userLocation.lon], 15, { animate: true, duration: 0.7 });
     } else {
