@@ -179,13 +179,13 @@ export function formatOsmAddress(tags: OsmTags): string {
 
 // Our own /api/overpass proxy (web/api/overpass.js) goes first: the public servers reject or
 // drop many direct browser requests (overpass-api.de answers a header-less 406 that browsers
-// report as a CORS error), and the proxy sends a proper User-Agent and caches answers. The
-// direct mirrors are the fallback for local `vite dev`, where there are no server functions.
+// report as a CORS error, so it is only used by the proxy), and the proxy sends a proper
+// User-Agent and caches answers. The direct mirrors are the fallback for local `vite dev`,
+// where there are no server functions.
 const OVERPASS_ENDPOINTS = [
   '/api/overpass',
   'https://overpass.kumi.systems/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
-  'https://overpass-api.de/api/interpreter',
 ];
 
 /** A later mirror is only tried if the earlier ones are still silent after this long. */
