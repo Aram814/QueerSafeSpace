@@ -743,7 +743,17 @@ export async function smartSearch(
   if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
 
   // Handy when a search looks short: per-source result counts and any errors.
-  console.info('[QSS search]', query, { build: SEARCH_BUILD, sources: sources.length, center, perSource: parts.map((r) => r.length), errors: errors.map(String) });
+  // One plain string so it can be copied and pasted whole from the console.
+  console.info(
+    '[QSS search]',
+    JSON.stringify({
+      query,
+      build: SEARCH_BUILD,
+      center: { lat: r3(center.lat), lon: r3(center.lon) },
+      perSource: parts.map((r) => r.length),
+      errors: errors.map(String),
+    }),
+  );
 
   let results = snapshot();
 
