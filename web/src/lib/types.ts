@@ -84,4 +84,6 @@ export interface PlaceResult {
   lon: number;
   display_name: string;
   dist: number | null;
+  /** Set for Foursquare results, which must be credited where they are shown. */
+  source?: 'foursquare';
 }

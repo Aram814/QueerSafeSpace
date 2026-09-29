@@ -558,6 +558,7 @@
     .geo-dist { margin-left: auto; font-size: 0.7rem; color: var(--primary); background: var(--primary-light); padding: 1px 7px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; }
     .geo-in-qss { font-size: 0.68rem; color: var(--safe); background: var(--safe-bg); padding: 1px 6px; border-radius: 99px; flex-shrink: 0; }
     .geo-item.loading { color: var(--text-muted); font-style: italic; cursor: default; }
+    .geo-credit { padding: 6px 14px; font-size: 0.7rem; color: var(--text-muted); text-align: right; }
 
     .sel-loc {
       background: var(--primary-light); border-radius: var(--radius-sm);
@@ -1398,7 +1399,7 @@ function attachSearchListener() {
                 ${distTxt ? `<span class="geo-dist">${distTxt}</span>` : ''}
               </div>
             </div>`;
-          }).join('');
+          }).join('') + (results.some(r => r.source === 'foursquare') ? '<div class="geo-credit">Place data by Foursquare</div>' : '');
           window.__srResults = results;
           drop.querySelectorAll('.geo-item[data-idx]').forEach(el => {
             el.addEventListener('click', () => {
@@ -1727,7 +1728,8 @@ async function placesSearch(q, lat, lon, radiusM, signal) {
   return (data.results || []).map(p => ({
     name: p.name, address: p.address, lat: p.lat, lon: p.lon,
     display_name: p.address ? `${p.name}, ${p.address}` : p.name,
-    dist: getDistKm(lat, lon, p.lat, p.lon)
+    dist: getDistKm(lat, lon, p.lat, p.lon),
+    source: 'foursquare'
   }));
 }
 
@@ -1862,8 +1864,6 @@ async function resolvePlace(words, restWords, lat, lon, signal) {
   return null;
 }
 
-const searchCache = new Map();
-const SEARCH_CACHE_MS = 5 * 60 * 1000;
 /* Beyond this from the search centre a name match is another town/state, not "nearby". */
 const LOCAL_KM = 80;
 
@@ -1876,9 +1876,7 @@ const LOCAL_KM = 80;
 async function smartSearch(q, onUpdate, signal) {
   const query = q.trim();
   const { lat, lon } = searchAnchor();
-  const cacheKey = query.toLowerCase() + '|' + lat.toFixed(2) + ',' + lon.toFixed(2);
-  const hit = searchCache.get(cacheKey);
-  if (hit && Date.now() - hit.at < SEARCH_CACHE_MS) { if (onUpdate) onUpdate(hit.results); return hit.results; }
+  /* Deliberately no result cache: Foursquare's usage guidelines allow no caching of place attributes. */
 
   const parsed = parseQuery(query);
   const isAddress = looksLikeAddress(query);
@@ -1999,7 +1997,6 @@ async function smartSearch(q, onUpdate, signal) {
     } catch (e) { errors.push(e); }
   }
   if (!results.length && errors.length >= sources.length) throw errors[0];
-  if (results.length) searchCache.set(cacheKey, { at: Date.now(), results });
   return results;
 }
 
@@ -2075,7 +2072,7 @@ window.debGeo = function(val, boxId) {
         <div class="geo-item" data-gi="${i}">
           <div class="geo-name">${esc(r.name)}</div>
           <div class="geo-addr"><span>${esc(r.address||r.display_name||'')}</span></div>
-        </div>`).join('');
+        </div>`).join('') + (results.some(r => r.source === 'foursquare') ? '<div class="geo-credit">Place data by Foursquare</div>' : '');
       window.__geoResults = results;
       box.querySelectorAll('.geo-item[data-gi]').forEach(el => {
         el.addEventListener('click', () => {

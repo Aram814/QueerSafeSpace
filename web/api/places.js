@@ -5,6 +5,10 @@
  * Foursquare. The API key stays on the server (FOURSQUARE_API_KEY); results are passed
  * through and never stored here.
  *
+ * Foursquare's usage guidelines (Pay as You Go / Sandbox) forbid caching any Places attribute
+ * other than fsq_place_id, so responses must not be cached by Vercel's edge or by browsers:
+ * keep `Cache-Control: no-store` below. https://docs.foursquare.com/fsq-developers-places/reference/usage-guidelines
+ *
  * GET /api/places?q=coffee&lat=29.05&lon=-82.46&radius=20000&limit=30
  *
  * Environment (Vercel -> Project Settings -> Environment Variables):
@@ -88,8 +92,8 @@ export default async function handler(req, res) {
     }
     const data = JSON.parse(text);
     const results = (data.results ?? []).map(toPlace).filter(Boolean);
-    // Same search from nearby points shares one cached response (coordinates are rounded above).
-    res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=3600');
+    // No caching of Foursquare data (see the note at the top of this file).
+    res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({ results });
   } catch (err) {
     res.setHeader('Cache-Control', 'no-store');

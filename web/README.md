@@ -55,6 +55,11 @@ OpenStreetMap is missing many small businesses, so name and category search also
 Foursquare Places. `api/places.js` is a Vercel Function that calls it server-side so the key
 never reaches the browser; results are passed through, not stored.
 
+**Compliance (Foursquare usage guidelines, Pay as You Go plan):** no Places attribute other
+than `fsq_place_id` may be cached, so `/api/places` answers `Cache-Control: no-store` and the
+client keeps no result cache. Places results shown in search carry a "Place data by Foursquare"
+credit. Do not add caching, and see the open question on saving picked places to the database.
+
 Setup (Vercel -> Project Settings -> Environment Variables, for Production **and** Preview):
 
 | Variable | Value |
