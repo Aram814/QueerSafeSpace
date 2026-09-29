@@ -15,8 +15,8 @@ export function getDistKm(lat1: number, lon1: number, lat2: number, lon2: number
 
 /** Colloquial search term -> OpenStreetMap tag pairs. Ported from PLACE_TAGS. */
 export const PLACE_TAGS: Record<string, [string, string][]> = {
-  cafe: [['amenity', 'cafe']],
-  coffee: [['amenity', 'cafe']],
+  cafe: [['amenity', 'cafe'], ['cuisine', 'coffee_shop']],
+  coffee: [['amenity', 'cafe'], ['cuisine', 'coffee_shop'], ['shop', 'coffee']],
   restaurant: [['amenity', 'restaurant']],
   food: [['amenity', 'restaurant'], ['amenity', 'fast_food']],
   'fast food': [['amenity', 'fast_food']],
@@ -40,7 +40,8 @@ export const PLACE_TAGS: Record<string, [string, string][]> = {
   bank: [['amenity', 'bank']],
   atm: [['amenity', 'atm']],
   supermarket: [['shop', 'supermarket']],
-  grocery: [['shop', 'supermarket'], ['shop', 'convenience'], ['shop', 'grocery']],
+  grocery: [['shop', 'supermarket'], ['shop', 'grocery'], ['shop', 'greengrocer']],
+  convenience: [['shop', 'convenience']],
   mall: [['shop', 'mall'], ['amenity', 'marketplace']],
   theater: [['amenity', 'theatre']],
   theatre: [['amenity', 'theatre']],
@@ -67,13 +68,12 @@ export const PLACE_TAGS: Record<string, [string, string][]> = {
   thrift: [['shop', 'second_hand']],
   clothing: [['shop', 'clothes']],
   shopping: [['shop', 'mall'], ['shop', 'department_store'], ['shop', 'clothes']],
-  store: [['shop', 'department_store'], ['shop', 'supermarket'], ['shop', 'convenience']],
 };
 
 const hasTag = (k: string): boolean => Object.prototype.hasOwnProperty.call(PLACE_TAGS, k);
 
 /** Words that may accompany a category ("coffee shop", "churches near me"). */
-const FILLER_WORDS = new Set(['near', 'me', 'nearby', 'shop', 'shops', 'the', 'a', 'in', 'around', 'and']);
+const FILLER_WORDS = new Set(['near', 'me', 'nearby', 'shop', 'shops', 'store', 'stores', 'the', 'a', 'in', 'around', 'and']);
 
 /**
  * Maps a query to OSM tag pairs only when it is *purely* a category
@@ -123,11 +123,18 @@ export function formatOsmAddress(tags: OsmTags): string {
 const OVERPASS_ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
 ];
 
-async function fetchJson<T>(url: string, init: RequestInit, timeoutMs: number): Promise<T> {
+async function fetchJson<T>(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+  outer?: AbortSignal,
+): Promise<T> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  outer?.addEventListener('abort', () => ctrl.abort());
   try {
     const res = await fetch(url, { ...init, signal: ctrl.signal });
     if (!res.ok) throw new Error(`${new URL(url).host} responded ${res.status}`);
@@ -138,30 +145,33 @@ async function fetchJson<T>(url: string, init: RequestInit, timeoutMs: number): 
 }
 
 /**
- * Runs an Overpass query, falling through to a mirror on HTTP errors,
- * non-JSON bodies and server-side timeouts (which arrive as HTTP 200 with a
- * `remark` and no elements — indistinguishable from "no results" otherwise).
+ * Races every Overpass mirror and takes the first good answer, then aborts the
+ * rest — public instances are individually slow or rate-limited, so trying them
+ * one after another (or waiting on a single one) is what made search feel dead.
+ * A server-side timeout arrives as HTTP 200 + `remark` + no elements; that counts
+ * as a failure for that mirror, not as "no results".
  */
-async function overpass(query: string): Promise<OverpassElement[]> {
-  let lastError: unknown;
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const data = await fetchJson<{ elements?: OverpassElement[]; remark?: string }>(
-        endpoint,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: `data=${encodeURIComponent(query)}`,
-        },
-        15000,
-      );
-      if (!data.elements?.length && data.remark) throw new Error(data.remark);
-      return data.elements ?? [];
-    } catch (err) {
-      lastError = err;
-    }
+async function overpass(query: string, timeoutMs = 9000): Promise<OverpassElement[]> {
+  const ctrl = new AbortController();
+  const attempts = OVERPASS_ENDPOINTS.map(async (endpoint) => {
+    const data = await fetchJson<{ elements?: OverpassElement[]; remark?: string }>(
+      endpoint,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `data=${encodeURIComponent(query)}`,
+      },
+      timeoutMs,
+      ctrl.signal,
+    );
+    if (!data.elements?.length && data.remark) throw new Error(data.remark);
+    return data.elements ?? [];
+  });
+  try {
+    return await Promise.any(attempts);
+  } finally {
+    ctrl.abort();
   }
-  throw lastError;
 }
 
 function toPlace(
@@ -188,6 +198,12 @@ function byDistance(a: PlaceResult, b: PlaceResult): number {
   return (a.dist ?? 0) - (b.dist ?? 0);
 }
 
+/**
+ * Named places matching any of the tag pairs within `radius` metres. Overpass
+ * returns elements in id order, not by distance, so a large radius in a dense
+ * area can cap out before reaching the nearest ones — callers run a small radius
+ * (guaranteed to include the closest) alongside a larger one.
+ */
 export async function overpassNearby(
   tagPairs: [string, string][],
   lat: number,
@@ -196,13 +212,9 @@ export async function overpassNearby(
   limit = 20,
 ): Promise<PlaceResult[]> {
   const lines = tagPairs
-    .map(
-      ([k, v]) =>
-        `  node["${k}"="${v}"](around:${radius},${lat},${lon});\n  way["${k}"="${v}"](around:${radius},${lat},${lon});`,
-    )
+    .map(([k, v]) => `  nwr["${k}"="${v}"]["name"](around:${radius},${lat},${lon});`)
     .join('\n');
-  // Fetch more than `limit` so the distance sort below picks the truly closest.
-  const elements = await overpass(`[out:json][timeout:15];\n(\n${lines}\n);\nout center 100;`);
+  const elements = await overpass(`[out:json][timeout:8];\n(\n${lines}\n);\nout center 80;`);
 
   return elements
     .map((el) => toPlace(el, lat, lon))
@@ -222,7 +234,8 @@ export async function overpassNameSearch(
   if (!safeQ) return [];
   const around = `(around:${radius},${lat},${lon})`;
   const elements = await overpass(
-    `[out:json][timeout:12];\n(\n  nwr["name"~"${safeQ}",i]${around};\n  nwr["brand"~"${safeQ}",i]${around};\n);\nout center 60;`,
+    `[out:json][timeout:10];\n(\n  nwr["name"~"${safeQ}",i]${around};\n  nwr["brand"~"${safeQ}",i]${around};\n);\nout center 60;`,
+    10000,
   );
 
   return elements
@@ -232,11 +245,65 @@ export async function overpassNameSearch(
     .slice(0, 15);
 }
 
+interface PhotonFeature {
+  geometry: { coordinates: [number, number] };
+  properties: {
+    name?: string;
+    housenumber?: string;
+    street?: string;
+    city?: string;
+    state?: string;
+    postcode?: string;
+  };
+}
+
+/**
+ * Photon (Komoot's OSM search) is built for search-as-you-type: fast, typo
+ * tolerant, and indexes the city with the place, so "First Love Church ocala"
+ * works as one phrase. lat/lon bias the ranking; `bboxDeg` (optional) restricts
+ * results to a box that many degrees around the point.
+ */
+export async function photonSearch(
+  q: string,
+  lat: number,
+  lon: number,
+  bboxDeg?: number,
+): Promise<PlaceResult[]> {
+  let url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=10&lang=en&lat=${lat}&lon=${lon}`;
+  if (bboxDeg) {
+    url += `&bbox=${lon - bboxDeg},${lat - bboxDeg},${lon + bboxDeg},${lat + bboxDeg}`;
+  }
+  const data = await fetchJson<{ features?: PhotonFeature[] }>(url, {}, 8000);
+  return (data.features ?? []).map((f) => {
+    const p = f.properties;
+    const [fLon, fLat] = f.geometry.coordinates;
+    const street = [p.housenumber, p.street].filter(Boolean).join(' ');
+    const address = [street, p.city, p.state].filter(Boolean).join(', ');
+    const name = p.name || street || address;
+    return {
+      name,
+      address,
+      lat: fLat,
+      lon: fLon,
+      display_name: address ? `${name}, ${address}` : name,
+      dist: getDistKm(lat, lon, fLat, fLon),
+    } satisfies PlaceResult;
+  });
+}
+
 interface NominatimResult {
   name?: string;
   display_name?: string;
   lat: string;
   lon: string;
+  address?: { house_number?: string; road?: string };
+}
+
+/** Street-address hits have no `name`; use "2529 North Magnolia Avenue", not the first comma chunk ("2529"). */
+function nominatimName(r: NominatimResult): string {
+  if (r.name) return r.name;
+  if (r.address?.house_number && r.address.road) return `${r.address.house_number} ${r.address.road}`;
+  return (r.display_name ?? '').split(',')[0];
 }
 
 async function nominatimQuery(
@@ -258,7 +325,7 @@ async function nominatimQuery(
     const rLat = parseFloat(r.lat);
     const rLon = parseFloat(r.lon);
     return {
-      name: r.name || (r.display_name ?? '').split(',')[0],
+      name: nominatimName(r),
       address: r.display_name ?? '',
       lat: rLat,
       lon: rLon,
@@ -285,15 +352,15 @@ export async function nominatimBiased(
 
 export const DEFAULT_CENTER = { lat: 39.5, lon: -98.35 };
 
+const normName = (n: string): string => n.toLowerCase().replace(/\s+/g, ' ').trim();
+
 /** Same place = same name (case/space-insensitive) within 150 m. */
 function dedupe(results: PlaceResult[]): PlaceResult[] {
   const out: PlaceResult[] = [];
   for (const r of results) {
-    const key = r.name.toLowerCase().replace(/\s+/g, ' ').trim();
+    const key = normName(r.name);
     const dup = out.some(
-      (o) =>
-        o.name.toLowerCase().replace(/\s+/g, ' ').trim() === key &&
-        getDistKm(o.lat, o.lon, r.lat, r.lon) < 0.15,
+      (o) => normName(o.name) === key && getDistKm(o.lat, o.lon, r.lat, r.lon) < 0.15,
     );
     if (!dup) out.push(r);
   }
@@ -305,42 +372,91 @@ export function looksLikeAddress(q: string): boolean {
   return /^\d+\s+\S/.test(q.trim()) || q.includes(',');
 }
 
+/** Results containing every query word (in name or address) outrank partial matches. */
+function matchesAllWords(r: PlaceResult, words: string[]): boolean {
+  const hay = `${r.name} ${r.address}`.toLowerCase();
+  return words.every((w) => hay.includes(w));
+}
+
+const cache = new Map<string, { at: number; results: PlaceResult[] }>();
+const CACHE_MS = 5 * 60 * 1000;
+
 /**
- * Search anything — a category ("cafe"), a chain or venue name ("Walmart"),
- * or an address — around (lat, lon). Categories use an Overpass tag search;
- * names run an Overpass name/brand search and Nominatim in parallel so one
- * slow or failing service can't blank the results. Rejects only when every
- * service that was tried failed.
+ * Search anything — a category ("cafe"), a chain or venue name ("Walmart",
+ * "First Love Church ocala"), or an address — around (lat, lon).
+ *
+ * Every source runs in parallel and `onUpdate` fires as each one lands, so the
+ * first results show as soon as the fastest service answers instead of after the
+ * slowest. Rejects only when every service that was tried failed.
  */
 export async function smartSearch(
   q: string,
   lat: number,
   lon: number,
+  onUpdate?: (results: PlaceResult[]) => void,
 ): Promise<PlaceResult[]> {
   const query = q.trim();
-  const tagPairs = tagPairsFor(query);
+  const cacheKey = `${query.toLowerCase()}|${lat.toFixed(2)},${lon.toFixed(2)}`;
+  const hit = cache.get(cacheKey);
+  if (hit && Date.now() - hit.at < CACHE_MS) {
+    onUpdate?.(hit.results);
+    return hit.results;
+  }
 
+  const tagPairs = tagPairsFor(query);
+  const words = query.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).filter(Boolean);
   const tasks: Promise<PlaceResult[]>[] = [];
   if (tagPairs) {
-    tasks.push(overpassNearby(tagPairs, lat, lon, 8000, 20));
+    // A small radius is guaranteed to include the closest places; the larger one fills out the list.
+    tasks.push(overpassNearby(tagPairs, lat, lon, 2000, 20));
+    tasks.push(overpassNearby(tagPairs, lat, lon, 8000, 40));
   } else {
-    if (!looksLikeAddress(query)) tasks.push(overpassNameSearch(query, lat, lon, 15000));
-    tasks.push(nominatimBiased(query, lat, lon));
+    tasks.push(photonSearch(query, lat, lon, 0.3));
+    tasks.push(photonSearch(query, lat, lon));
+    if (looksLikeAddress(query)) {
+      // Commas and "FL 34475" trip up Photon's phrase matching; Nominatim is strongest on
+      // structured addresses, so it runs alongside rather than only as a fallback.
+      tasks.push(photonSearch(query.replace(/,/g, ' '), lat, lon));
+      tasks.push(nominatimBiased(query, lat, lon));
+    } else {
+      tasks.push(overpassNameSearch(query, lat, lon, 10000));
+    }
   }
 
-  let settled = await Promise.allSettled(tasks);
-  let results = settled.flatMap((s) => (s.status === 'fulfilled' ? s.value : []));
+  const all: PlaceResult[] = [];
+  const errors: unknown[] = [];
+  const snapshot = (): PlaceResult[] => {
+    const sorted = [...all].sort(byDistance);
+    const ranked = tagPairs
+      ? sorted
+      : [
+          ...sorted.filter((r) => matchesAllWords(r, words)),
+          ...sorted.filter((r) => !matchesAllWords(r, words)),
+        ];
+    return dedupe(ranked).slice(0, 15);
+  };
+  const run = (p: Promise<PlaceResult[]>) =>
+    p.then(
+      (r) => {
+        all.push(...r);
+        onUpdate?.(snapshot());
+      },
+      (e) => {
+        errors.push(e);
+      },
+    );
 
-  // A category with no nearby hits: retry as a plain name/address search.
-  if (tagPairs && results.length === 0) {
-    settled = [...settled, ...(await Promise.allSettled([nominatimBiased(query, lat, lon)]))];
-    results = settled.flatMap((s) => (s.status === 'fulfilled' ? s.value : []));
-  }
+  await Promise.all(tasks.map(run));
 
-  if (results.length === 0 && settled.every((s) => s.status === 'rejected')) {
-    throw (settled[0] as PromiseRejectedResult).reason;
+  // Nothing usable from the primary services: fall back to Nominatim.
+  if (all.length === 0) {
+    await run(nominatimBiased(query, lat, lon));
   }
-  return dedupe(results.sort(byDistance)).slice(0, 15);
+  if (all.length === 0 && errors.length >= tasks.length) throw errors[0];
+
+  const results = snapshot();
+  if (results.length) cache.set(cacheKey, { at: Date.now(), results });
+  return results;
 }
 
 export function formatDistance(dist: number | null): string {

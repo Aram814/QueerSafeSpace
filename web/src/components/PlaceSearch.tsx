@@ -6,8 +6,11 @@ interface Props {
   placeholder: string;
   value: string;
   onValueChange: (value: string) => void;
-  /** Runs debounced; rejecting renders the failure state. */
-  search: (query: string) => Promise<PlaceResult[]>;
+  /**
+   * Runs debounced; rejecting renders the failure state. `onPartial` may be called
+   * any number of times with interim results while slower sources are still pending.
+   */
+  search: (query: string, onPartial: (results: PlaceResult[]) => void) => Promise<PlaceResult[]>;
   onPick: (result: PlaceResult) => void;
   /** Rendered as a badge on a result already present in QueerSafeSpace. */
   isKnown?: (result: PlaceResult) => boolean;
@@ -32,7 +35,7 @@ export default function PlaceSearch({
   search,
   onPick,
   isKnown,
-  debounceMs = 450,
+  debounceMs = 300,
   minLength = 2,
 }: Props) {
   const [state, setState] = useState<State>({ kind: 'idle' });
@@ -54,7 +57,11 @@ export default function PlaceSearch({
 
     const timer = setTimeout(async () => {
       try {
-        const results = await search(query);
+        const results = await search(query, (partial) => {
+          if (token === tokenRef.current && partial.length) {
+            setState({ kind: 'results', results: partial });
+          }
+        });
         if (token !== tokenRef.current) return;
         setState({ kind: 'results', results });
       } catch {

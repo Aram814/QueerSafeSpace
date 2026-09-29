@@ -87,7 +87,7 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
 
   // Anything on the map can be searched; places already in QueerSafeSpace are
   // matched by name/address too, so they surface even if OSM search misses them.
-  const search = useCallback(async (q: string) => {
+  const search = useCallback(async (q: string, onPartial: (r: PlaceResult[]) => void) => {
     const view = mapViewRef.current;
     const anchor =
       view && view.zoom >= 9 ? view : (userLocationRef.current ?? view ?? DEFAULT_CENTER);
@@ -112,16 +112,21 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
       .sort((a, b) => (a.dist ?? 0) - (b.dist ?? 0))
       .slice(0, 5);
 
+    const withKnown = (found: PlaceResult[]): PlaceResult[] => [
+      ...known,
+      ...found.filter((r) => !known.some((k) => getDistKm(k.lat, k.lon, r.lat, r.lon) < 0.1)),
+    ];
+    if (known.length) onPartial(known);
+
     let found: PlaceResult[] = [];
     try {
-      found = await smartSearch(q, anchor.lat, anchor.lon);
+      found = await smartSearch(q, anchor.lat, anchor.lon, (partial) =>
+        onPartial(withKnown(partial)),
+      );
     } catch (err) {
       if (!known.length) throw err;
     }
-    const seen = found.filter(
-      (r) => !known.some((k) => getDistKm(k.lat, k.lon, r.lat, r.lon) < 0.1),
-    );
-    return [...known, ...seen];
+    return withKnown(found);
   }, []);
 
   // Ported from pickSearchResult(): fly there, open the space if we already

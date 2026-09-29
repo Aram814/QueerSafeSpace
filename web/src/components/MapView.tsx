@@ -47,8 +47,19 @@ function MapEffects({
   const cbs = useRef({ onUserLocated, onLocationError, onMapMove });
   cbs.current = { onUserLocated, onLocationError, onMapMove };
 
+  // GPS can answer seconds after the user has already searched or panned; only the
+  // first fix may move the map, and only if nothing else has (otherwise the map
+  // "bounces back" to the user's location after flying to a search result).
+  const interacted = useRef(false);
+
   useEffect(() => {
-    const located = (e: L.LocationEvent) => cbs.current.onUserLocated(e.latlng.lat, e.latlng.lng);
+    const located = (e: L.LocationEvent) => {
+      if (!interacted.current) map.setView(e.latlng, 13);
+      cbs.current.onUserLocated(e.latlng.lat, e.latlng.lng);
+    };
+    const touched = () => {
+      interacted.current = true;
+    };
     const failed = () => cbs.current.onLocationError();
     const moved = () => {
       const c = map.getCenter();
@@ -57,19 +68,24 @@ function MapEffects({
     map.on('locationfound', located);
     map.on('locationerror', failed);
     map.on('moveend', moved);
+    map.on('dragstart', touched);
+    map.on('zoomstart', touched);
     moved();
-    map.locate({ setView: true, maxZoom: 13 });
+    map.locate({ setView: false });
     const timer = setTimeout(() => map.invalidateSize(), 200);
     return () => {
       clearTimeout(timer);
       map.off('locationfound', located);
       map.off('locationerror', failed);
       map.off('moveend', moved);
+      map.off('dragstart', touched);
+      map.off('zoomstart', touched);
     };
   }, [map]);
 
   useEffect(() => {
     if (!flyTo) return;
+    interacted.current = true;
     map.flyTo([flyTo.lat, flyTo.lon], flyTo.zoom, { animate: true, duration: 0.7 });
   }, [map, flyTo]);
 
