@@ -478,6 +478,23 @@ export function looksLikeAddress(q: string): boolean {
   return /^\d+\s+\S/.test(q.trim()) || q.includes(',');
 }
 
+/**
+ * "11223 N Williams St # A, Dunnellon, FL 34432" -> unit designators removed ("# A", "Apt 4",
+ * "Suite 200"), which geocoders match against nothing and which sink the whole lookup.
+ */
+export function normalizeAddress(q: string): string {
+  return q
+    .replace(/#\s*[\w-]+/g, ' ')
+    .replace(/\b(apt|apartment|suite|ste|unit|bldg)\b\.?\s*[\w-]+/gi, ' ')
+    .replace(/\s*,\s*(,\s*)+/g, ', ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s+,/g, ',')
+    .trim();
+}
+
+/** Words of 1-2 letters ("co", "of", "a") match nearly every name, so they never drive a search. */
+const significant = (words: string[]): string[] => words.filter((w) => w.length >= 3);
+
 /** Results containing every query word (in name or address) outrank partial matches. */
 function matchesAllWords(r: PlaceResult, words: string[]): boolean {
   const hay = `${r.name} ${r.address}`.toLowerCase();
@@ -563,24 +580,27 @@ export async function smartSearch(
 
   // A city named in the query becomes the search centre.
   let center = { lat, lon };
-  let nameWords = parsed.restWords;
+  let nameWords = significant(parsed.restWords);
   let inPlace = false;
   if (hasCategory && parsed.restWords.length) {
     const place = await resolvePlace(parsed.words, parsed.restWords, lat, lon, signal);
     if (place) {
       center = place;
       inPlace = true;
-      nameWords = parsed.restWords.filter((w) => !place.words.includes(w));
+      nameWords = significant(parsed.restWords.filter((w) => !place.words.includes(w)));
     }
   }
   const sortKm = (r: PlaceResult): number => getDistKm(center.lat, center.lon, r.lat, r.lon);
 
   const sources: Source[] = [];
   if (isAddress) {
-    // Commas and "FL 34475" trip up Photon's phrase matching; Nominatim is strongest on
-    // structured addresses, so both run.
-    sources.push(async (emit) => emit(await photonSearch(query.replace(/,/g, ' '), lat, lon, { signal })));
-    sources.push(async (emit) => emit(await nominatimBiased(query, lat, lon, signal)));
+    // Unit numbers ("# A") and ZIP codes trip up phrase matching; Nominatim is strongest on
+    // structured addresses. Several spellings of the same address run together.
+    const addr = normalizeAddress(query);
+    const noZip = addr.replace(/\b\d{5}(-\d{4})?\b/g, ' ').replace(/\s+/g, ' ').trim();
+    sources.push(async (emit) => emit(await photonSearch(addr.replace(/,/g, ' '), lat, lon, { signal })));
+    sources.push(async (emit) => emit(await photonSearch(noZip.replace(/,/g, ' '), lat, lon, { signal })));
+    sources.push(async (emit) => emit(await nominatimBiased(addr, lat, lon, signal)));
   } else if (hasCategory && nameWords.length === 0) {
     // Pure category: coffee, grocery, smoke shop, "Dunnellon coffee".
     // Three independent radii, run together: the small one is guaranteed to include the nearest
@@ -607,6 +627,17 @@ export async function smartSearch(
     sources.push(async (emit) =>
       emit(await photonSearch(parsed.categoryWords.join(' '), center.lat, center.lon, { bboxDeg: 0.25, signal })),
     );
+    // The whole query may itself be a business name: "Dunnellon Coffee Co" is a category
+    // word plus a city as far as the parser can tell, but also just the shop's name.
+    const phrase = significant(parsed.words);
+    if (phrase.length >= 2) {
+      sources.push(async (emit) =>
+        emit(await photonSearch(phrase.join(' '), center.lat, center.lon, { bboxDeg: 0.4, signal })),
+      );
+      sources.push(async (emit) =>
+        emit(await overpassNameSearch(phrase, center.lat, center.lon, 15000, signal)),
+      );
+    }
   } else {
     // A named business, optionally with a category and/or city: "First Love Church (Ocala)".
     const nameQuery = [...nameWords, ...parsed.categoryWords].join(' ');
@@ -614,7 +645,7 @@ export async function smartSearch(
       emit(await photonSearch(nameQuery || query, center.lat, center.lon, { bboxDeg: inPlace ? 0.3 : 0.4, signal })),
     );
     sources.push(async (emit) =>
-      emit(await overpassNameSearch(nameWords.length ? nameWords : parsed.words, center.lat, center.lon, 15000, signal)),
+      emit(await overpassNameSearch(nameWords.length ? nameWords : significant(parsed.words), center.lat, center.lon, 15000, signal)),
     );
   }
 
