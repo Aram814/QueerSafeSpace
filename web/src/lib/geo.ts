@@ -380,6 +380,7 @@ export async function placesSearch(
         lon: p.lon,
         display_name: p.address ? `${p.name}, ${p.address}` : p.name,
         dist: getDistKm(lat, lon, p.lat, p.lon),
+        source: 'foursquare',
       }) satisfies PlaceResult,
   );
 }
@@ -585,8 +586,6 @@ async function resolvePlace(
   return null;
 }
 
-const cache = new Map<string, { at: number; results: PlaceResult[] }>();
-const CACHE_MS = 5 * 60 * 1000;
 /** Beyond this from the search centre a name match is another town/state, not "nearby". */
 const LOCAL_KM = 80;
 
@@ -611,12 +610,7 @@ export async function smartSearch(
   signal?: AbortSignal,
 ): Promise<PlaceResult[]> {
   const query = q.trim();
-  const cacheKey = `${query.toLowerCase()}|${lat.toFixed(2)},${lon.toFixed(2)}`;
-  const hit = cache.get(cacheKey);
-  if (hit && Date.now() - hit.at < CACHE_MS) {
-    onUpdate?.(hit.results);
-    return hit.results;
-  }
+  // Deliberately no result cache: Foursquare's usage guidelines allow no caching of place attributes.
 
   const parsed = parseQuery(query);
   const isAddress = looksLikeAddress(query);
@@ -775,7 +769,6 @@ export async function smartSearch(
   }
 
   if (!results.length && errors.length >= sources.length) throw errors[0];
-  if (results.length) cache.set(cacheKey, { at: Date.now(), results });
   return results;
 }
 

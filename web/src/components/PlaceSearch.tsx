@@ -132,6 +132,9 @@ export default function PlaceSearch({
                 </div>
               </div>
             ))}
+          {state.kind === 'results' && state.results.some((r) => r.source === 'foursquare') && (
+            <div className="geo-credit">Place data by Foursquare</div>
+          )}
         </div>
       )}
     </div>
