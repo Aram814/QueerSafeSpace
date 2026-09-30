@@ -15,10 +15,12 @@
  *   FOURSQUARE_API_KEY   required. A Places API "service key" from developer.foursquare.com.
  *   FOURSQUARE_API_BASE  optional. Defaults to the current Places API search endpoint.
  *   FOURSQUARE_API_VERSION optional. Sent as X-Places-Api-Version (current API only).
+ *   RATE_LIMIT_PLACES_PER_MIN optional (default 60) and FOURSQUARE_DAILY_CAP optional (default 5000,
+ *   0 disables): see api/_lib/guard.js.
  */
 const DEFAULT_BASE = 'https://places-api.foursquare.com/places/search';
 const DEFAULT_VERSION = '2025-06-17';
-const ALLOWED_ORIGIN = /^(https:\/\/(www\.)?queersafespace\.org|https:\/\/[a-z0-9-]+\.vercel\.app|http:\/\/localhost(:\d+)?)$/;
+import { applyCors, dailyCap, limits, rateLimit, tooManyRequests } from './_lib/guard.js';
 
 const num = (v) => (typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN);
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
@@ -43,15 +45,7 @@ function toPlace(r) {
 }
 
 export default async function handler(req, res) {
-  const origin = req.headers.origin;
-  if (origin && ALLOWED_ORIGIN.test(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-  }
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    return res.status(204).end();
-  }
+  if (applyCors(req, res)) return;
   if (req.method !== 'GET') return res.status(405).json({ error: 'GET only' });
 
   const key = process.env.FOURSQUARE_API_KEY;
@@ -65,6 +59,12 @@ export default async function handler(req, res) {
   }
   const radius = clamp(Math.round(num(req.query?.radius)) || 20000, 500, 50000);
   const limit = clamp(Math.round(num(req.query?.limit)) || 30, 1, 50);
+
+  // Protect the Foursquare quota: per-visitor limit, then a sitewide daily budget.
+  const visitor = await rateLimit(req, { name: 'places', limit: limits.placesPerMin() });
+  if (!visitor.ok) return tooManyRequests(res, visitor.retryAfter);
+  const budget = await dailyCap('foursquare', limits.foursquareDaily());
+  if (!budget.ok) return tooManyRequests(res, 3600);
 
   const base = process.env.FOURSQUARE_API_BASE || DEFAULT_BASE;
   const legacy = /api\.foursquare\.com\/v3/.test(base);

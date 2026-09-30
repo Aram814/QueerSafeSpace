@@ -72,6 +72,24 @@ Redeploy after adding them. Without the key `/api/places` answers 503 and search
 the free OpenStreetMap sources. Check Foursquare's current terms for attribution and for how
 long results may be stored before publishing.
 
+## Rate limiting and allowed sites (`api/_lib/guard.js`)
+
+Both proxies (`/api/places`, `/api/overpass`) share `api/_lib/guard.js`:
+
+- **Allowed sites:** browsers on `queersafespace.org`, `queer-safe-space.vercel.app`, this
+  project's Vercel preview URLs and `localhost` only. This stops other websites from using the
+  proxies from their visitors' browsers; it does not stop scripts, which is what the limits are for.
+- **Per-visitor limit** (by IP address, per minute): 60 for `/api/places`, 120 for `/api/overpass`.
+  Over the limit the proxy answers 429 with `Retry-After`, and the app simply falls back to its
+  other sources.
+- **Daily cap** on Foursquare calls across all visitors: 5,000 by default.
+- Counters live in Upstash Redis. Add it in Vercel -> Storage -> Upstash (Free plan); the
+  integration sets `KV_REST_API_URL` / `KV_REST_API_TOKEN`. **Without them the limits are skipped**,
+  and if the store is briefly unavailable requests are allowed rather than blocked.
+
+Optional Vercel environment variables: `RATE_LIMIT_PLACES_PER_MIN`, `RATE_LIMIT_OVERPASS_PER_MIN`,
+`FOURSQUARE_DAILY_CAP` (`0` disables the cap). Redeploy after changing them.
+
 ## Anonymity
 
 Ratings are never joined to `profiles` or auth data. The detail sheet renders a rating's date,

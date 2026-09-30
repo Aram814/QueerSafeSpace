@@ -19,7 +19,7 @@ const MIRRORS = [
 const HEDGE_MS = 3000;
 const MIRROR_TIMEOUT_MS = 12000;
 const USER_AGENT = 'QueerSafeSpace/1.0 (https://www.queersafespace.org; QueerSafeSpace.lgbt@gmail.com)';
-const ALLOWED_ORIGIN = /^(https:\/\/(www\.)?queersafespace\.org|https:\/\/[a-z0-9-]+\.vercel\.app|http:\/\/localhost(:\d+)?)$/;
+import { applyCors, limits, rateLimit, tooManyRequests } from './_lib/guard.js';
 // Only Overpass JSON queries of a sane size: this must not become an open proxy.
 const QUERY_SHAPE = /^\[out:json\]\[timeout:\d{1,2}\];/;
 const MAX_QUERY_LENGTH = 4000;
@@ -106,15 +106,7 @@ function raceMirrors(query) {
 }
 
 export default async function handler(req, res) {
-  const origin = req.headers.origin;
-  if (origin && ALLOWED_ORIGIN.test(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-  }
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    return res.status(204).end();
-  }
+  if (applyCors(req, res)) return;
   if (req.method !== 'GET') return res.status(405).json({ error: 'GET only' });
 
   let query = typeof req.query?.data === 'string' ? req.query.data.trim() : '';
@@ -124,6 +116,10 @@ export default async function handler(req, res) {
   if (!query || query.length > MAX_QUERY_LENGTH || !QUERY_SHAPE.test(query)) {
     return res.status(400).json({ error: 'Expected an Overpass JSON query in ?data=' });
   }
+
+  // Answers served from Vercel's cache never reach this point; only fresh queries are counted.
+  const visitor = await rateLimit(req, { name: 'overpass', limit: limits.overpassPerMin() });
+  if (!visitor.ok) return tooManyRequests(res, visitor.retryAfter);
 
   try {
     const data = await raceMirrors(query);
