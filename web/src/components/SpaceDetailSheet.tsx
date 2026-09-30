@@ -16,9 +16,9 @@ const BADGE_CLASS = {
 } as const;
 
 const BARS = [
-  ['safe', '✅ Safe', '#22C55E'],
-  ['mixed', '⚠️ Mixed', '#FBBF24'],
-  ['not_safe', '❌ Not Safe', '#EF4444'],
+  ['safe', '✅ Safe', PIN_COLORS.safe],
+  ['mixed', '⚠️ Mixed', PIN_COLORS.mixed],
+  ['not_safe', '❌ Not Safe', PIN_COLORS.not_safe],
 ] as const;
 
 /**

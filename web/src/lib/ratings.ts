@@ -25,10 +25,10 @@ export function countRatings(
 }
 
 export const PIN_COLORS: Record<OverallRating, string> = {
-  safe: '#22C55E',
-  mixed: '#FBBF24',
-  not_safe: '#EF4444',
-  unknown: '#9CA3AF',
+  safe: '#2F9E5B',
+  mixed: '#E0A010',
+  not_safe: '#D64545',
+  unknown: '#8A94A3',
 };
 
 export const RATING_LABELS: Record<OverallRating, string> = {
