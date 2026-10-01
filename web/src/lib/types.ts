@@ -62,6 +62,8 @@ export interface Location {
   user_id: string | null;
   latitude: number | null;
   longitude: number | null;
+  /** 'osm' = listed from OpenStreetMap, not added by a member. */
+  source?: 'community' | 'osm';
 }
 
 /** public_locations / public_ratings: the anonymous read views, minus user_id. */
