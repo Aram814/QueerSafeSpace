@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import AddSpaceSheet from '../components/AddSpaceSheet';
 import Icon from '../components/Icon';
+import NearbyList from '../components/NearbyList';
 import MenuDrawer from '../components/MenuDrawer';
 import ShieldLogo from '../components/ShieldLogo';
 import { getTheme, type ThemeChoice } from '../theme';
@@ -51,6 +52,8 @@ export default function MapScreen({
   const [recenterTick, setRecenterTick] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setThemeState] = useState<ThemeChoice>(getTheme);
+  const [nearbyOpen, setNearbyOpen] = useState(false);
+  const [viewCenter, setViewCenter] = useState<{ lat: number; lon: number } | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
 
   const mapViewRef = useRef<{ lat: number; lon: number; zoom: number } | null>(null);
@@ -108,6 +111,7 @@ export default function MapScreen({
 
   const handleMapMove = useCallback((lat: number, lon: number, zoom: number) => {
     mapViewRef.current = { lat, lon, zoom };
+    setViewCenter({ lat, lon });
   }, []);
 
   const userLocationRef = useRef(userLocation);
@@ -252,31 +256,18 @@ export default function MapScreen({
       </div>
 
       <div className="main-body">
-        <aside className="sidebar">
-          <div className="legend-card">
-            <p className="legend-title">Map Legend</p>
-            <span className="key-item">
-              <span className="key-dot" style={{ background: PIN_COLORS.safe }} />
-              Safe
-            </span>
-            <span className="key-item">
-              <span className="key-dot" style={{ background: PIN_COLORS.mixed }} />
-              Mixed
-            </span>
-            <span className="key-item">
-              <span className="key-dot" style={{ background: PIN_COLORS.not_safe }} />
-              Not Safe
-            </span>
-            <span className="key-item">
-              <span className="key-dot" style={{ background: PIN_COLORS.unknown }} />
-              Unknown
-            </span>
-          </div>
-          <div className="sidebar-tip">
-            <strong>💡 Add a Space</strong>
-            <span>Tap + in the top bar to share a safe space with the community.</span>
-          </div>
-        </aside>
+        <NearbyList
+          spaces={spaces}
+          filter={filter}
+          center={viewCenter ?? userLocation ?? DEFAULT_CENTER}
+          expanded={nearbyOpen}
+          onToggle={() => setNearbyOpen((o) => !o)}
+          onSelect={(sp) => {
+            setNearbyOpen(false);
+            setFlyTo({ lat: sp.latitude as number, lon: sp.longitude as number, zoom: 16 });
+            void openDetail(sp.id);
+          }}
+        />
 
         <div className="map-area">
           <button

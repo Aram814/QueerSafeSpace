@@ -31,6 +31,9 @@ export const PATHS: Record<string, string> = {
   glass: 'M5 4h14l-7 9-7-9zM12 13v7M8 20h8',
   church: 'M12 2v4M10 4h4M12 6l6 4v10H6V10l6-4zM10 20v-5h4v5',
   bag: 'M6 8h12l1 12H5L6 8zM9 8V7a3 3 0 0 1 6 0v1',
+  fork: 'M7 3v7a2 2 0 0 0 4 0V3M9 10v11M17 3c-2 2-3 4.5-3 7h3v11',
+  cross: 'M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6V4z',
+  pin: 'M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11zM12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z',
   question: 'M9 9.5a3 3 0 1 1 4.4 2.6c-.9.5-1.4 1.1-1.4 2M12 18h.01',
 };
 

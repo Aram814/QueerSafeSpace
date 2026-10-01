@@ -1,4 +1,4 @@
-import type { OverallRating, RatingVote, SafetyRating } from './types';
+import type { LocationCategory, OverallRating, RatingVote, SafetyRating } from './types';
 
 /**
  * Majority-vote tally, ported from overallRating() in index.html.
@@ -50,3 +50,26 @@ export const FILTER_TO_RATING: Record<Exclude<SpaceFilter, 'all'>, SafetyRating>
 export function matchesFilter(rating: OverallRating, filter: SpaceFilter): boolean {
   return filter === 'all' || rating === FILTER_TO_RATING[filter];
 }
+
+export const CATEGORY_LABELS: Record<LocationCategory, string> = {
+  cafe: 'Café',
+  restaurant: 'Restaurant',
+  bar: 'Bar',
+  retail: 'Shopping',
+  place_of_worship: 'Place of worship',
+  healthcare: 'Healthcare',
+  community: 'Community',
+  other: 'Place',
+};
+
+/** Icon name (see components/Icon.tsx) for each kind of place. */
+export const CATEGORY_ICONS: Record<LocationCategory, string> = {
+  cafe: 'cup',
+  restaurant: 'fork',
+  bar: 'glass',
+  retail: 'bag',
+  place_of_worship: 'church',
+  healthcare: 'cross',
+  community: 'users',
+  other: 'pin',
+};

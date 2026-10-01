@@ -14,21 +14,23 @@ interface Props {
   /** The kind of place: cafe, library, bar... */
   icon: IconName;
   /** CSS left/top of the pin's tip. */
-  left: string;
-  top: string;
+  left?: string;
+  top?: string;
   large?: boolean;
+  /** Sits in normal flow (inside a Leaflet marker) instead of absolutely positioned. */
+  onMap?: boolean;
 }
 
 /**
  * A map pin: color and a badge say how safe a place is (the badge keeps it readable without
  * color vision), the center icon says what kind of place it is.
  */
-export default function PlacePin({ rating, icon, left, top, large }: Props) {
+export default function PlacePin({ rating, icon, left, top, large, onMap }: Props) {
   const color = PIN_COLORS[rating];
   const stroke = { fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
   return (
     <svg
-      className={`place-pin${large ? ' large' : ''}`}
+      className={`place-pin${large ? ' large' : ''}${onMap ? ' on-map' : ''}`}
       viewBox="0 0 32 40"
       style={{ left, top }}
       aria-hidden="true"
