@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { FEEDBACK_HREF, TESTER_HREF } from '../config';
+import { DEFAULT_AVATAR } from '../lib/profiles';
 import type { Profile } from '../lib/types';
 import type { InfoPage } from '../screens/InfoPages';
 import { setTheme, type ThemeChoice } from '../theme';
@@ -50,7 +51,13 @@ export default function MenuDrawer({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="menu-head">
-          <ShieldLogo className="menu-shield" />
+          {user ? (
+            <span className="menu-avatar" aria-hidden="true">
+              {profile?.avatar_url ?? DEFAULT_AVATAR}
+            </span>
+          ) : (
+            <ShieldLogo className="menu-shield" />
+          )}
           <div className="menu-id">
             <div className="menu-uname">{user ? (profile?.username ?? 'Member') : 'Guest'}</div>
             <div className="menu-email">{user?.email ?? 'Not signed in'}</div>
@@ -65,6 +72,12 @@ export default function MenuDrawer({
             <Icon name="map" />
             Map
           </button>
+          {user && (
+            <button className="menu-item" onClick={() => onOpenPage('account')}>
+              <Icon name="user" />
+              Account settings
+            </button>
+          )}
           <button className="menu-item" onClick={() => onOpenPage('crisis')}>
             <Icon name="sos" />
             Crisis resources

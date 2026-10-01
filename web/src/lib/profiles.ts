@@ -63,3 +63,14 @@ export async function saveAvatar(userId: string, avatar: string): Promise<void> 
     .eq('user_id', userId);
   if (error) throw new Error(error.message);
 }
+
+export async function saveUsername(userId: string, username: string): Promise<void> {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ username })
+    .eq('user_id', userId);
+  if (error) {
+    // 23505 = unique_violation: profiles.username is UNIQUE.
+    throw new Error(error.code === '23505' ? 'That username is taken.' : error.message);
+  }
+}

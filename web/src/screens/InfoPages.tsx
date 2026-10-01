@@ -2,9 +2,9 @@ import type { ReactNode } from 'react';
 import Icon from '../components/Icon';
 import { CONTACT_EMAIL, FEEDBACK_HREF, INSTAGRAM_HREF, TESTER_HREF } from '../config';
 
-export type InfoPage = 'crisis' | 'contact' | 'privacy' | 'terms';
+export type InfoPage = 'crisis' | 'contact' | 'privacy' | 'terms' | 'account';
 
-function PageShell({ title, onBack, children }: { title: string; onBack: () => void; children: ReactNode }) {
+export function PageShell({ title, onBack, children }: { title: string; onBack: () => void; children: ReactNode }) {
   return (
     <div className="screen page">
       <header className="page-head">

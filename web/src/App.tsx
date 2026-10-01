@@ -7,6 +7,8 @@ import AuthOverlay, { type AuthMode } from './components/AuthOverlay';
 import Toast from './components/Toast';
 import SplashScreen from './screens/SplashScreen';
 import MapScreen from './screens/MapScreen';
+import AccountPage from './screens/AccountPage';
+import ResetPasswordScreen from './screens/ResetPasswordScreen';
 import { ContactPage, CrisisPage, PrivacyPage, TermsPage, type InfoPage } from './screens/InfoPages';
 
 type Screen = 'splash' | 'main';
@@ -16,6 +18,8 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [authMode, setAuthMode] = useState<AuthMode | null>(null);
+  // Set when the user opens a password-reset link from their email.
+  const [recovering, setRecovering] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   // Crisis resources and Contact open over the map so its state (search, position) is kept.
   const [page, setPage] = useState<InfoPage | null>(null);
@@ -26,8 +30,9 @@ export default function App() {
     let active = true;
 
     // Mirrors onAuthStateChange in index.html: a session sends you to the map.
-    const handle = (nextUser: User | null) => {
+    const handle = (nextUser: User | null, event?: string) => {
       if (!active) return;
+      if (event === 'PASSWORD_RECOVERY') setRecovering(true);
       setUser(nextUser);
       if (!nextUser) {
         setProfile(null);
@@ -72,6 +77,29 @@ export default function App() {
       {page === 'contact' && <ContactPage onBack={() => setPage(null)} />}
       {page === 'privacy' && <PrivacyPage onBack={() => setPage(null)} />}
       {page === 'terms' && <TermsPage onBack={() => setPage(null)} />}
+
+      {page === 'account' && user && (
+        <AccountPage
+          user={user}
+          profile={profile}
+          onBack={() => setPage(null)}
+          onProfileChange={setProfile}
+          onSignedOut={() => {
+            setPage(null);
+            setScreen('splash');
+          }}
+          onToast={showToast}
+        />
+      )}
+
+      {recovering && (
+        <ResetPasswordScreen
+          onDone={(message) => {
+            setRecovering(false);
+            showToast(message);
+          }}
+        />
+      )}
 
       {authMode && (
         <AuthOverlay
