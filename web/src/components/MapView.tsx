@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef } from 'react';
 import L from 'leaflet';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import { DEFAULT_CENTER } from '../lib/geo';
-import { matchesFilter, overallRating, PIN_COLORS, RATING_LABELS, type SpaceFilter } from '../lib/ratings';
-import type { Space } from '../lib/types';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { CATEGORY_ICONS, matchesFilter, overallRating, RATING_LABELS, type SpaceFilter } from '../lib/ratings';
+import type { LocationCategory, OverallRating, Space } from '../lib/types';
+import PlacePin from './PlacePin';
 
 interface Props {
   spaces: Space[];
@@ -24,22 +26,23 @@ interface Props {
   onLocationError: (code?: number) => void;
 }
 
-/** Ported from the divIcon in renderMarkers(). */
-function pinIcon(color: string): L.DivIcon {
-  return L.divIcon({
-    className: '',
-    html: `<div style="
-      width:28px;height:28px;
-      background:${color};
-      border-radius:50% 50% 50% 0;
-      transform:rotate(-45deg);
-      border:3px solid #fff;
-      box-shadow:0 3px 8px rgba(0,0,0,0.28);
-    "></div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 28],
-    popupAnchor: [0, -30],
+/** Color + badge say how safe a place is, the center icon says what it is. */
+const iconCache = new Map<string, L.DivIcon>();
+function pinIcon(rating: OverallRating, category: LocationCategory): L.DivIcon {
+  const key = `${rating}:${category}`;
+  const hit = iconCache.get(key);
+  if (hit) return hit;
+  const icon = L.divIcon({
+    className: 'pin-wrap',
+    html: renderToStaticMarkup(
+      <PlacePin rating={rating} icon={CATEGORY_ICONS[category] ?? 'pin'} onMap />,
+    ),
+    iconSize: [32, 40],
+    iconAnchor: [16, 40],
+    popupAnchor: [0, -38],
   });
+  iconCache.set(key, icon);
+  return icon;
 }
 
 // Coarse (Wi-Fi/cell) fixes are fine for city-level search and are much faster than GPS; the
@@ -240,7 +243,7 @@ export default function MapView({
           <Marker
             key={space.id}
             position={[space.latitude as number, space.longitude as number]}
-            icon={pinIcon(PIN_COLORS[rating])}
+            icon={pinIcon(rating, space.category)}
           >
             <Popup>
               <div className="map-popup">

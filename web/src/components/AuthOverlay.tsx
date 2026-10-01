@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { OAUTH_ENABLED } from '../config';
 import { resetPassword, signIn, signInWithOAuth, signUp } from '../lib/auth';
 
 export type AuthMode = 'signin' | 'signup';
@@ -8,6 +9,7 @@ interface Props {
   onModeChange: (mode: AuthMode) => void;
   onClose: () => void;
   onToast: (message: string) => void;
+  onOpenPage: (page: 'privacy' | 'terms') => void;
 }
 
 interface Message {
@@ -15,7 +17,7 @@ interface Message {
   isError: boolean;
 }
 
-export default function AuthOverlay({ mode, onModeChange, onClose, onToast }: Props) {
+export default function AuthOverlay({ mode, onModeChange, onClose, onToast, onOpenPage }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -159,7 +161,12 @@ export default function AuthOverlay({ mode, onModeChange, onClose, onToast }: Pr
                     checked={agreedTerms}
                     onChange={(e) => setAgreedTerms(e.target.checked)}
                   />
-                  I agree to the Terms &amp; Conditions
+                  <span>
+                    I agree to the{' '}
+                    <button type="button" className="link-btn" onClick={() => onOpenPage('terms')}>
+                      Terms &amp; Conditions
+                    </button>
+                  </span>
                 </label>
                 <label className="chk-row">
                   <input
@@ -167,7 +174,12 @@ export default function AuthOverlay({ mode, onModeChange, onClose, onToast }: Pr
                     checked={agreedPrivacy}
                     onChange={(e) => setAgreedPrivacy(e.target.checked)}
                   />
-                  I agree to the Privacy Policy
+                  <span>
+                    I agree to the{' '}
+                    <button type="button" className="link-btn" onClick={() => onOpenPage('privacy')}>
+                      Privacy Policy
+                    </button>
+                  </span>
                 </label>
               </div>
             </>
@@ -190,15 +202,19 @@ export default function AuthOverlay({ mode, onModeChange, onClose, onToast }: Pr
           )}
         </form>
 
-        <div className="oauth-divider">or continue with</div>
-        <div className="oauth-row">
-          <button className="btn btn-oauth" onClick={() => handleOAuth('google')}>
-            Continue with Google
-          </button>
-          <button className="btn btn-oauth" onClick={() => handleOAuth('apple')}>
-            Continue with Apple
-          </button>
-        </div>
+        {OAUTH_ENABLED && (
+          <>
+            <div className="oauth-divider">or continue with</div>
+            <div className="oauth-row">
+              <button className="btn btn-oauth" onClick={() => handleOAuth('google')}>
+                Continue with Google
+              </button>
+              <button className="btn btn-oauth" onClick={() => handleOAuth('apple')}>
+                Continue with Apple
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

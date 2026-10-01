@@ -7,6 +7,7 @@ import AuthOverlay, { type AuthMode } from './components/AuthOverlay';
 import Toast from './components/Toast';
 import SplashScreen from './screens/SplashScreen';
 import MapScreen from './screens/MapScreen';
+import { ContactPage, CrisisPage, PrivacyPage, TermsPage, type InfoPage } from './screens/InfoPages';
 
 type Screen = 'splash' | 'main';
 
@@ -16,6 +17,8 @@ export default function App() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [authMode, setAuthMode] = useState<AuthMode | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  // Crisis resources and Contact open over the map so its state (search, position) is kept.
+  const [page, setPage] = useState<InfoPage | null>(null);
 
   const showToast = useCallback((message: string) => setToast(message), []);
 
@@ -52,6 +55,7 @@ export default function App() {
           onSignUp={() => setAuthMode('signup')}
           onSignIn={() => setAuthMode('signin')}
           onBrowseAnonymously={() => setScreen('main')}
+          onOpenPage={setPage}
         />
       ) : (
         <MapScreen
@@ -60,8 +64,14 @@ export default function App() {
           onRequestAuth={() => setAuthMode('signin')}
           onSignedOut={() => setScreen('splash')}
           onToast={showToast}
+          onOpenPage={setPage}
         />
       )}
+
+      {page === 'crisis' && <CrisisPage onBack={() => setPage(null)} />}
+      {page === 'contact' && <ContactPage onBack={() => setPage(null)} />}
+      {page === 'privacy' && <PrivacyPage onBack={() => setPage(null)} />}
+      {page === 'terms' && <TermsPage onBack={() => setPage(null)} />}
 
       {authMode && (
         <AuthOverlay
@@ -69,6 +79,7 @@ export default function App() {
           onModeChange={setAuthMode}
           onClose={() => setAuthMode(null)}
           onToast={showToast}
+          onOpenPage={setPage}
         />
       )}
 

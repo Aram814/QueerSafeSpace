@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import AddSpaceSheet from '../components/AddSpaceSheet';
+import Icon from '../components/Icon';
+import NearbyList from '../components/NearbyList';
+import MenuDrawer from '../components/MenuDrawer';
+import ShieldLogo from '../components/ShieldLogo';
+import { getTheme, type ThemeChoice } from '../theme';
+import type { InfoPage } from './InfoPages';
 import MapView from '../components/MapView';
 import PlaceSearch from '../components/PlaceSearch';
 import RateSheet from '../components/RateSheet';
@@ -11,11 +17,11 @@ import { PIN_COLORS, type SpaceFilter } from '../lib/ratings';
 import { loadSpaceDetail, loadSpaces } from '../lib/spaces';
 import type { PlaceResult, Profile, Space, SpaceDetail } from '../lib/types';
 
-const FILTERS: { value: SpaceFilter; label: string }[] = [
-  { value: 'all', label: '🏳️‍🌈 All' },
-  { value: 'safe', label: '✅ Safe' },
-  { value: 'mixed', label: '⚠️ Mixed' },
-  { value: 'unsafe', label: '❌ Not Safe' },
+const FILTERS: { value: SpaceFilter; label: string; dot?: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'safe', label: 'Safe', dot: PIN_COLORS.safe },
+  { value: 'mixed', label: 'Mixed', dot: PIN_COLORS.mixed },
+  { value: 'unsafe', label: 'Not safe', dot: PIN_COLORS.not_safe },
 ];
 
 interface Props {
@@ -24,9 +30,17 @@ interface Props {
   onRequestAuth: () => void;
   onSignedOut: () => void;
   onToast: (message: string) => void;
+  onOpenPage: (page: InfoPage) => void;
 }
 
-export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, onToast }: Props) {
+export default function MapScreen({
+  user,
+  profile,
+  onRequestAuth,
+  onSignedOut,
+  onToast,
+  onOpenPage,
+}: Props) {
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [filter, setFilter] = useState<SpaceFilter>('all');
   const [query, setQuery] = useState('');
@@ -36,6 +50,10 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
   const [addOpen, setAddOpen] = useState(false);
   const [pendingPlace, setPendingPlace] = useState<PlaceResult | null>(null);
   const [recenterTick, setRecenterTick] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [theme, setThemeState] = useState<ThemeChoice>(getTheme);
+  const [nearbyOpen, setNearbyOpen] = useState(false);
+  const [viewCenter, setViewCenter] = useState<{ lat: number; lon: number } | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
 
   const mapViewRef = useRef<{ lat: number; lon: number; zoom: number } | null>(null);
@@ -93,6 +111,7 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
 
   const handleMapMove = useCallback((lat: number, lon: number, zoom: number) => {
     mapViewRef.current = { lat, lon, zoom };
+    setViewCenter({ lat, lon });
   }, []);
 
   const userLocationRef = useRef(userLocation);
@@ -189,7 +208,11 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
   return (
     <div className="screen main">
       <div className="topbar">
-        <div className="brand">🏳️‍🌈 QueerSafeSpace</div>
+        <div className="brand">
+          <ShieldLogo className="brand-shield" />
+          <span className="brand-name">QueerSafeSpace</span>
+          <span className="beta-tag">Beta</span>
+        </div>
         <PlaceSearch
           placeholder="Search cafes, parks, Walmart…"
           value={query}
@@ -211,26 +234,12 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
             )
           }
         />
-        <button className="icon-btn primary" onClick={openAddSpace} title="Add a safe space">
-          +
+        <button className="icon-btn primary add-btn" onClick={openAddSpace} title="Add a safe space" aria-label="Add a safe space">
+          <Icon name="plus" size={20} />
         </button>
-        {user ? (
-          <button
-            className="icon-btn"
-            title={profile?.username ?? user.email ?? 'Account'}
-            onClick={async () => {
-              await signOut();
-              onSignedOut();
-              onToast('Signed out');
-            }}
-          >
-            {profile?.avatar_url ?? '🏳️‍🌈'}
-          </button>
-        ) : (
-          <button className="icon-btn" onClick={onRequestAuth}>
-            Sign In
-          </button>
-        )}
+        <button className="icon-btn menu-btn" onClick={() => setMenuOpen(true)} aria-label="Open menu">
+          <Icon name="menu" size={20} />
+        </button>
       </div>
 
       <div className="filter-bar">
@@ -240,37 +249,25 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
             className={`chip${filter === f.value ? ' active' : ''}`}
             onClick={() => setFilter(f.value)}
           >
+            {f.dot && <span className="chip-dot" style={{ background: f.dot }} />}
             {f.label}
           </button>
         ))}
       </div>
 
       <div className="main-body">
-        <aside className="sidebar">
-          <div className="legend-card">
-            <p className="legend-title">Map Legend</p>
-            <span className="key-item">
-              <span className="key-dot" style={{ background: PIN_COLORS.safe }} />
-              Safe
-            </span>
-            <span className="key-item">
-              <span className="key-dot" style={{ background: PIN_COLORS.mixed }} />
-              Mixed
-            </span>
-            <span className="key-item">
-              <span className="key-dot" style={{ background: PIN_COLORS.not_safe }} />
-              Not Safe
-            </span>
-            <span className="key-item">
-              <span className="key-dot" style={{ background: PIN_COLORS.unknown }} />
-              Unknown
-            </span>
-          </div>
-          <div className="sidebar-tip">
-            <strong>💡 Add a Space</strong>
-            <span>Tap + in the top bar to share a safe space with the community.</span>
-          </div>
-        </aside>
+        <NearbyList
+          spaces={spaces}
+          filter={filter}
+          center={viewCenter ?? userLocation ?? DEFAULT_CENTER}
+          expanded={nearbyOpen}
+          onToggle={() => setNearbyOpen((o) => !o)}
+          onSelect={(sp) => {
+            setNearbyOpen(false);
+            setFlyTo({ lat: sp.latitude as number, lon: sp.longitude as number, zoom: 16 });
+            void openDetail(sp.id);
+          }}
+        />
 
         <div className="map-area">
           <button
@@ -302,6 +299,30 @@ export default function MapScreen({ user, profile, onRequestAuth, onSignedOut, o
           />
         </div>
       </div>
+
+      {menuOpen && (
+        <MenuDrawer
+          user={user}
+          profile={profile}
+          theme={theme}
+          onThemeChange={setThemeState}
+          onClose={() => setMenuOpen(false)}
+          onOpenPage={(p) => {
+            setMenuOpen(false);
+            onOpenPage(p);
+          }}
+          onSignIn={() => {
+            setMenuOpen(false);
+            onRequestAuth();
+          }}
+          onSignOut={async () => {
+            setMenuOpen(false);
+            await signOut();
+            onSignedOut();
+            onToast('Signed out');
+          }}
+        />
+      )}
 
       {detail && (
         <SpaceDetailSheet

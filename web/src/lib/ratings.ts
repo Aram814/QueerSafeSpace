@@ -1,4 +1,4 @@
-import type { OverallRating, RatingVote, SafetyRating } from './types';
+import type { LocationCategory, OverallRating, RatingVote, SafetyRating } from './types';
 
 /**
  * Majority-vote tally, ported from overallRating() in index.html.
@@ -25,10 +25,10 @@ export function countRatings(
 }
 
 export const PIN_COLORS: Record<OverallRating, string> = {
-  safe: '#22C55E',
-  mixed: '#FBBF24',
-  not_safe: '#EF4444',
-  unknown: '#9CA3AF',
+  safe: '#2F9E5B',
+  mixed: '#E0A010',
+  not_safe: '#D64545',
+  unknown: '#8A94A3',
 };
 
 export const RATING_LABELS: Record<OverallRating, string> = {
@@ -50,3 +50,26 @@ export const FILTER_TO_RATING: Record<Exclude<SpaceFilter, 'all'>, SafetyRating>
 export function matchesFilter(rating: OverallRating, filter: SpaceFilter): boolean {
   return filter === 'all' || rating === FILTER_TO_RATING[filter];
 }
+
+export const CATEGORY_LABELS: Record<LocationCategory, string> = {
+  cafe: 'Café',
+  restaurant: 'Restaurant',
+  bar: 'Bar',
+  retail: 'Shopping',
+  place_of_worship: 'Place of worship',
+  healthcare: 'Healthcare',
+  community: 'Community',
+  other: 'Place',
+};
+
+/** Icon name (see components/Icon.tsx) for each kind of place. */
+export const CATEGORY_ICONS: Record<LocationCategory, string> = {
+  cafe: 'cup',
+  restaurant: 'fork',
+  bar: 'glass',
+  retail: 'bag',
+  place_of_worship: 'church',
+  healthcare: 'cross',
+  community: 'users',
+  other: 'pin',
+};

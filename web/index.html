@@ -7,14 +7,30 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#ffffff" />
+    <!-- crossorigin sends the visitor's cookies, which password-protected Vercel previews need to serve the manifest -->
+    <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0d1a2a" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-title" content="QueerSafeSpace" />
     <title>QueerSafeSpace</title>
     <meta
       name="description"
       content="A community-driven map for the LGBTQ+ community to find and share safe, inclusive spaces."
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap"
+    />
+    <script>
+      // Apply a saved light/dark choice before first paint so the page does not flash.
+      try {
+        var t = localStorage.getItem('qss-theme');
+        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
