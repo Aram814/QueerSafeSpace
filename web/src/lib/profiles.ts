@@ -9,8 +9,10 @@ export const AVATARS = [
   '💚', '💙', '💜', '🩵', '🩷', '🤍', '🖤',
 ];
 
-function fallbackUsername(user: User): string {
-  return (user.email ?? '').split('@')[0] || 'friend';
+/** Usernames are public, so the default must not reveal anything about the person's email. */
+function fallbackUsername(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(3));
+  return `friend-${Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')}`;
 }
 
 /**
@@ -23,7 +25,7 @@ function fallbackUsername(user: User): string {
 export async function loadProfile(user: User): Promise<Profile> {
   const fallback: Profile = {
     user_id: user.id,
-    username: fallbackUsername(user),
+    username: fallbackUsername(),
     avatar_url: DEFAULT_AVATAR,
     sign_up_date: null,
   };

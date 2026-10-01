@@ -92,9 +92,10 @@ Optional Vercel environment variables: `RATE_LIMIT_PLACES_PER_MIN`, `RATE_LIMIT_
 
 ## Anonymity
 
-Ratings are never joined to `profiles` or auth data. The detail sheet renders a rating's date,
-colour, tags and comment only. `profiles` is readable by its owner alone at the RLS level, so
-there is no client path from a rating to a username.
+Ratings are shown with the author's chosen username, supplied by the `public_ratings` view
+(migration `20251001130000_public_usernames.sql`). The view exposes only the username text, never
+`user_id` or email. `profiles` itself is readable by its owner alone at the RLS level, so a client
+cannot resolve a rating to a user any other way. Default usernames are random, not email-derived.
 
 Signed-out visitors read through the `public_locations` / `public_ratings` views, which omit
 `user_id` entirely; the base tables are revoked from `anon`. Writing always requires a session.

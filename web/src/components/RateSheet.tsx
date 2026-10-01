@@ -86,7 +86,7 @@ export default function RateSheet({ spaceId, userId, onClose, onSubmitted }: Pro
           />
         </div>
 
-        <p className="rate-note">Your rating is anonymous. Your username is never shown with it.</p>
+        <p className="rate-note">Your rating is shown with your username, never your email.</p>
 
         {message && <div className={`fmsg${message.isError ? ' error' : ''}`}>{message.text}</div>}
 

@@ -38,7 +38,7 @@ export default function SplashScreen({ onSignUp, onSignIn, onBrowseAnonymously, 
             <span className="fact-dot">
               <Icon name="lock" size={14} />
             </span>
-            Ratings are always anonymous
+            Rate under a username, never your real name
           </li>
           <li>
             <span className="fact-dot">

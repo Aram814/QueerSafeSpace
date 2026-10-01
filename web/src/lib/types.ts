@@ -42,6 +42,8 @@ export interface Rating {
   comment: string | null;
   safety_tags: SafetyTag[];
   created_at: string | null;
+  /** Only present on ratings read through public_ratings. */
+  username?: string | null;
 }
 
 /** The shape loadSpaces() reads: only the rating value is needed for the tally. */
@@ -64,7 +66,8 @@ export interface Location {
 
 /** public_locations / public_ratings: the anonymous read views, minus user_id. */
 export type PublicLocation = Omit<Location, 'user_id' | 'identity'>;
-export type PublicRating = Omit<Rating, 'user_id'>;
+/** `username` is the author's chosen display name, null once they delete their account. */
+export type PublicRating = Omit<Rating, 'user_id'> & { username: string | null };
 
 export type Space = Location & { ratings: RatingVote[] | null };
 export type SpaceDetail = Location & { ratings: Rating[] | null };

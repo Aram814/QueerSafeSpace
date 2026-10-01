@@ -70,19 +70,12 @@ async function loadSpaceDetailAnonymously(spaceId: string): Promise<SpaceDetail 
   return { ...(location.data as PublicLocation), user_id: null, identity: null, ratings: reviews };
 }
 
-/** Ported from the detail query in openDetail(). */
-export async function loadSpaceDetail(
-  spaceId: string,
-  signedIn: boolean,
-): Promise<SpaceDetail | null> {
-  if (!signedIn) return loadSpaceDetailAnonymously(spaceId);
-
-  const { data } = await supabase
-    .from('locations')
-    .select('*, ratings(*)')
-    .eq('id', spaceId)
-    .single();
-  return (data as SpaceDetail | null) ?? null;
+/**
+ * Signed-in and signed-out visitors read the same public views, so a rating always shows its
+ * author's chosen username (never user_id or email).
+ */
+export async function loadSpaceDetail(spaceId: string): Promise<SpaceDetail | null> {
+  return loadSpaceDetailAnonymously(spaceId);
 }
 
 export interface NewSpaceInput {

@@ -128,8 +128,8 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
           </button>
         </form>
         <p className="account-note">
-          Your username is private. It is never shown with the ratings or spaces you add, so what you
-          share stays anonymous.
+          Your username is shown publicly next to your ratings and comments. Please don&apos;t use
+          your real name. This protects everyone&apos;s identity and safety, including yours.
         </p>
       </article>
 

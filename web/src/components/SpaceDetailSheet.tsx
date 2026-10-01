@@ -92,7 +92,7 @@ export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate }:
             <div className="verdict-sub">
               {total === 0
                 ? 'Be the first to share what it is like here.'
-                : `Based on ${total} anonymous rating${total === 1 ? '' : 's'}`}
+                : `Based on ${total} rating${total === 1 ? '' : 's'}`}
             </div>
           </div>
         </div>
@@ -146,7 +146,7 @@ export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate }:
 
         <section className="detail-sec">
           <h3>
-            Anonymous comments{comments.length > 0 && <span className="detail-count">{comments.length}</span>}
+            Comments{comments.length > 0 && <span className="detail-count">{comments.length}</span>}
           </h3>
           {comments.length === 0 ? (
             <div className="empty-state">
@@ -160,7 +160,7 @@ export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate }:
                   <span className="rev-badge" style={{ background: PIN_COLORS[r.rating] }}>
                     <Icon name={BADGE[r.rating]} size={11} />
                   </span>
-                  <span className="rev-anon">Anonymous</span>
+                  <span className="rev-name">{r.username || 'Former member'}</span>
                   <span className="rev-date">
                     {r.created_at ? new Date(r.created_at).toLocaleDateString() : ''}
                   </span>

@@ -80,13 +80,10 @@ export default function MapScreen({
     void refreshSpaces();
   }, [refreshSpaces]);
 
-  const openDetail = useCallback(
-    async (spaceId: string) => {
-      const space = await loadSpaceDetail(spaceId, signedIn);
-      if (space) setDetail(space);
-    },
-    [signedIn],
-  );
+  const openDetail = useCallback(async (spaceId: string) => {
+    const space = await loadSpaceDetail(spaceId);
+    if (space) setDetail(space);
+  }, []);
 
   // Say why location failed, once per attempt (a recenter click starts a new attempt).
   const locationToastShown = useRef(false);
