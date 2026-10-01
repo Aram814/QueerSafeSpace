@@ -5,6 +5,7 @@ import Icon from '../components/Icon';
 import MenuDrawer from '../components/MenuDrawer';
 import ShieldLogo from '../components/ShieldLogo';
 import { getTheme, type ThemeChoice } from '../theme';
+import type { InfoPage } from './InfoPages';
 import MapView from '../components/MapView';
 import PlaceSearch from '../components/PlaceSearch';
 import RateSheet from '../components/RateSheet';
@@ -28,7 +29,7 @@ interface Props {
   onRequestAuth: () => void;
   onSignedOut: () => void;
   onToast: (message: string) => void;
-  onOpenPage: (page: 'crisis' | 'contact') => void;
+  onOpenPage: (page: InfoPage) => void;
 }
 
 export default function MapScreen({

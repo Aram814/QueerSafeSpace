@@ -261,6 +261,57 @@ svg.i {
   gap: 10px;
 }
 
+.splash-legal {
+  margin: 10px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 10px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.splash-legal .link-btn,
+.chk-row .link-btn {
+  padding: 0;
+  font-size: inherit;
+}
+
+.legal-doc {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px 18px 8px;
+  line-height: 1.6;
+}
+
+.legal-doc h2 {
+  margin: 18px 0 4px;
+  font-size: 1.1rem;
+}
+
+.legal-doc p,
+.legal-doc li {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.legal-doc p {
+  margin: 0 0 10px;
+}
+
+.legal-doc ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+}
+
+.legal-date {
+  font-weight: 700;
+  color: var(--ink) !important;
+}
+
 .splash-note {
   margin: 18px 0 0;
   font-size: 0.82rem;

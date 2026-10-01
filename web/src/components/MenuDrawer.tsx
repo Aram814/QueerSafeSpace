@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { FEEDBACK_HREF, TESTER_HREF } from '../config';
 import type { Profile } from '../lib/types';
+import type { InfoPage } from '../screens/InfoPages';
 import { setTheme, type ThemeChoice } from '../theme';
 import Icon, { type IconName } from './Icon';
 import ShieldLogo from './ShieldLogo';
@@ -12,7 +13,7 @@ interface Props {
   theme: ThemeChoice;
   onThemeChange: (t: ThemeChoice) => void;
   onClose: () => void;
-  onOpenPage: (page: 'crisis' | 'contact') => void;
+  onOpenPage: (page: InfoPage) => void;
   onSignIn: () => void;
   onSignOut: () => void;
 }
@@ -71,6 +72,14 @@ export default function MenuDrawer({
           <button className="menu-item" onClick={() => onOpenPage('contact')}>
             <Icon name="mail" />
             Contact us
+          </button>
+          <button className="menu-item" onClick={() => onOpenPage('privacy')}>
+            <Icon name="lock" />
+            Privacy policy
+          </button>
+          <button className="menu-item" onClick={() => onOpenPage('terms')}>
+            <Icon name="file" />
+            Terms &amp; conditions
           </button>
 
           <div className="menu-sep" />

@@ -25,6 +25,7 @@ const PATHS: Record<string, string> = {
   sun: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
   moon: 'M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z',
   auto: 'M4 5h16v11H4zM9 20h6M12 16v4',
+  file: 'M7 3h7l5 5v13H7zM14 3v5h5M9 13h6M9 17h6',
 };
 
 export type IconName = keyof typeof PATHS;

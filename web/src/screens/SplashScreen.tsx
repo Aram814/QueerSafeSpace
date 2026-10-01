@@ -1,13 +1,15 @@
 import Icon from '../components/Icon';
 import ShieldLogo from '../components/ShieldLogo';
+import type { InfoPage } from './InfoPages';
 
 interface Props {
   onSignUp: () => void;
   onSignIn: () => void;
   onBrowseAnonymously: () => void;
+  onOpenPage: (page: InfoPage) => void;
 }
 
-export default function SplashScreen({ onSignUp, onSignIn, onBrowseAnonymously }: Props) {
+export default function SplashScreen({ onSignUp, onSignIn, onBrowseAnonymously, onOpenPage }: Props) {
   return (
     <div className="screen splash">
       <div className="flag-ribbon" aria-hidden="true" />
@@ -52,6 +54,19 @@ export default function SplashScreen({ onSignUp, onSignIn, onBrowseAnonymously }
         <p className="splash-note">
           <span className="beta-tag">Beta</span> Still being built with the community. Tell us what you
           think from the menu.
+        </p>
+        <p className="splash-legal">
+          <button className="link-btn" onClick={() => onOpenPage('privacy')}>
+            Privacy policy
+          </button>
+          <span aria-hidden="true">&middot;</span>
+          <button className="link-btn" onClick={() => onOpenPage('terms')}>
+            Terms &amp; conditions
+          </button>
+          <span aria-hidden="true">&middot;</span>
+          <button className="link-btn" onClick={() => onOpenPage('crisis')}>
+            Crisis resources
+          </button>
         </p>
       </div>
     </div>
