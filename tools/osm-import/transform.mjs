@@ -38,17 +38,31 @@ export function category(tags) {
   return 'other';
 }
 
-function address(tags, state) {
-  const street = [tags['addr:housenumber'], tags['addr:street']].filter(Boolean).join(' ');
-  const city = tags['addr:city'];
+const cleanZip = (z) => (z ? String(z).split('-')[0].trim() : '');
+
+/**
+ * Builds "123 Main Street, City, ST 12345" from OpenStreetMap tags, plus an optional reverse
+ * geocode result (Nominatim `address` object) to fill in whatever the tags lack.
+ * Returns { address, complete } where complete=false means a city is still missing.
+ */
+export function buildAddress(tags, state, geo = {}) {
+  const house = tags['addr:housenumber'] || geo.house_number || '';
+  const road = tags['addr:street'] || geo.road || '';
+  const city =
+    tags['addr:city'] ||
+    geo.city || geo.town || geo.village || geo.hamlet || geo.municipality || '';
   const st = tags['addr:state'] || state;
-  const zip = tags['addr:postcode'];
-  if (street) {
-    const tail = [city, [st, zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
-    return `${street}, ${tail}`;
-  }
-  // No street in the data: the name stands in so the address column is never empty.
-  return [tags.name, city, st].filter(Boolean).join(', ');
+  const zip = cleanZip(tags['addr:postcode'] || geo.postcode);
+  const tail = [city, [st, zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+
+  if (house && road) return { address: `${house} ${road}, ${tail}`, complete: Boolean(city) };
+  // No street number: lead with the name so two places on one road never share an address.
+  if (road) return { address: `${tags.name}, ${road}, ${tail}`, complete: Boolean(city) };
+  return { address: `${tags.name}, ${tail}`, complete: Boolean(city) };
+}
+
+function address(tags, state) {
+  return buildAddress(tags, state).address;
 }
 
 const LEVEL_TEXT = {
@@ -77,6 +91,9 @@ export function toRow(el, state) {
       notes: `${LEVEL_TEXT[level] ?? LEVEL_TEXT.yes}. Listing from OpenStreetMap; not yet rated by the community.`,
       source_id: `${el.type}/${el.id}`,
     },
+    // Needs a lookup when the tags did not give a street address with a city.
+    needsGeocode: !(tags['addr:housenumber'] && tags['addr:street'] && tags['addr:city']),
+    tags,
   };
 }
 

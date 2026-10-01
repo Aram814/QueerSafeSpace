@@ -4,11 +4,13 @@
 //   node tools/osm-import/import.mjs                 all 50 states + DC
 //   node tools/osm-import/import.mjs --states=FL,GA  just these
 //   node tools/osm-import/import.mjs --out=some/dir  where the .sql files go (default: out/)
+//   node tools/osm-import/import.mjs --no-geocode   skip the city/street lookup (faster)
 //
 // Nothing is written to the database; review the files, then run them in the Supabase SQL Editor.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { dedupe, toRow, toSql } from './transform.mjs';
+import { buildAddress, dedupe, toRow, toSql } from './transform.mjs';
+import { GEOCODE_DELAY_MS, reverseGeocode } from './geocode.mjs';
 
 const STATES = {
   AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado',
@@ -32,6 +34,7 @@ const MIRRORS = [
 const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.split('=')[1];
 const wanted = (arg('states') ?? '').split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
 const outDir = arg('out') ?? 'out';
+const geocodeOn = !process.argv.includes('--no-geocode');
 const states = wanted.length ? wanted : Object.keys(STATES);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -90,12 +93,27 @@ for (const code of states) {
   for (const el of elements) {
     const r = toRow(el, code);
     if (r.skipped) skipped[r.skipped] = (skipped[r.skipped] ?? 0) + 1;
-    else rows.push(r.row);
+    else rows.push({ ...r.row, needsGeocode: r.needsGeocode, tags: r.tags });
   }
   const unique = dedupe(rows);
+
+  // Fill in the street/city that OpenStreetMap is missing, one polite request at a time.
+  let looked = 0;
+  if (geocodeOn) {
+    for (const row of unique) {
+      if (!row.needsGeocode) continue;
+      const geo = await reverseGeocode(row.latitude, row.longitude);
+      looked++;
+      if (geo) {
+        const built = buildAddress(row.tags, code, geo);
+        if (built.complete) row.address = built.address;
+      }
+      await sleep(GEOCODE_DELAY_MS);
+    }
+  }
   if (unique.length) writeFileSync(`${outDir}/${code}.sql`, toSql(unique, STATES[code]));
-  summary.push({ state: code, found: elements.length, listed: unique.length, skipped });
-  console.log(`  ${elements.length} found, ${unique.length} listed`);
+  summary.push({ state: code, found: elements.length, listed: unique.length, looked_up: looked, skipped });
+  console.log(`  ${elements.length} found, ${unique.length} listed, ${looked} addresses looked up`);
   await sleep(5_000); // be polite to the free public server
 }
 
