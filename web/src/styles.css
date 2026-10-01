@@ -571,7 +571,8 @@ svg.i {
   padding: 10px 14px;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
-  z-index: 1000;
+  /* Above the Nearby list (1100) so the search results are never covered by it. */
+  z-index: 1300;
 }
 
 .topbar > * {
