@@ -1661,3 +1661,88 @@ svg.i {
     animation: none;
   }
 }
+
+/* ---------------------------------------------------------------- account */
+.menu-avatar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--sky-soft);
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+}
+
+.account-email {
+  margin: 0 0 12px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.account-note {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.avatar-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.avatar-opt {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: var(--surface-2);
+  font-size: 1.4rem;
+  display: grid;
+  place-items: center;
+}
+
+.avatar-opt.on {
+  border-color: var(--accent-ink);
+  background: var(--sky-soft);
+}
+
+.danger-card {
+  border-color: var(--unsafe);
+  display: grid;
+  gap: 10px;
+}
+
+.danger-card h2,
+.danger-card p {
+  margin: 0;
+}
+
+.btn-danger {
+  background: var(--unsafe);
+  color: #fff;
+}
+
+.btn-danger:disabled {
+  opacity: 0.45;
+}
+
+.btn-danger-outline {
+  background: transparent;
+  color: var(--unsafe-ink);
+  border-color: var(--unsafe);
+}
+
+.reset-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.reset-shield {
+  width: 40px;
+  height: 46px;
+}

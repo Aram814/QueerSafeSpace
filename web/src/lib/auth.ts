@@ -1,4 +1,4 @@
-import type { Session, User } from '@supabase/supabase-js';
+import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 
 /** Ported from withTimeout() in index.html. */
@@ -32,11 +32,33 @@ export async function signIn(email: string, password: string): Promise<void> {
 
 export async function resetPassword(email: string): Promise<void> {
   const { error } = await withTimeout(
-    supabase.auth.resetPasswordForEmail(email),
+    // The link lands on the app itself; onAuthStateChange then reports PASSWORD_RECOVERY.
+    supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin }),
     TIMEOUT_MS,
     'Connection timed out. Please try again.',
   );
   if (error) throw new Error(error.message);
+}
+
+/** Used by the reset-password screen and by Account settings. */
+export async function updatePassword(password: string): Promise<void> {
+  const { error } = await withTimeout(
+    supabase.auth.updateUser({ password }),
+    TIMEOUT_MS,
+    TIMEOUT_MSG,
+  );
+  if (error) throw new Error(error.message);
+}
+
+/** Deletes the signed-in user via the delete_my_account() database function, then signs out. */
+export async function deleteAccount(): Promise<void> {
+  const { error } = await withTimeout(
+    supabase.rpc('delete_my_account'),
+    TIMEOUT_MS,
+    TIMEOUT_MSG,
+  );
+  if (error) throw new Error(error.message);
+  await supabase.auth.signOut();
 }
 
 export async function signOut(): Promise<void> {
@@ -48,9 +70,11 @@ export async function getSession(): Promise<Session | null> {
   return data.session;
 }
 
-export function onAuthStateChange(handler: (user: User | null) => void): () => void {
-  const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-    handler(session?.user ?? null);
+export function onAuthStateChange(
+  handler: (user: User | null, event: AuthChangeEvent) => void,
+): () => void {
+  const { data } = supabase.auth.onAuthStateChange((event, session) => {
+    handler(session?.user ?? null, event);
   });
   return () => data.subscription.unsubscribe();
 }
