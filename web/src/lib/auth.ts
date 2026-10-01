@@ -12,9 +12,10 @@ export function withTimeout<T>(promise: PromiseLike<T>, ms: number, message: str
 const TIMEOUT_MS = 12000;
 const TIMEOUT_MSG = 'Connection timed out. Please try again in a moment.';
 
-export async function signUp(email: string, password: string): Promise<void> {
+export async function signUp(email: string, password: string, username: string): Promise<void> {
   const { error } = await withTimeout(
-    supabase.auth.signUp({ email, password }),
+    // The username is kept in the account's metadata until the profile is created at first sign-in.
+    supabase.auth.signUp({ email, password, options: { data: { username } } }),
     TIMEOUT_MS,
     TIMEOUT_MSG,
   );

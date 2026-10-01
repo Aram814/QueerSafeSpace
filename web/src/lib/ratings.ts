@@ -73,3 +73,23 @@ export const CATEGORY_ICONS: Record<LocationCategory, string> = {
   community: 'users',
   other: 'pin',
 };
+
+/** Tags that describe a problem; the rest describe something good. Matches SAFETY_TAGS. */
+export const NEGATIVE_TAGS: ReadonlySet<string> = new Set([
+  'incident_reported',
+  'hostile_clientele',
+  'discriminatory_service',
+  'unsafe_neighborhood',
+]);
+
+export function tagLabel(tag: string): string {
+  const text = tag.replaceAll('_', ' ').replace('lgbtq', 'LGBTQ+');
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+export const VERDICTS: Record<OverallRating, string> = {
+  safe: 'Mostly safe',
+  mixed: 'Mixed reports',
+  not_safe: 'Reported not safe',
+  unknown: 'No ratings yet',
+};

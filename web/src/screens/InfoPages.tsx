@@ -139,7 +139,11 @@ export function PrivacyPage({ onBack }: { onBack: () => void }) {
         </p>
 
         <h2>Anonymity</h2>
-        <p>Your contributions are anonymous. We never sell your data or share it with advertisers.</p>
+        <p>
+          Your ratings and comments are shown with the username you choose, never with your email.
+          Please don&apos;t use your real name. You can change your username at any time in Account
+          settings. We never sell your data or share it with advertisers.
+        </p>
 
         <h2>Location data</h2>
         <p>

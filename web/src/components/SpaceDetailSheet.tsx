@@ -1,5 +1,16 @@
-import { countRatings, overallRating, PIN_COLORS, RATING_LABELS } from '../lib/ratings';
-import type { SpaceDetail } from '../lib/types';
+import { useEffect, useMemo } from 'react';
+import {
+  CATEGORY_ICONS,
+  CATEGORY_LABELS,
+  countRatings,
+  NEGATIVE_TAGS,
+  overallRating,
+  PIN_COLORS,
+  tagLabel,
+  VERDICTS,
+} from '../lib/ratings';
+import type { OverallRating, SafetyRating, SpaceDetail } from '../lib/types';
+import Icon, { type IconName } from './Icon';
 
 interface Props {
   space: SpaceDetail;
@@ -8,112 +19,173 @@ interface Props {
   onRate: () => void;
 }
 
-const BADGE_CLASS = {
-  safe: 'sb-safe',
-  mixed: 'sb-mixed',
-  not_safe: 'sb-unsafe',
-  unknown: 'sb-unknown',
-} as const;
+const BADGE: Record<OverallRating, IconName> = {
+  safe: 'check',
+  mixed: 'alert',
+  not_safe: 'x',
+  unknown: 'question',
+};
 
-const BARS = [
-  ['safe', '✅ Safe', PIN_COLORS.safe],
-  ['mixed', '⚠️ Mixed', PIN_COLORS.mixed],
-  ['not_safe', '❌ Not Safe', PIN_COLORS.not_safe],
-] as const;
+const SEGMENTS: { key: SafetyRating; label: string }[] = [
+  { key: 'safe', label: 'Safe' },
+  { key: 'mixed', label: 'Mixed' },
+  { key: 'not_safe', label: 'Not safe' },
+];
+
+function percent(n: number, total: number): number {
+  return total ? Math.round((n / total) * 100) : 0;
+}
 
 /**
- * Ported from openDetail(). Reviews are deliberately author-less: a rating is
- * never joined to a profile, so only the date, colour and comment are shown.
+ * Reviews are deliberately author-less: a rating is never joined to a profile, so only the
+ * date, verdict, tags and comment are shown.
  */
 export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate }: Props) {
-  const ratings = space.ratings ?? [];
+  const ratings = useMemo(() => space.ratings ?? [], [space.ratings]);
   const total = ratings.length;
   const counts = countRatings(ratings);
   const overall = overallRating(ratings);
+  const color = PIN_COLORS[overall];
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  // What people noticed, most-mentioned first.
+  const noticed = useMemo(() => {
+    const tally = new Map<string, number>();
+    for (const r of ratings) for (const t of r.safety_tags ?? []) tally.set(t, (tally.get(t) ?? 0) + 1);
+    return [...tally.entries()].sort((a, b) => b[1] - a[1]);
+  }, [ratings]);
+
+  const spaceTags = Array.isArray(space.tags) ? space.tags : [];
+  const comments = ratings.filter((r) => r.comment && r.comment.trim());
+  const hasLocation = space.latitude != null && space.longitude != null;
 
   return (
-    <div className="overlay" role="dialog" aria-modal="true">
-      <div className="sheet">
-        <div className="sheet-header end">
+    <div className="overlay panel" role="dialog" aria-modal="true" aria-label={space.name} onClick={onClose}>
+      <div className="sheet detail" onClick={(e) => e.stopPropagation()}>
+        <div className="detail-head">
+          <span className="detail-icon" style={{ background: color }}>
+            <Icon name={(CATEGORY_ICONS[space.category] ?? 'pin') as IconName} size={26} />
+          </span>
+          <div className="detail-title">
+            <h2 className="space-name">{space.name}</h2>
+            <div className="space-addr">
+              {CATEGORY_LABELS[space.category] ?? 'Place'}
+              {space.address && ` · ${space.address.split(',').slice(0, 3).join(',')}`}
+            </div>
+          </div>
           <button className="close-x" onClick={onClose} aria-label="Close">
-            ✕
+            <Icon name="close" size={18} />
           </button>
         </div>
 
-        <div className="space-name">{space.name}</div>
-        {space.address && (
-          <div className="space-addr">📍 {space.address.split(',').slice(0, 3).join(',')}</div>
-        )}
-
-        <div className={`safety-badge ${BADGE_CLASS[overall]}`}>
-          {RATING_LABELS[overall]} · {total} rating{total !== 1 ? 's' : ''}
+        <div className={`verdict v-${overall}`}>
+          <span className="verdict-badge" style={{ background: color }}>
+            <Icon name={BADGE[overall]} size={20} />
+          </span>
+          <div>
+            <div className="verdict-title">{VERDICTS[overall]}</div>
+            <div className="verdict-sub">
+              {total === 0
+                ? 'Be the first to share what it is like here.'
+                : `Based on ${total} rating${total === 1 ? '' : 's'}`}
+            </div>
+          </div>
         </div>
 
         {total > 0 && (
-          <div className="bars">
-            {BARS.map(([key, label, color]) => (
-              <div className="bar-row" key={key}>
-                <span className="bar-lbl">{label}</span>
-                <div className="bar-track">
-                  <div
-                    className="bar-fill"
-                    style={{
-                      width: `${total ? Math.round((counts[key] / total) * 100) : 0}%`,
-                      background: color,
-                    }}
+          <div className="split">
+            <div className="split-bar" role="img" aria-label="How people rated this place">
+              {SEGMENTS.map(({ key }) =>
+                counts[key] > 0 ? (
+                  <span
+                    key={key}
+                    className="split-seg"
+                    style={{ flexGrow: counts[key], background: PIN_COLORS[key] }}
                   />
-                </div>
-                <span className="bar-ct">{counts[key]}</span>
-              </div>
-            ))}
+                ) : null,
+              )}
+            </div>
+            <div className="split-legend">
+              {SEGMENTS.map(({ key, label }) => (
+                <span className="split-item" key={key}>
+                  <span className="key-dot" style={{ background: PIN_COLORS[key] }} />
+                  {label} <b>{percent(counts[key], total)}%</b>
+                  <span className="split-n">({counts[key]})</span>
+                </span>
+              ))}
+            </div>
           </div>
         )}
 
-        {space.tags && space.tags.length > 0 && (
-          <div className="space-tags">
-            {space.tags.map((t) => (
-              <span className="stag" key={t}>
-                {t}
-              </span>
-            ))}
-          </div>
+        {(noticed.length > 0 || spaceTags.length > 0) && (
+          <section className="detail-sec">
+            <h3>What people noticed</h3>
+            <div className="space-tags">
+              {noticed.map(([tag, n]) => (
+                <span className={`stag ${NEGATIVE_TAGS.has(tag) ? 'neg' : 'pos'}`} key={tag}>
+                  <Icon name={NEGATIVE_TAGS.has(tag) ? 'alert' : 'check'} size={13} />
+                  {tagLabel(tag)}
+                  {n > 1 && <b>×{n}</b>}
+                </span>
+              ))}
+              {spaceTags.map((t) => (
+                <span className="stag" key={t}>
+                  {t}
+                </span>
+              ))}
+            </div>
+          </section>
         )}
 
         {space.notes && <p className="space-notes">{space.notes}</p>}
 
-        <button className="btn btn-primary" onClick={onRate}>
-          {isSignedIn ? '⭐ Rate This Space' : '🔑 Sign In to Rate'}
-        </button>
-
-        <div className="reviews-sec">
-          <div className="reviews-title">Recent Ratings</div>
-          {total === 0 ? (
+        <section className="detail-sec">
+          <h3>
+            Comments{comments.length > 0 && <span className="detail-count">{comments.length}</span>}
+          </h3>
+          {comments.length === 0 ? (
             <div className="empty-state">
-              <div className="ei">💬</div>
-              No ratings yet — be the first!
+              <Icon name="message" size={22} />
+              <span>{total === 0 ? 'No ratings yet. Be the first!' : 'No comments yet.'}</span>
             </div>
           ) : (
-            ratings.slice(0, 8).map((r) => (
-              <div className="rev-item" key={r.id}>
+            comments.slice(0, 8).map((r) => (
+              <article className="rev-item" key={r.id} style={{ borderLeftColor: PIN_COLORS[r.rating] }}>
                 <div className="rev-head">
-                  <span>👤</span>
+                  <span className="rev-badge" style={{ background: PIN_COLORS[r.rating] }}>
+                    <Icon name={BADGE[r.rating]} size={11} />
+                  </span>
+                  <span className="rev-name">{r.username || 'Former member'}</span>
                   <span className="rev-date">
                     {r.created_at ? new Date(r.created_at).toLocaleDateString() : ''}
                   </span>
-                  <div className="rev-dot" style={{ background: PIN_COLORS[r.rating] }} />
                 </div>
-                {r.safety_tags && r.safety_tags.length > 0 && (
-                  <div className="space-tags">
-                    {r.safety_tags.map((t) => (
-                      <span className="stag" key={t}>
-                        {t.replaceAll('_', ' ')}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {r.comment && <div className="rev-text">{r.comment}</div>}
-              </div>
+                <div className="rev-text">{r.comment}</div>
+              </article>
             ))
+          )}
+        </section>
+
+        <div className="detail-actions">
+          <button className="btn btn-primary" onClick={onRate}>
+            <Icon name={isSignedIn ? 'star' : 'login'} />
+            {isSignedIn ? 'Rate this place' : 'Sign in to rate'}
+          </button>
+          {hasLocation && (
+            <a
+              className="btn btn-secondary"
+              target="_blank"
+              rel="noopener noreferrer"
+              href={`https://www.google.com/maps/dir/?api=1&destination=${space.latitude},${space.longitude}`}
+            >
+              <Icon name="map" />
+              Directions
+            </a>
           )}
         </div>
       </div>

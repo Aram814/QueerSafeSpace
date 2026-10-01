@@ -15,9 +15,11 @@ A community-driven map of places that are safe, or not safe, for LGBTQ+ people. 
 
 ## Anonymity
 
-Anonymity is a core design goal. Ratings and comments are never linked to a username: `profiles`
-is readable only by its owner, and signed-out visitors read through `public_locations` /
-`public_ratings` views that omit `user_id` entirely. See
+Safety and pseudonymity are core design goals. Ratings and comments are shown with the author's
+chosen username, and the app tells people not to use their real name. Nothing else identifies an
+author: `profiles` is readable only by its owner, and everyone reads ratings through the
+`public_ratings` view, which exposes the username text but never `user_id` or email. Default
+usernames are random (`friend-xxxxxx`), not derived from the email. See
 [`supabase/SCHEMA_NOTES.md`](supabase/SCHEMA_NOTES.md) for the analysis of the gaps this closed.
 
 ## Repository layout

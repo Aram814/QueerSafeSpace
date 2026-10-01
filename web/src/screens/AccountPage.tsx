@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { deleteAccount, signOut, updatePassword } from '../lib/auth';
-import { AVATARS, saveAvatar, saveUsername } from '../lib/profiles';
+import { AVATARS, isEmailName, isUsernameAvailable, saveAvatar, saveUsername, USERNAME_HINT, validateUsername } from '../lib/profiles';
 import type { Profile } from '../lib/types';
 import Icon from '../components/Icon';
 import { PageShell } from './InfoPages';
@@ -44,8 +44,17 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
     e.preventDefault();
     const next = username.trim();
     if (!profile || next === profile.username) return;
-    if (next.length < 2 || next.length > 30) {
-      setUsernameMsg({ text: 'Usernames are 2 to 30 characters.', error: true });
+    const nameError = validateUsername(next);
+    if (nameError) {
+      setUsernameMsg({ text: nameError, error: true });
+      return;
+    }
+    if (isEmailName(next, user.email)) {
+      setUsernameMsg({ text: 'Please don\u2019t use the first part of your email as your username.', error: true });
+      return;
+    }
+    if (!(await isUsernameAvailable(next))) {
+      setUsernameMsg({ text: 'That username is taken.', error: true });
       return;
     }
     try {
@@ -118,7 +127,7 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
               id="acct-username"
               className="fi"
               value={username}
-              maxLength={30}
+              maxLength={20}
               onChange={(e) => setUsername(e.target.value)}
             />
           </div>
@@ -128,8 +137,7 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
           </button>
         </form>
         <p className="account-note">
-          Your username is private. It is never shown with the ratings or spaces you add, so what you
-          share stays anonymous.
+          Your username is shown publicly next to your ratings and comments. {USERNAME_HINT}
         </p>
       </article>
 

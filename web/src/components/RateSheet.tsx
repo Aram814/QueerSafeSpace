@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { submitRating } from '../lib/spaces';
 import { SAFETY_TAGS, type SafetyRating, type SafetyTag } from '../lib/types';
+import { NEGATIVE_TAGS, tagLabel } from '../lib/ratings';
+import Icon from './Icon';
 import SafetyPicker from './SafetyPicker';
 
 interface Props {
@@ -44,14 +46,14 @@ export default function RateSheet({ spaceId, userId, onClose, onSubmitted }: Pro
     <div className="overlay center" role="dialog" aria-modal="true">
       <div className="sheet">
         <div className="sheet-header">
-          <span className="sheet-title">Rate This Space</span>
+          <span className="sheet-title">Rate this place</span>
           <button className="close-x" onClick={onClose} aria-label="Close">
-            ✕
+            <Icon name="close" size={18} />
           </button>
         </div>
 
         <div className="fg">
-          <label className="fl">Your Rating</label>
+          <label className="fl">How safe did it feel?</label>
           <SafetyPicker value={rating} onChange={setRating} />
         </div>
 
@@ -62,10 +64,10 @@ export default function RateSheet({ spaceId, userId, onClose, onSubmitted }: Pro
               <button
                 key={tag}
                 type="button"
-                className={`tag-btn${safetyTags.includes(tag) ? ' sel' : ''}`}
+                className={`tag-btn${NEGATIVE_TAGS.has(tag) ? ' neg' : ''}${safetyTags.includes(tag) ? ' sel' : ''}`}
                 onClick={() => toggleTag(tag)}
               >
-                {tag.replaceAll('_', ' ')}
+                {tagLabel(tag)}
               </button>
             ))}
           </div>
@@ -84,10 +86,12 @@ export default function RateSheet({ spaceId, userId, onClose, onSubmitted }: Pro
           />
         </div>
 
+        <p className="rate-note">Your rating is shown with your username, never your email.</p>
+
         {message && <div className={`fmsg${message.isError ? ' error' : ''}`}>{message.text}</div>}
 
         <button className="btn btn-primary" onClick={handleSubmit}>
-          Submit Rating
+          Submit rating
         </button>
       </div>
     </div>

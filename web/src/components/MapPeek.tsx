@@ -40,7 +40,7 @@ export default function MapPeek() {
           </span>
           <span className="peek-card-text">
             <strong>Bean There Coffee</strong>
-            <small>0.3 mi &middot; 9 anonymous ratings</small>
+            <small>0.3 mi &middot; 9 ratings</small>
           </span>
           <span className="peek-pill">Mostly safe</span>
         </div>
