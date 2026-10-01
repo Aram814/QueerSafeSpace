@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import AddSpaceSheet from '../components/AddSpaceSheet';
 import Icon from '../components/Icon';
@@ -16,6 +16,9 @@ import { DEFAULT_CENTER, getDistKm, smartSearch } from '../lib/geo';
 import { PIN_COLORS, type SpaceFilter } from '../lib/ratings';
 import { loadSpaceDetail, loadSpacesInView, type MapBounds } from '../lib/spaces';
 import type { PlaceResult, Profile, Space, SpaceDetail } from '../lib/types';
+
+/** Unrated listings (grey pins) only appear once the map is zoomed in to about city level. */
+const LISTED_MIN_ZOOM = 11;
 
 const FILTERS: { value: SpaceFilter; label: string; dot?: string }[] = [
   { value: 'all', label: 'All' },
@@ -53,6 +56,7 @@ export default function MapScreen({
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setThemeState] = useState<ThemeChoice>(getTheme);
   const [nearbyOpen, setNearbyOpen] = useState(false);
+  const [viewZoom, setViewZoom] = useState(4);
   const [viewCenter, setViewCenter] = useState<{ lat: number; lon: number } | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
 
@@ -67,6 +71,11 @@ export default function MapScreen({
     return userLocation ?? view ?? DEFAULT_CENTER;
   }
   const center = currentCenter();
+  // Community-rated places show at any zoom; OpenStreetMap listings only when zoomed in.
+  const shownSpaces = useMemo(
+    () => spaces.filter((sp) => sp.source !== 'osm' || viewZoom >= LISTED_MIN_ZOOM),
+    [spaces, viewZoom],
+  );
   const spacesRef = useRef<Space[]>([]);
   spacesRef.current = spaces;
 
@@ -125,6 +134,7 @@ export default function MapScreen({
     (lat: number, lon: number, zoom: number, bounds: MapBounds) => {
       mapViewRef.current = { lat, lon, zoom };
       setViewCenter({ lat, lon });
+      setViewZoom(zoom);
       viewportRef.current = { bounds, center: { lat, lon } };
       clearTimeout(loadTimer.current);
       loadTimer.current = setTimeout(() => void refreshSpaces(), 350);
@@ -275,7 +285,7 @@ export default function MapScreen({
 
       <div className="main-body">
         <NearbyList
-          spaces={spaces}
+          spaces={shownSpaces}
           filter={filter}
           center={viewCenter ?? userLocation ?? DEFAULT_CENTER}
           expanded={nearbyOpen}
@@ -303,7 +313,7 @@ export default function MapScreen({
             </svg>
           </button>
           <MapView
-            spaces={spaces}
+            spaces={shownSpaces}
             filter={filter}
             flyTo={flyTo}
             onOpenDetail={openDetail}
