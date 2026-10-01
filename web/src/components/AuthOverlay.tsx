@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { OAUTH_ENABLED } from '../config';
 import { resetPassword, signIn, signInWithOAuth, signUp } from '../lib/auth';
 
 export type AuthMode = 'signin' | 'signup';
@@ -201,15 +202,19 @@ export default function AuthOverlay({ mode, onModeChange, onClose, onToast, onOp
           )}
         </form>
 
-        <div className="oauth-divider">or continue with</div>
-        <div className="oauth-row">
-          <button className="btn btn-oauth" onClick={() => handleOAuth('google')}>
-            Continue with Google
-          </button>
-          <button className="btn btn-oauth" onClick={() => handleOAuth('apple')}>
-            Continue with Apple
-          </button>
-        </div>
+        {OAUTH_ENABLED && (
+          <>
+            <div className="oauth-divider">or continue with</div>
+            <div className="oauth-row">
+              <button className="btn btn-oauth" onClick={() => handleOAuth('google')}>
+                Continue with Google
+              </button>
+              <button className="btn btn-oauth" onClick={() => handleOAuth('apple')}>
+                Continue with Apple
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

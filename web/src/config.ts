@@ -12,3 +12,9 @@ export const TESTER_HREF = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent
 )}`;
 
 export const INSTAGRAM_HREF = 'https://www.instagram.com/queersafespace.lgbt';
+
+/**
+ * Google and Apple sign-in. Keep off until both providers are configured in Supabase
+ * (Authentication > Providers) and their redirect URLs are added; see web/README.md.
+ */
+export const OAUTH_ENABLED = false;
