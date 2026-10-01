@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { dedupe, toRow, toSql } from './transform.mjs';
+import { buildAddress, dedupe, toRow, toSql } from './transform.mjs';
 
 const els = JSON.parse(readFileSync(new URL('./fixtures/florida-sample.json', import.meta.url)));
 const results = els.map((e) => ({ e, r: toRow(e, 'FL') }));
@@ -37,4 +37,31 @@ test('escapes quotes in the SQL', () => {
   const sql = toSql(rows, 'Florida');
   assert.match(sql, /'Bradley''s on 7th'/);
   assert.match(sql, /on conflict do nothing;/);
+});
+
+test('fills missing city and street from a reverse geocode', () => {
+  const geo = { house_number: '100', road: 'Main Street', city: 'Ocala', postcode: '34471-1234' };
+  assert.deepEqual(buildAddress({ name: 'Cafe' }, 'FL', geo), {
+    address: '100 Main Street, Ocala, FL 34471',
+    complete: true,
+  });
+  // No house number: the name leads so two places on one road never share an address.
+  assert.equal(
+    buildAddress({ name: 'Hunters Club' }, 'FL', { road: 'Wilton Drive', town: 'Wilton Manors' }).address,
+    'Hunters Club, Wilton Drive, Wilton Manors, FL',
+  );
+  // OpenStreetMap's own tags win over the lookup.
+  assert.equal(
+    buildAddress({ name: 'X', 'addr:housenumber': '5', 'addr:street': 'Elm St' }, 'FL', { city: 'Tampa' }).address,
+    '5 Elm St, Tampa, FL',
+  );
+  // Nothing found: incomplete, so the caller keeps the plain fallback.
+  assert.equal(buildAddress({ name: 'Hunters Club' }, 'FL').complete, false);
+});
+
+test('marks places that need a lookup', () => {
+  const enigma = results.find((x) => x.e.tags.name === 'Enigma').r;
+  const disco = results.find((x) => x.e.tags.name === 'Disco Pony Nightclub').r;
+  assert.equal(enigma.needsGeocode, true);
+  assert.equal(disco.needsGeocode, false);
 });

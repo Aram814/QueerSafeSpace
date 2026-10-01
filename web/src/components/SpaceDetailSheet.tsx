@@ -36,6 +36,13 @@ function percent(n: number, total: number): number {
   return total ? Math.round((n / total) * 100) : 0;
 }
 
+/** Imported listings without a street number start their address with the place name; drop it. */
+function shortAddress(name: string, address: string): string {
+  const prefix = `${name}, `;
+  const rest = address.startsWith(prefix) ? address.slice(prefix.length) : address;
+  return rest.split(',').slice(0, 3).join(',');
+}
+
 /**
  * Reviews are deliberately author-less: a rating is never joined to a profile, so only the
  * date, verdict, tags and comment are shown.
@@ -75,7 +82,7 @@ export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate }:
             <h2 className="space-name">{space.name}</h2>
             <div className="space-addr">
               {CATEGORY_LABELS[space.category] ?? 'Place'}
-              {space.address && ` · ${space.address.split(',').slice(0, 3).join(',')}`}
+              {space.address && ` · ${shortAddress(space.name, space.address)}`}
             </div>
           </div>
           <button className="close-x" onClick={onClose} aria-label="Close">

@@ -19,6 +19,23 @@ Or locally (Node 20+): `node tools/osm-import/import.mjs --states=FL --out=out`
 2. In the Supabase SQL Editor, paste one state's `.sql` file and run it. Re-running is safe.
 3. `summary.json` lists how many places were found/listed per state and why others were skipped.
 
+## Addresses
+
+OpenStreetMap often has no city or street for a place. For those, the importer asks the free
+Nominatim service (one request per second, as its policy requires) for the city and street from the
+coordinates. A full run can therefore take a few hours. `--no-geocode` skips it.
+
+## Refreshing places you already loaded
+
+Re-running a state file never changes rows that already exist. To replace earlier listings with
+better data, first delete the *unrated* ones (rated places are kept), then load the new files:
+
+```sql
+delete from public.locations l
+where l.source = 'osm'
+  and not exists (select 1 from public.ratings r where r.space_id = l.id);
+```
+
 ## What is left out
 
 Private or members-only venues, adult venues, nudist/kink venues, chains whose tag has no recorded
