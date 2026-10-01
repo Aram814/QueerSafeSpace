@@ -122,6 +122,20 @@ export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate }:
           </div>
         )}
 
+        {space.source === 'osm' && (
+          <div className="listed-note">
+            <Icon name="question" size={18} />
+            <div>
+              <strong>Listed as LGBTQ+ friendly on OpenStreetMap.</strong> This is a listing, not a
+              safety rating, and nobody here has rated it yet. If you have been, rate it and help
+              others know what to expect.
+              <div className="listed-credit">
+                Listing data © OpenStreetMap contributors (ODbL).
+              </div>
+            </div>
+          </div>
+        )}
+
         {(noticed.length > 0 || spaceTags.length > 0) && (
           <section className="detail-sec">
             <h3>What people noticed</h3>
@@ -142,7 +156,7 @@ export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate }:
           </section>
         )}
 
-        {space.notes && <p className="space-notes">{space.notes}</p>}
+        {space.notes && space.source !== 'osm' && <p className="space-notes">{space.notes}</p>}
 
         <section className="detail-sec">
           <h3>
