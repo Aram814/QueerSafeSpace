@@ -1,5 +1,5 @@
 /** Small line icons, one set everywhere (replaces the mix of emoji and font icons). */
-const PATHS: Record<string, string> = {
+export const PATHS: Record<string, string> = {
   menu: 'M4 7h16M4 12h16M4 17h16',
   plus: 'M12 5v14M5 12h14',
   search: 'M11 4.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM20 20l-4.2-4.2',
@@ -26,6 +26,12 @@ const PATHS: Record<string, string> = {
   moon: 'M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z',
   auto: 'M4 5h16v11H4zM9 20h6M12 16v4',
   file: 'M7 3h7l5 5v13H7zM14 3v5h5M9 13h6M9 17h6',
+  cup: 'M4 8h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8zM16 10h2a2 2 0 0 1 0 4h-2M7 3v2M11 3v2',
+  book: 'M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4zM5 17a3 3 0 0 1 3-3h10',
+  glass: 'M5 4h14l-7 9-7-9zM12 13v7M8 20h8',
+  church: 'M12 2v4M10 4h4M12 6l6 4v10H6V10l6-4zM10 20v-5h4v5',
+  bag: 'M6 8h12l1 12H5L6 8zM9 8V7a3 3 0 0 1 6 0v1',
+  question: 'M9 9.5a3 3 0 1 1 4.4 2.6c-.9.5-1.4 1.1-1.4 2M12 18h.01',
 };
 
 export type IconName = keyof typeof PATHS;

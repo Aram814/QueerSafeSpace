@@ -1,4 +1,5 @@
 import Icon from '../components/Icon';
+import MapPeek from '../components/MapPeek';
 import ShieldLogo from '../components/ShieldLogo';
 import type { InfoPage } from './InfoPages';
 
@@ -9,14 +10,22 @@ interface Props {
   onOpenPage: (page: InfoPage) => void;
 }
 
+/**
+ * Phone: the map on top, the shield resting on the edge of the sheet below it.
+ * Desktop: the map fills the left, the sheet is a panel on the right, same edge, same shield.
+ */
 export default function SplashScreen({ onSignUp, onSignIn, onBrowseAnonymously, onOpenPage }: Props) {
   return (
     <div className="screen splash">
       <div className="flag-ribbon" aria-hidden="true" />
-      <div className="splash-inner">
-        <ShieldLogo className="splash-shield" />
+      <MapPeek />
+
+      <main className="splash-sheet">
+        <ShieldLogo className="splash-badge" />
         <h1 className="splash-title">QueerSafeSpace</h1>
-        <p className="splash-tagline">Because safety shouldn&apos;t be a privilege</p>
+        <p className="splash-tagline">
+          Know before you go. Because safety shouldn&apos;t be a privilege.
+        </p>
 
         <ul className="splash-facts">
           <li>
@@ -51,24 +60,22 @@ export default function SplashScreen({ onSignUp, onSignIn, onBrowseAnonymously, 
             I already have an account
           </button>
         </div>
-        <p className="splash-note">
-          <span className="beta-tag">Beta</span> Still being built with the community. Tell us what you
-          think from the menu.
-        </p>
+
         <p className="splash-legal">
+          <span className="beta-tag">Beta</span>
           <button className="link-btn" onClick={() => onOpenPage('privacy')}>
-            Privacy policy
+            Privacy
           </button>
           <span aria-hidden="true">&middot;</span>
           <button className="link-btn" onClick={() => onOpenPage('terms')}>
-            Terms &amp; conditions
+            Terms
           </button>
           <span aria-hidden="true">&middot;</span>
           <button className="link-btn" onClick={() => onOpenPage('crisis')}>
             Crisis resources
           </button>
         </p>
-      </div>
+      </main>
     </div>
   );
 }

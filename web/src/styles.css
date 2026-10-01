@@ -33,6 +33,12 @@
   --unsafe-ink: #b32f2f;
   --unknown-ink: #566172;
 
+  --map-land: #e3eaee;
+  --map-water: #cfe3ef;
+  --map-park: #d5e8d3;
+  --map-road: #ffffff;
+  --map-road2: #f4f7f9;
+
   --overlay: rgba(10, 22, 38, 0.5);
   --shadow: 0 6px 18px rgba(16, 35, 58, 0.16);
   --shadow-lg: 0 18px 44px rgba(16, 35, 58, 0.22);
@@ -64,6 +70,12 @@
     --unsafe-ink: #ff9a9a;
     --unknown-ink: #b4bfcc;
 
+    --map-land: #172b41;
+    --map-water: #12364f;
+    --map-park: #173a30;
+    --map-road: #243d59;
+    --map-road2: #1d3550;
+
     --overlay: rgba(0, 0, 0, 0.6);
     --shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
     --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.55);
@@ -94,6 +106,12 @@
   --mixed-ink: #f3c35a;
   --unsafe-ink: #ff9a9a;
   --unknown-ink: #b4bfcc;
+
+  --map-land: #172b41;
+  --map-water: #12364f;
+  --map-park: #173a30;
+  --map-road: #243d59;
+  --map-road2: #1d3550;
 
   --overlay: rgba(0, 0, 0, 0.6);
   --shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
@@ -173,19 +191,17 @@ svg.i {
 
 /* ---------------------------------------------------------------- welcome */
 .splash {
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(180deg, var(--sky-soft) 0%, var(--bg) 62%);
+  background: var(--surface);
   overflow-y: auto;
-  padding: 20px;
 }
 
 .flag-ribbon {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   height: 6px;
+  z-index: 20;
   background: linear-gradient(
     90deg,
     #e03c3c 0 16.66%,
@@ -197,45 +213,189 @@ svg.i {
   );
 }
 
-.splash-inner {
-  width: min(420px, 100%);
-  margin: auto;
+.map-peek {
+  position: relative;
+  flex: 0 0 44%;
+  min-height: 280px;
+  overflow: hidden;
+  background: var(--map-land);
+}
+
+.peek-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.mp-land {
+  fill: var(--map-land);
+}
+
+.mp-water {
+  fill: var(--map-water);
+}
+
+.mp-park {
+  fill: var(--map-park);
+}
+
+.mp-road {
+  stroke: var(--map-road);
+}
+
+.mp-road2 {
+  stroke: var(--map-road2);
+}
+
+.place-pin {
+  position: absolute;
+  width: 32px;
+  height: 40px;
+  translate: -50% -100%;
+  filter: drop-shadow(0 3px 3px rgba(16, 35, 58, 0.3));
+}
+
+.place-pin.large {
+  width: 40px;
+  height: 50px;
+}
+
+.peek-card {
+  position: absolute;
+  left: 50%;
+  top: calc(env(safe-area-inset-top, 0px) + 28px);
+  translate: -50% 0;
+  width: min(340px, calc(100% - 28px));
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 18px;
+  padding: 12px 14px 14px;
+  box-shadow: var(--shadow-lg);
+  display: grid;
+  gap: 9px;
+}
+
+.peek-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.peek-ico {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--safe-soft);
+  color: var(--safe-ink);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.peek-card-text {
+  min-width: 0;
+  display: grid;
+  line-height: 1.2;
+}
+
+.peek-card-text strong {
+  font-family: var(--display);
+  font-size: 1rem;
+}
+
+.peek-card-text small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.peek-pill {
+  margin-left: auto;
+  flex: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--safe-soft);
+  color: var(--safe-ink);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.peek-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--line);
+}
+
+.peek-bar i {
+  display: block;
+  height: 100%;
+}
+
+.peek-example {
+  position: absolute;
+  top: -9px;
+  right: 14px;
+  background: var(--sky-soft);
+  color: var(--accent-ink);
+  border: 1px solid var(--sky);
+  border-radius: 999px;
+  padding: 0 8px;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.splash-sheet {
+  position: relative;
+  z-index: 3;
+  flex: 1;
+  margin-top: -30px;
+  background: var(--surface);
+  border-radius: 30px 30px 0 0;
+  box-shadow: 0 -10px 30px rgba(16, 35, 58, 0.12);
+  padding: 66px 22px calc(env(safe-area-inset-bottom, 0px) + 18px);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 18px 0;
 }
 
-.splash-shield {
-  width: 104px;
-  height: 117px;
-  filter: drop-shadow(0 10px 14px rgba(22, 58, 99, 0.25));
+.splash-badge {
+  position: absolute;
+  top: -56px;
+  left: 50%;
+  translate: -50% 0;
+  width: 100px;
+  height: 112px;
+  filter: drop-shadow(0 10px 14px rgba(10, 28, 50, 0.35));
 }
 
 .splash-title {
-  margin: 14px 0 2px;
-  font-size: 2.3rem;
+  margin: 0;
+  font-size: 2.2rem;
   line-height: 1.05;
   font-weight: 800;
   color: var(--accent-ink);
 }
 
 .splash-tagline {
-  margin: 0;
+  margin: 6px 0 0;
   color: var(--muted);
   font-size: 1rem;
-  max-width: 280px;
+  max-width: 300px;
 }
 
 .splash-facts {
+  display: none;
   list-style: none;
-  margin: 22px 0 24px;
+  margin: 22px 0 0;
   padding: 0;
-  display: grid;
   gap: 10px;
   text-align: left;
-  font-size: 0.95rem;
+  font-size: 0.98rem;
 }
 
 .splash-facts li {
@@ -245,8 +405,8 @@ svg.i {
 }
 
 .fact-dot {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: var(--sky-soft);
   color: var(--accent-ink);
@@ -257,14 +417,18 @@ svg.i {
 
 .splash-actions {
   width: 100%;
+  max-width: 380px;
   display: grid;
   gap: 10px;
+  margin-top: auto;
+  padding-top: 20px;
 }
 
 .splash-legal {
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: center;
   gap: 4px 10px;
   color: var(--muted);
@@ -277,46 +441,59 @@ svg.i {
   font-size: inherit;
 }
 
-.legal-doc {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 18px 18px 8px;
-  line-height: 1.6;
-}
+/* Desktop: map on the left, the sheet becomes a panel on the right. */
+@media (min-width: 900px) {
+  .splash {
+    flex-direction: row;
+    overflow-y: auto;
+  }
 
-.legal-doc h2 {
-  margin: 18px 0 4px;
-  font-size: 1.1rem;
-}
+  .map-peek {
+    flex: 1;
+    min-height: 0;
+  }
 
-.legal-doc p,
-.legal-doc li {
-  color: var(--muted);
-  font-size: 0.95rem;
-}
+  .peek-card {
+    left: 12%;
+    translate: 0 0;
+    top: 12%;
+    width: 360px;
+  }
 
-.legal-doc p {
-  margin: 0 0 10px;
-}
+  .splash-sheet {
+    flex: 0 0 min(520px, 44vw);
+    margin: 0;
+    border-radius: 32px 0 0 32px;
+    box-shadow: -14px 0 40px rgba(16, 35, 58, 0.14);
+    padding: 40px clamp(32px, 5vw, 64px);
+    justify-content: center;
+    /* the shield hangs over the left edge, so this must not clip */
+    overflow: visible;
+    min-height: 100%;
+  }
 
-.legal-doc ul {
-  margin: 0 0 10px;
-  padding-left: 20px;
-  display: grid;
-  gap: 6px;
-}
+  .splash-badge {
+    top: 50%;
+    left: -52px;
+    translate: 0 -50%;
+  }
 
-.legal-date {
-  font-weight: 700;
-  color: var(--ink) !important;
-}
+  .splash-title {
+    font-size: 2.7rem;
+  }
 
-.splash-note {
-  margin: 18px 0 0;
-  font-size: 0.82rem;
-  color: var(--muted);
-  max-width: 320px;
+  .splash-tagline {
+    max-width: 380px;
+  }
+
+  .splash-facts {
+    display: grid;
+  }
+
+  .splash-actions {
+    margin-top: 28px;
+    padding-top: 0;
+  }
 }
 
 /* ---------------------------------------------------------------- buttons */
