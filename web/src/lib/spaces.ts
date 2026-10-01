@@ -11,49 +11,66 @@ import type {
   SpaceDetail,
 } from './types';
 
+export interface MapBounds {
+  south: number;
+  north: number;
+  west: number;
+  east: number;
+}
+
+interface SpaceRow {
+  id: string;
+  created_at: string;
+  name: string;
+  address: string;
+  category: LocationCategory;
+  safety_rating: Space['safety_rating'];
+  tags: string[] | null;
+  notes: string | null;
+  latitude: number;
+  longitude: number;
+  source: 'community' | 'osm';
+  safe_count: number;
+  mixed_count: number;
+  not_safe_count: number;
+}
+
+/** Rebuilds the vote list the rest of the app tallies from the counts the database sends. */
+function votes(row: SpaceRow): RatingVote[] {
+  const list: RatingVote[] = [];
+  for (let i = 0; i < row.safe_count; i++) list.push({ rating: 'safe' });
+  for (let i = 0; i < row.mixed_count; i++) list.push({ rating: 'mixed' });
+  for (let i = 0; i < row.not_safe_count; i++) list.push({ rating: 'not_safe' });
+  return list;
+}
+
 /**
- * Signed-out reads go through public_locations / public_ratings, which project
- * away user_id. The base tables are unreadable by `anon` on purpose, so this is
- * the only anonymous path and it cannot expose an author.
+ * Places in (and around) the visible map, nearest to `center` first, with rating counts. One
+ * path for signed-in and signed-out visitors: it never exposes who added a place.
  */
-function asSpace(location: PublicLocation, ratings: RatingVote[]): Space {
-  return { ...location, user_id: null, identity: null, ratings };
-}
-
-async function loadSpacesAnonymously(): Promise<Space[]> {
-  const [locations, ratings] = await Promise.all([
-    supabase.from('public_locations').select('*'),
-    supabase.from('public_ratings').select('space_id, rating'),
-  ]);
-  if (locations.error) {
-    console.warn('Could not load spaces:', locations.error.message);
-    return [];
-  }
-
-  // The views have no FK metadata to embed through, so the votes are grouped
-  // client-side instead of with a nested select.
-  const votesBySpace = new Map<string, RatingVote[]>();
-  for (const row of (ratings.data ?? []) as Pick<PublicRating, 'space_id' | 'rating'>[]) {
-    const votes = votesBySpace.get(row.space_id) ?? [];
-    votes.push({ rating: row.rating });
-    votesBySpace.set(row.space_id, votes);
-  }
-
-  return ((locations.data ?? []) as PublicLocation[]).map((loc) =>
-    asSpace(loc, votesBySpace.get(loc.id) ?? []),
-  );
-}
-
-/** Ported from loadSpaces() in index.html. */
-export async function loadSpaces(signedIn: boolean): Promise<Space[]> {
-  if (!signedIn) return loadSpacesAnonymously();
-
-  const { data, error } = await supabase.from('locations').select('*, ratings(rating)');
+export async function loadSpacesInView(
+  bounds: MapBounds,
+  center: { lat: number; lon: number },
+): Promise<Space[]> {
+  const { data, error } = await supabase.rpc('spaces_in_view', {
+    min_lat: bounds.south,
+    max_lat: bounds.north,
+    min_lon: bounds.west,
+    max_lon: bounds.east,
+    center_lat: center.lat,
+    center_lon: center.lon,
+  });
   if (error) {
     console.warn('Could not load spaces:', error.message);
     return [];
   }
-  return (data ?? []) as Space[];
+  return ((data ?? []) as SpaceRow[]).map((row) => {
+    const { safe_count, mixed_count, not_safe_count, ...location } = row;
+    void safe_count;
+    void mixed_count;
+    void not_safe_count;
+    return { ...location, user_id: null, identity: null, ratings: votes(row) } as Space;
+  });
 }
 
 async function loadSpaceDetailAnonymously(spaceId: string): Promise<SpaceDetail | null> {

@@ -1,0 +1,223 @@
+[
+ {
+  "type": "node",
+  "id": 2641536525,
+  "lat": 27.9611062,
+  "lon": -82.4428339,
+  "tags": {
+   "addr:city": "Tampa",
+   "addr:housenumber": "1901",
+   "addr:postcode": "33605",
+   "addr:state": "FL",
+   "addr:street": "North 15th Street",
+   "amenity": "nightclub",
+   "lgbtq": "primary",
+   "name": "Disco Pony Nightclub"
+  }
+ },
+ {
+  "type": "node",
+  "id": 3406720271,
+  "lat": 27.9601784,
+  "lon": -82.4448627,
+  "tags": {
+   "addr:city": "Tampa",
+   "addr:housenumber": "1315",
+   "addr:state": "FL",
+   "addr:street": "East 7th Avenue",
+   "lgbtq": "primary",
+   "name": "Metro Wellness and Community Centers",
+   "office": "ngo"
+  }
+ },
+ {
+  "type": "node",
+  "id": 3408501630,
+  "lat": 27.9603775,
+  "lon": -82.4425941,
+  "tags": {
+   "addr:city": "Tampa",
+   "addr:housenumber": "1510",
+   "addr:postcode": "33605",
+   "addr:state": "FL",
+   "addr:street": "East 7th Avenue",
+   "amenity": "bar",
+   "lgbtq": "primary",
+   "name": "Bradley's on 7th"
+  }
+ },
+ {
+  "type": "node",
+  "id": 4460678697,
+  "lat": 27.7709614,
+  "lon": -82.6502257,
+  "tags": {
+   "addr:housenumber": "1110",
+   "addr:state": "FL",
+   "addr:street": "Central Avenue",
+   "amenity": "bar",
+   "lgbtq": "welcome",
+   "name": "Enigma"
+  }
+ },
+ {
+  "type": "node",
+  "id": 11227915157,
+  "lat": 28.1584493,
+  "lon": -81.4397357,
+  "tags": {
+   "club": "nudism",
+   "leisure": "resort",
+   "lgbtq": "welcome",
+   "name": "Cypress Cove Nudist Resort",
+   "nudism": "designated",
+   "tourism": "attraction"
+  }
+ },
+ {
+  "type": "node",
+  "id": 12408450958,
+  "lat": 28.4638327,
+  "lon": -81.3681169,
+  "tags": {
+   "access": "private",
+   "club": "yes",
+   "kinky": "yes",
+   "lgbtq": "welcome",
+   "name": "The Woodshed Orlando"
+  }
+ },
+ {
+  "type": "node",
+  "id": 12924943080,
+  "lat": 28.5692423,
+  "lon": -81.3725965,
+  "tags": {
+   "addr:city": "Orlando",
+   "addr:housenumber": "1913",
+   "addr:postcode": "32804",
+   "addr:state": "FL",
+   "addr:street": "North Orange Avenue",
+   "amenity": "bar",
+   "lgbtq": "primary",
+   "name": "Savoy"
+  }
+ },
+ {
+  "type": "node",
+  "id": 13019989671,
+  "lat": 28.5580423,
+  "lon": -81.3646059,
+  "tags": {
+   "amenity": "community_centre",
+   "community_centre:for": "lgbtq",
+   "lgbtq": "primary",
+   "name": "The Center"
+  }
+ },
+ {
+  "type": "node",
+  "id": 14097668070,
+  "lat": 28.0839885,
+  "lon": -82.45906,
+  "tags": {
+   "addr:housenumber": "14839",
+   "addr:street": "North Florida Avenue",
+   "lgbtq": "welcome",
+   "lgbtq:signed": "yes",
+   "name": "Ravens & Rockers",
+   "shop": "clothes;fashion_accessories;leather;shoes"
+  }
+ },
+ {
+  "type": "way",
+  "id": 75615709,
+  "center": {
+   "lat": 27.9619238,
+   "lon": -82.4418931
+  },
+  "tags": {
+   "addr:city": "Tampa",
+   "addr:housenumber": "2004",
+   "addr:state": "FL",
+   "addr:street": "North 16th Street",
+   "amenity": "nightclub",
+   "lgbtq": "welcome",
+   "name": "The Castle"
+  }
+ },
+ {
+  "type": "way",
+  "id": 253366065,
+  "center": {
+   "lat": 27.9683385,
+   "lon": -82.745815
+  },
+  "tags": {
+   "amenity": "fuel",
+   "brand": "7-Eleven",
+   "brand:wikidata": "Q259340",
+   "lgbtq": "welcome",
+   "lgbtq:signed": "yes",
+   "name": "7-Eleven",
+   "source:lgbtq": "Progress pride flag flown, employee has rainbow flag and lgbtq ally pins"
+  }
+ },
+ {
+  "type": "way",
+  "id": 253366067,
+  "center": {
+   "lat": 27.968353,
+   "lon": -82.745479
+  },
+  "tags": {
+   "brand": "7-Eleven",
+   "brand:wikidata": "Q259340",
+   "lgbtq": "welcome",
+   "lgbtq:signed": "yes",
+   "name": "7-Eleven",
+   "shop": "convenience",
+   "source:lgbtq": "Progress pride flag flown, employee has rainbow flag and lgbtq ally pins"
+  }
+ },
+ {
+  "type": "way",
+  "id": 912774878,
+  "center": {
+   "lat": 28.1917233,
+   "lon": -82.3969846
+  },
+  "tags": {
+   "amenity": "restaurant",
+   "brand": "Bonefish Grill",
+   "brand:wikidata": "Q4941599",
+   "lgbtq": "welcome",
+   "name": "Bonefish Grill"
+  }
+ },
+ {
+  "type": "way",
+  "id": 1,
+  "center": {
+   "lat": 28.0,
+   "lon": -82.0
+  },
+  "tags": {
+   "building": "yes",
+   "lgbtq": "primary",
+   "name": "Unlabelled building"
+  }
+ },
+ {
+  "type": "way",
+  "id": 2,
+  "center": {
+   "lat": 28.0,
+   "lon": -82.0
+  },
+  "tags": {
+   "amenity": "bar",
+   "lgbtq": "primary"
+  }
+ }
+]

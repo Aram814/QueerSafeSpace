@@ -4,6 +4,7 @@ import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import { DEFAULT_CENTER } from '../lib/geo';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CATEGORY_ICONS, matchesFilter, overallRating, RATING_LABELS, type SpaceFilter } from '../lib/ratings';
+import type { MapBounds } from '../lib/spaces';
 import type { LocationCategory, OverallRating, Space } from '../lib/types';
 import PlacePin from './PlacePin';
 
@@ -14,7 +15,7 @@ interface Props {
   onOpenDetail: (spaceId: string) => void;
   onUserLocated: (lat: number, lon: number) => void;
   /** Fired on load and after every pan/zoom, so searches can bias to the visible area. */
-  onMapMove: (lat: number, lon: number, zoom: number) => void;
+  onMapMove: (lat: number, lon: number, zoom: number, bounds: MapBounds) => void;
   /** Last known GPS fix, if any. */
   userLocation: { lat: number; lon: number } | null;
   /** Bump to recentre on the user. */
@@ -100,7 +101,13 @@ function MapEffects({
     };
     const moved = () => {
       const c = map.getCenter();
-      cbs.current.onMapMove(c.lat, c.lng, map.getZoom());
+      const b = map.getBounds();
+      cbs.current.onMapMove(c.lat, c.lng, map.getZoom(), {
+        south: b.getSouth(),
+        north: b.getNorth(),
+        west: b.getWest(),
+        east: b.getEast(),
+      });
     };
     map.on('locationfound', located);
     map.on('locationerror', failed);

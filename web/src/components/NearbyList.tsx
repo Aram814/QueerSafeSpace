@@ -25,6 +25,9 @@ const BADGE: Record<OverallRating, IconName> = {
   unknown: 'question',
 };
 
+/** How far from the map centre a place can be and still count as "nearby" (about 25 miles). */
+const NEARBY_RADIUS_KM = 40;
+
 function formatDist(km: number): string {
   const mi = km * 0.621371;
   return mi < 0.1 ? 'Here' : mi < 10 ? `${mi.toFixed(1)} mi` : `${Math.round(mi)} mi`;
@@ -52,7 +55,7 @@ export default function NearbyList({ spaces, filter, center, onSelect, expanded,
           rating: overallRating(space.ratings),
           dist: getDistKm(center.lat, center.lon, space.latitude as number, space.longitude as number),
         }))
-        .filter(({ rating }) => matchesFilter(rating, filter))
+        .filter(({ rating, dist }) => dist <= NEARBY_RADIUS_KM && matchesFilter(rating, filter))
         .sort((a, b) => a.dist - b.dist)
         .slice(0, 50),
     [spaces, filter, center.lat, center.lon],
