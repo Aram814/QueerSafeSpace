@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { deleteAccount, signOut, updatePassword } from '../lib/auth';
-import { AVATARS, isUsernameAvailable, saveAvatar, saveUsername, USERNAME_HINT, validateUsername } from '../lib/profiles';
+import { AVATARS, isEmailName, isUsernameAvailable, saveAvatar, saveUsername, USERNAME_HINT, validateUsername } from '../lib/profiles';
 import type { Profile } from '../lib/types';
 import Icon from '../components/Icon';
 import { PageShell } from './InfoPages';
@@ -47,6 +47,10 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
     const nameError = validateUsername(next);
     if (nameError) {
       setUsernameMsg({ text: nameError, error: true });
+      return;
+    }
+    if (isEmailName(next, user.email)) {
+      setUsernameMsg({ text: 'Please don\u2019t use the first part of your email as your username.', error: true });
       return;
     }
     if (!(await isUsernameAvailable(next))) {

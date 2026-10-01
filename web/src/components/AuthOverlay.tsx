@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { OAUTH_ENABLED } from '../config';
-import { isUsernameAvailable, USERNAME_HINT, validateUsername } from '../lib/profiles';
+import { isEmailName, isUsernameAvailable, USERNAME_HINT, validateUsername } from '../lib/profiles';
 import { resetPassword, signIn, signInWithOAuth, signUp } from '../lib/auth';
 
 export type AuthMode = 'signin' | 'signup';
@@ -37,6 +37,13 @@ export default function AuthOverlay({ mode, onModeChange, onClose, onToast, onOp
         const nameError = validateUsername(username);
         if (nameError) {
           setMessage({ text: nameError, isError: true });
+          return;
+        }
+        if (isEmailName(username, email)) {
+          setMessage({
+            text: 'Please don\u2019t use the first part of your email as your username.',
+            isError: true,
+          });
           return;
         }
         if (!(await isUsernameAvailable(username.trim()))) {

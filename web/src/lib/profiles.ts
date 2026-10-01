@@ -28,11 +28,50 @@ export function validateUsername(raw: string): string | null {
   return null;
 }
 
+/** The part of an email before the @ must not be used as a public name. */
+export function isEmailName(username: string, email: string | undefined): boolean {
+  const name = (email ?? '').split('@')[0].toLowerCase();
+  return !!name && username.trim().toLowerCase() === name;
+}
+
 /** True if nobody has this username. If the check cannot run, allow it: the database enforces uniqueness. */
 export async function isUsernameAvailable(name: string): Promise<boolean> {
   const { data, error } = await supabase.rpc('username_available', { name });
   if (error) return true;
   return data !== false;
+}
+
+function emailName(user: User): string {
+  return (user.email ?? '').split('@')[0].toLowerCase();
+}
+
+/**
+ * Usernames are public, and the database may create a profile named after the email (a sign-up
+ * trigger does this). If the profile still carries that email name, swap it for the name chosen
+ * at sign-up, or for a random one if none was chosen.
+ */
+const repairAttempted = new Set<string>();
+
+async function repairUsername(user: User, profile: Profile, chosen: string): Promise<Profile> {
+  const email = emailName(user);
+  if (!email || profile.username.toLowerCase() !== email) return profile;
+  // Updating the account fires another auth event, so only ever try once per user per page load.
+  if (repairAttempted.has(user.id)) return profile;
+  repairAttempted.add(user.id);
+
+  const valid = chosen && !validateUsername(chosen) && chosen.toLowerCase() !== email;
+  const candidates = valid ? [chosen, fallbackUsername()] : [fallbackUsername()];
+  for (const username of candidates) {
+    const { error } = await supabase.from('profiles').update({ username }).eq('user_id', user.id);
+    if (!error) {
+      if (valid && username === chosen) {
+        // The chosen name has been applied; stop it overriding later edits.
+        void supabase.auth.updateUser({ data: { username: null } });
+      }
+      return { ...profile, username };
+    }
+  }
+  return profile;
 }
 
 /**
@@ -58,7 +97,7 @@ export async function loadProfile(user: User): Promise<Profile> {
       .select('*')
       .eq('user_id', user.id)
       .maybeSingle();
-    if (data) return data as Profile;
+    if (data) return await repairUsername(user, data as Profile, chosen);
 
     const { data: created, error: insertError } = await supabase
       .from('profiles')
