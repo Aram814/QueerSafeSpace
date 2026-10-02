@@ -44,6 +44,8 @@ export interface Rating {
   created_at: string | null;
   /** Only present on ratings read through public_ratings. */
   username?: string | null;
+  /** True when the author chose to show their Founding Member badge. */
+  founding?: boolean;
 }
 
 /** The shape loadSpaces() reads: only the rating value is needed for the tally. */
@@ -69,7 +71,7 @@ export interface Location {
 /** public_locations / public_ratings: the anonymous read views, minus user_id. */
 export type PublicLocation = Omit<Location, 'user_id' | 'identity'>;
 /** `username` is the author's chosen display name, null once they delete their account. */
-export type PublicRating = Omit<Rating, 'user_id'> & { username: string | null };
+export type PublicRating = Omit<Rating, 'user_id'> & { username: string | null; founding: boolean };
 
 export type Space = Location & { ratings: RatingVote[] | null };
 export type SpaceDetail = Location & { ratings: Rating[] | null };
@@ -79,6 +81,10 @@ export interface Profile {
   username: string;
   avatar_url: string | null;
   sign_up_date: string | null;
+  /** Set from the founding_members table, never stored on the profile itself. */
+  founding?: boolean;
+  /** Whether the member chose to show the badge next to their ratings. */
+  badgeVisible?: boolean;
 }
 
 /** A place returned by Overpass or Nominatim, before it becomes a location. */

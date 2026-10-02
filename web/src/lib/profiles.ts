@@ -81,7 +81,26 @@ async function repairUsername(user: User, profile: Profile, chosen: string): Pro
  * profiles is readable only by its owner, so this is the one and only path that
  * ever touches the table — nothing else may join a profile to a rating.
  */
+/** The member's badge status, or nulls if they have none (or we cannot tell). */
+async function foundingStatus(userId: string): Promise<{ founding: boolean; badgeVisible: boolean }> {
+  try {
+    const { data } = await supabase
+      .from('founding_members')
+      .select('user_id, show_badge')
+      .eq('user_id', userId)
+      .maybeSingle();
+    return { founding: Boolean(data), badgeVisible: Boolean(data?.show_badge) };
+  } catch {
+    return { founding: false, badgeVisible: false };
+  }
+}
+
 export async function loadProfile(user: User): Promise<Profile> {
+  const profile = await loadProfileRow(user);
+  return { ...profile, ...(await foundingStatus(user.id)) };
+}
+
+async function loadProfileRow(user: User): Promise<Profile> {
   // The name picked on the sign-up form travels in the account's metadata.
   const chosen = String(user.user_metadata?.username ?? '').trim();
   const fallback: Profile = {
@@ -145,4 +164,9 @@ export async function saveUsername(userId: string, username: string): Promise<vo
     // 23505 = unique_violation: profiles.username is UNIQUE.
     throw new Error(error.code === '23505' ? 'That username is taken.' : error.message);
   }
+}
+
+export async function setBadgeVisibility(show: boolean): Promise<void> {
+  const { error } = await supabase.rpc('set_badge_visibility', { p_show: show });
+  if (error) throw new Error(error.message);
 }

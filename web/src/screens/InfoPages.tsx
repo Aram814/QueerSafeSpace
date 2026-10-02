@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import Icon from '../components/Icon';
-import { CONTACT_EMAIL, FEEDBACK_HREF, INSTAGRAM_HREF, TESTER_HREF } from '../config';
+import { CONTACT_EMAIL, FEEDBACK_HREF, INSTAGRAM_HREF } from '../config';
 
-export type InfoPage = 'crisis' | 'contact' | 'privacy' | 'terms' | 'account';
+export type InfoPage = 'crisis' | 'contact' | 'privacy' | 'terms' | 'account' | 'tester';
 
 export function PageShell({ title, onBack, children }: { title: string; onBack: () => void; children: ReactNode }) {
   return (
@@ -85,7 +85,7 @@ export function CrisisPage({ onBack }: { onBack: () => void }) {
   );
 }
 
-export function ContactPage({ onBack }: { onBack: () => void }) {
+export function ContactPage({ onBack, onOpenPage }: { onBack: () => void; onOpenPage: (page: InfoPage) => void }) {
   return (
     <PageShell title="Contact us" onBack={onBack}>
       <article className="info-card">
@@ -103,10 +103,10 @@ export function ContactPage({ onBack }: { onBack: () => void }) {
             <Icon name="message" />
             Send feedback
           </a>
-          <a className="btn btn-secondary" href={TESTER_HREF}>
+          <button className="btn btn-secondary" onClick={() => onOpenPage('tester')}>
             <Icon name="flask" />
             Become a tester
-          </a>
+          </button>
         </div>
       </article>
       <article className="info-card">
@@ -136,6 +136,11 @@ export function PrivacyPage({ onBack }: { onBack: () => void }) {
         <p>
           We collect account info (email, password hash), optional location data when you add spaces,
           and basic usage data to improve the app.
+        </p>
+        <p>
+          If you fill in the &ldquo;Become a tester&rdquo; form we also keep the name, email, city,
+          device and notes you enter, only to contact you about QueerSafeSpace. Ask us at any time
+          to delete them.
         </p>
 
         <h2>Anonymity</h2>

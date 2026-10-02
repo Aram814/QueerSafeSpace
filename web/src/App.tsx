@@ -8,6 +8,7 @@ import Toast from './components/Toast';
 import SplashScreen from './screens/SplashScreen';
 import MapScreen from './screens/MapScreen';
 import AccountPage from './screens/AccountPage';
+import TesterPage from './screens/TesterPage';
 import ResetPasswordScreen from './screens/ResetPasswordScreen';
 import { ContactPage, CrisisPage, PrivacyPage, TermsPage, type InfoPage } from './screens/InfoPages';
 
@@ -22,7 +23,10 @@ export default function App() {
   const [recovering, setRecovering] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   // Crisis resources and Contact open over the map so its state (search, position) is kept.
-  const [page, setPage] = useState<InfoPage | null>(null);
+  // Opening /?join (for QR codes and flyers) goes straight to the tester form.
+  const [page, setPage] = useState<InfoPage | null>(() =>
+    new URLSearchParams(window.location.search).has('join') ? 'tester' : null,
+  );
 
   const showToast = useCallback((message: string) => setToast(message), []);
 
@@ -74,9 +78,19 @@ export default function App() {
       )}
 
       {page === 'crisis' && <CrisisPage onBack={() => setPage(null)} />}
-      {page === 'contact' && <ContactPage onBack={() => setPage(null)} />}
+      {page === 'contact' && <ContactPage onBack={() => setPage(null)} onOpenPage={setPage} />}
       {page === 'privacy' && <PrivacyPage onBack={() => setPage(null)} />}
       {page === 'terms' && <TermsPage onBack={() => setPage(null)} />}
+
+      {page === 'tester' && (
+        <TesterPage
+          onBack={() => {
+            setPage(null);
+            if (window.location.search) window.history.replaceState(null, '', window.location.pathname);
+          }}
+          onOpenPage={setPage}
+        />
+      )}
 
       {page === 'account' && user && (
         <AccountPage
