@@ -3,7 +3,7 @@
 export type AvatarDef =
   | { id: string; label: string; tier: Tier; kind: 'flag'; stripes: string[] }
   | { id: string; label: string; tier: Tier; kind: 'heart'; bg: string; fill: string }
-  | { id: string; label: string; tier: Tier; kind: 'glow'; from: string; to: string }
+  | { id: string; label: string; tier: Tier; kind: 'glow'; from: string; to: string; motif: 'sun' | 'aurora' | 'waves' | 'moon' | 'dots' }
   | { id: string; label: string; tier: Tier; kind: 'ring'; stripes: string[] }
   | { id: string; label: string; tier: Tier; kind: 'star'; bg: string; fill: string }
   | { id: string; label: string; tier: Tier; kind: 'night'; bg: string; fill: string };
@@ -28,11 +28,11 @@ export const AVATAR_DEFS: AvatarDef[] = [
   { id: 'flag-genderfluid', label: 'Genderfluid', tier: 0, kind: 'flag', stripes: ['#FF76A4', '#FFFFFF', '#C011D7', '#000000', '#2F3CBE'] },
   { id: 'flag-agender', label: 'Agender', tier: 0, kind: 'flag', stripes: ['#000000', '#BCC4C7', '#FFFFFF', '#B7F684', '#FFFFFF', '#BCC4C7', '#000000'] },
 
-  { id: 'glow-sunrise', label: 'Sunrise', tier: 1, kind: 'glow', from: '#FF9A56', to: '#F25C9A' },
-  { id: 'glow-aurora', label: 'Aurora', tier: 1, kind: 'glow', from: '#3DDC97', to: '#4F6CFF' },
-  { id: 'glow-ocean', label: 'Ocean', tier: 1, kind: 'glow', from: '#5BCEFA', to: '#2D5BE3' },
-  { id: 'glow-dusk', label: 'Dusk', tier: 1, kind: 'glow', from: '#F5A9B8', to: '#7C4DFF' },
-  { id: 'glow-candy', label: 'Candy', tier: 1, kind: 'glow', from: '#FF8AD8', to: '#6EC5FF' },
+  { id: 'glow-sunrise', label: 'Sunrise', tier: 1, kind: 'glow', from: '#FF9A56', to: '#F25C9A', motif: 'sun' },
+  { id: 'glow-aurora', label: 'Aurora', tier: 1, kind: 'glow', from: '#3DDC97', to: '#4F6CFF', motif: 'aurora' },
+  { id: 'glow-ocean', label: 'Ocean', tier: 1, kind: 'glow', from: '#5BCEFA', to: '#2D5BE3', motif: 'waves' },
+  { id: 'glow-dusk', label: 'Dusk', tier: 1, kind: 'glow', from: '#F5A9B8', to: '#7C4DFF', motif: 'moon' },
+  { id: 'glow-candy', label: 'Candy', tier: 1, kind: 'glow', from: '#FF8AD8', to: '#6EC5FF', motif: 'dots' },
 
   { id: 'ring-rainbow', label: 'Rainbow ring', tier: 2, kind: 'ring', stripes: ['#E40303', '#FF8C00', '#FFED00', '#008026', '#004DFF', '#750787'] },
   { id: 'ring-trans', label: 'Trans ring', tier: 2, kind: 'ring', stripes: ['#5BCEFA', '#F5A9B8', '#FFFFFF', '#F5A9B8', '#5BCEFA'] },
