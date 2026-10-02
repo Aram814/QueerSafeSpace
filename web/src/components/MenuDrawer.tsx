@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { FEEDBACK_HREF } from '../config';
-import { DEFAULT_AVATAR } from '../lib/profiles';
+import Avatar from './Avatar';
 import type { Profile } from '../lib/types';
 import type { InfoPage } from '../screens/InfoPages';
 import { setTheme, type ThemeChoice } from '../theme';
@@ -54,7 +54,7 @@ export default function MenuDrawer({
         <div className="menu-head">
           {user ? (
             <span className="menu-avatar" aria-hidden="true">
-              {profile?.avatar_url ?? DEFAULT_AVATAR}
+              <Avatar id={profile?.avatar_url} size={44} />
             </span>
           ) : (
             <ShieldLogo className="menu-shield" />

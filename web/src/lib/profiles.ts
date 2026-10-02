@@ -2,12 +2,7 @@ import type { User } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import type { Profile } from './types';
 
-export const DEFAULT_AVATAR = '🏳️‍🌈';
-
-export const AVATARS = [
-  '🏳️‍🌈', '🏳️‍⚧️', '👩', '👨', '🧑', '❤️', '🧡', '💛',
-  '💚', '💙', '💜', '🩵', '🩷', '🤍', '🖤',
-];
+import { DEFAULT_AVATAR } from './avatars';
 
 /** Usernames are public, so the default must not reveal anything about the person's email. */
 function fallbackUsername(): string {
@@ -95,7 +90,29 @@ async function foundingStatus(userId: string): Promise<{ founding: boolean; badg
   }
 }
 
+const referralAttempted = new Set<string>();
+
+/** A new member who arrived through a referral link tells the database once, then forgets the code. */
+async function claimReferral(user: User): Promise<void> {
+  const ref = String(user.user_metadata?.ref ?? '').trim();
+  if (!ref || referralAttempted.has(user.id)) return;
+  referralAttempted.add(user.id);
+  try {
+    const { error } = await supabase.rpc('claim_referral', { p_code: ref });
+    if (error) {
+      // Keep the code so the next sign-in can try again.
+      referralAttempted.delete(user.id);
+      console.error('claim_referral error:', error.message);
+      return;
+    }
+    void supabase.auth.updateUser({ data: { ref: null } });
+  } catch {
+    /* referrals are a nice-to-have; never block sign-in */
+  }
+}
+
 export async function loadProfile(user: User): Promise<Profile> {
+  void claimReferral(user);
   const profile = await loadProfileRow(user);
   return { ...profile, ...(await foundingStatus(user.id)) };
 }

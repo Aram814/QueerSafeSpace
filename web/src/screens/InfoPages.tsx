@@ -138,6 +138,10 @@ export function PrivacyPage({ onBack }: { onBack: () => void }) {
           and basic usage data to improve the app.
         </p>
         <p>
+          If you join through another member&apos;s referral link, we record which member referred
+          you. That member only ever sees a count, never your name or details.
+        </p>
+        <p>
           If you fill in the &ldquo;Become a tester&rdquo; form we also keep the name, email, city,
           device and notes you enter, only to contact you about QueerSafeSpace. Ask us at any time
           to delete them.

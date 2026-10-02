@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { OAUTH_ENABLED } from '../config';
+import { storedReferral } from '../lib/referral';
+import { checkReferralCode, displayCode } from '../lib/impact';
 import { isEmailName, isUsernameAvailable, USERNAME_HINT, validateUsername } from '../lib/profiles';
 import { resetPassword, signIn, signInWithOAuth, signUp } from '../lib/auth';
 
@@ -22,6 +24,10 @@ export default function AuthOverlay({ mode, onModeChange, onClose, onToast, onOp
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [refCode, setRefCode] = useState(() => {
+    const saved = storedReferral();
+    return saved ? displayCode(saved) : '';
+  });
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [agreedPrivacy, setAgreedPrivacy] = useState(false);
@@ -46,6 +52,11 @@ export default function AuthOverlay({ mode, onModeChange, onClose, onToast, onOp
           });
           return;
         }
+        const cleanRef = refCode.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+        if (cleanRef && (await checkReferralCode(cleanRef)) === false) {
+          setMessage({ text: 'We could not find that referral code. Check it, or clear the box to continue without one.', isError: true });
+          return;
+        }
         if (!(await isUsernameAvailable(username.trim()))) {
           setMessage({ text: 'That username is taken. Please pick another.', isError: true });
           return;
@@ -62,7 +73,7 @@ export default function AuthOverlay({ mode, onModeChange, onClose, onToast, onOp
           setMessage({ text: 'Please agree to Terms & Privacy Policy.', isError: true });
           return;
         }
-        await signUp(email.trim(), password, username.trim());
+        await signUp(email.trim(), password, username.trim(), cleanRef || undefined);
         setMessage({ text: '✅ Check your email to confirm your account!', isError: false });
       } else {
         await signIn(email.trim(), password);
@@ -176,6 +187,22 @@ export default function AuthOverlay({ mode, onModeChange, onClose, onToast, onOp
                 <p className="field-hint">
                   Shown next to your ratings and comments. {USERNAME_HINT}
                 </p>
+              </div>
+              <div className="fg">
+                <label className="fl" htmlFor="a-ref">
+                  Referral code (optional)
+                </label>
+                <input
+                  id="a-ref"
+                  className="fi"
+                  placeholder="QSS-XXXXXX"
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  maxLength={12}
+                  value={refCode}
+                  onChange={(e) => setRefCode(e.target.value)}
+                />
+                <p className="field-hint">Do you have a referral code? Enter it here so the person who shared it gets credit.</p>
               </div>
               <div className="fg">
                 <label className="fl" htmlFor="a-cpw">
