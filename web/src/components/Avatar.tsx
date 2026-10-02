@@ -3,7 +3,6 @@ import { avatarDef, DEFAULT_AVATAR, type AvatarDef } from '../lib/avatars';
 
 const HEART =
   'M32 52 C32 52 12 40 12 26 C12 19 17 14 23 14 C27 14 30 16 32 19 C34 16 37 14 41 14 C47 14 52 19 52 26 C52 40 32 52 32 52 Z';
-const SPARKLE = 'M32 10 L36 28 L54 32 L36 36 L32 54 L28 36 L10 32 L28 28 Z';
 
 function Stripes({ colors, y = 0, h = 64 }: { colors: string[]; y?: number; h?: number }) {
   const band = h / colors.length;
@@ -98,15 +97,52 @@ function Art({ def, uid }: { def: AvatarDef; uid: string }) {
           <path d={HEART} fill={def.stripes[0]} transform="translate(8 8) scale(0.75)" />
         </>
       );
-    case 'star':
+    case 'star': {
+      const pts = [...Array(10)].map((_, i) => {
+        const r = i % 2 === 0 ? 21 : 9;
+        const a = -Math.PI / 2 + (i * Math.PI) / 5;
+        return [32 + Math.cos(a) * r, 33 + Math.sin(a) * r];
+      });
+      const bands = ['#E40303', '#FF8C00', '#FFED00', '#008026', '#004DFF', '#750787'];
+      const spark = (x: number, y: number, k: number) => (
+        <path d="M0 -4 L1 -1 L4 0 L1 1 L0 4 L-1 1 L-4 0 L-1 -1 Z" fill="#fff" transform={`translate(${x} ${y}) scale(${k})`} />
+      );
       return (
         <>
-          <rect width="64" height="64" fill={def.bg} />
-          <path d={SPARKLE} fill={def.fill} />
-          <circle cx="15" cy="15" r="2" fill="#fff" opacity="0.8" />
-          <circle cx="50" cy="49" r="1.5" fill="#fff" opacity="0.8" />
+          <defs>
+            <radialGradient id={`${uid}b`} cx="0.5" cy="0.5" r="0.7">
+              <stop offset="0" stopColor="#4A2D8F" />
+              <stop offset="1" stopColor={def.bg} />
+            </radialGradient>
+            <radialGradient id={`${uid}h`}>
+              <stop offset="0" stopColor="#FFD86B" stopOpacity="0.85" />
+              <stop offset="1" stopColor="#FFD86B" stopOpacity="0" />
+            </radialGradient>
+            <linearGradient id={`${uid}s`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#FFF3B0" />
+              <stop offset="0.5" stopColor={def.fill} />
+              <stop offset="1" stopColor="#E8920C" />
+            </linearGradient>
+          </defs>
+          <rect width="64" height="64" fill={`url(#${uid}b)`} />
+          {bands.map((c, i) => (
+            <circle key={c} cx="32" cy="32" r={31 - i * 1.6} fill="none" stroke={c} strokeWidth="1.7" />
+          ))}
+          <circle cx="32" cy="33" r="26" fill={`url(#${uid}h)`} />
+          <polygon points={pts.map((q) => q.join(',')).join(' ')} fill={`url(#${uid}s)`} stroke="#FFF3B0" strokeWidth="1" strokeLinejoin="round" />
+          {pts.map((q, i) => {
+            if (i % 2 === 1) return null;
+            const l = pts[(i + 9) % 10];
+            const r = pts[(i + 1) % 10];
+            return <polygon key={i} points={`32,33 ${l.join(',')} ${q.join(',')} ${r.join(',')}`} fill="#fff" opacity="0.14" />;
+          })}
+          {spark(13, 17, 1.1)}
+          {spark(51, 15, 0.8)}
+          {spark(52, 50, 1)}
+          {spark(12, 49, 0.7)}
         </>
       );
+    }
     case 'night':
       return (
         <>
