@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import Icon from '../components/Icon';
 import { CONTACT_EMAIL, FEEDBACK_HREF, INSTAGRAM_HREF } from '../config';
 
-export type InfoPage = 'crisis' | 'contact' | 'privacy' | 'terms' | 'account' | 'tester';
+export type InfoPage = 'crisis' | 'contact' | 'privacy' | 'terms' | 'account' | 'tester' | 'admin';
 
 export function PageShell({ title, onBack, children }: { title: string; onBack: () => void; children: ReactNode }) {
   return (

@@ -85,6 +85,8 @@ export interface Profile {
   founding?: boolean;
   /** Whether the member chose to show the badge next to their ratings. */
   badgeVisible?: boolean;
+  /** True for the owner/admin account (checked by the database). */
+  admin?: boolean;
 }
 
 /** A place returned by Overpass or Nominatim, before it becomes a location. */

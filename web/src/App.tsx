@@ -10,6 +10,7 @@ import SplashScreen from './screens/SplashScreen';
 import MapScreen from './screens/MapScreen';
 import AccountPage from './screens/AccountPage';
 import TesterPage from './screens/TesterPage';
+import AdminPage from './screens/AdminPage';
 import ResetPasswordScreen from './screens/ResetPasswordScreen';
 import { ContactPage, CrisisPage, PrivacyPage, TermsPage, type InfoPage } from './screens/InfoPages';
 
@@ -115,6 +116,10 @@ export default function App() {
           }}
           onToast={showToast}
         />
+      )}
+
+      {page === 'admin' && profile?.admin && (
+        <AdminPage onBack={() => setPage(null)} onToast={showToast} />
       )}
 
       {recovering && (
