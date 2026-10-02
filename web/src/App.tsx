@@ -89,6 +89,12 @@ export default function App() {
             if (window.location.search) window.history.replaceState(null, '', window.location.pathname);
           }}
           onOpenPage={setPage}
+          signedIn={!!user}
+          onCreateAccount={() => {
+            setPage(null);
+            if (window.location.search) window.history.replaceState(null, '', window.location.pathname);
+            setAuthMode('signup');
+          }}
         />
       )}
 
