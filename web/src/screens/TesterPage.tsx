@@ -15,9 +15,13 @@ const EMPTY: TesterSignup = { name: '', email: '', location: '', device: '', rol
 export default function TesterPage({
   onBack,
   onOpenPage,
+  onCreateAccount,
+  signedIn,
 }: {
   onBack: () => void;
   onOpenPage: (page: InfoPage) => void;
+  onCreateAccount: () => void;
+  signedIn: boolean;
 }) {
   const [form, setForm] = useState<TesterSignup>(EMPTY);
   const [trap, setTrap] = useState(''); // hidden field: only bots fill it in
@@ -64,9 +68,23 @@ export default function TesterPage({
             help is to open the map, search for places you know firsthand, and rate them. We plan to
             thank our early supporters with special perks.
           </p>
-          <button className="btn btn-primary" onClick={onBack}>
-            Start rating places
-          </button>
+          {signedIn ? (
+            <button className="btn btn-primary" onClick={onBack}>
+              Start rating places
+            </button>
+          ) : (
+            <>
+              <p className="account-note">
+                To rate places you also need a free account. That is separate from this sign-up.
+              </p>
+              <button className="btn btn-primary" onClick={onCreateAccount}>
+                Create my account
+              </button>
+              <button className="btn btn-ghost" onClick={onBack}>
+                Maybe later
+              </button>
+            </>
+          )}
         </article>
       </PageShell>
     );
@@ -78,6 +96,17 @@ export default function TesterPage({
         QueerSafeSpace is in beta and built by and for the community. We especially need{' '}
         <strong>data collectors</strong> and <strong>testers</strong>. Tell us a little about
         yourself and how you would like to help.
+      </p>
+      <p className="tester-note">
+        <Icon name="user" size={16} />
+        <span>
+          This is a volunteer sign-up, not an account. {signedIn ? '' : 'To rate places you will also need a free account. '}
+          {!signedIn && (
+            <button type="button" className="link-btn" onClick={onCreateAccount}>
+              Create an account
+            </button>
+          )}
+        </span>
       </p>
       <article className="info-card">
         <form onSubmit={submit} noValidate>

@@ -2056,3 +2056,49 @@ svg.i {
   gap: 8px;
   margin-top: 10px;
 }
+
+/* ---------------------------------------------------------------- welcome: beta help + tester note */
+.splash-help {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.splash-help > .i {
+  flex: none;
+  margin-top: 2px;
+  color: var(--accent-ink);
+}
+
+.splash-help p {
+  margin: 0;
+}
+
+.splash-help-note {
+  display: block;
+  font-size: 0.78rem;
+}
+
+.tester-note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--sky-soft);
+  font-size: 0.88rem;
+}
+
+.tester-note > .i {
+  flex: none;
+  margin-top: 2px;
+  color: var(--accent-ink);
+}
