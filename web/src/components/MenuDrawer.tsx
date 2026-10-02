@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { FEEDBACK_HREF, TESTER_HREF } from '../config';
+import { FEEDBACK_HREF } from '../config';
 import { DEFAULT_AVATAR } from '../lib/profiles';
 import type { Profile } from '../lib/types';
 import type { InfoPage } from '../screens/InfoPages';
@@ -104,10 +104,10 @@ export default function MenuDrawer({
             <Icon name="message" />
             Send feedback
           </a>
-          <a className="menu-item" href={TESTER_HREF}>
+          <button className="menu-item" onClick={() => onOpenPage('tester')}>
             <Icon name="flask" />
             Become a tester
-          </a>
+          </button>
 
           <div className="menu-sep" />
 

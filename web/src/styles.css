@@ -1901,3 +1901,63 @@ svg.i {
   font-size: 0.78rem;
   color: var(--muted);
 }
+
+/* ---------------------------------------------------------------- tester form */
+.opt {
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.role-set {
+  border: none;
+  padding: 0;
+  margin: 0 0 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.role-opt {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.role-opt:has(input:checked) {
+  border-color: var(--accent-ink);
+  background: var(--sky-soft);
+}
+
+.role-opt input {
+  margin-top: 4px;
+  accent-color: var(--primary);
+}
+
+.role-opt small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.tester-done {
+  text-align: center;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  color: var(--accent-ink);
+}
+
+.tester-done p {
+  color: var(--ink);
+}
