@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { OAUTH_ENABLED } from '../config';
+import { storedReferral } from '../lib/referral';
 import { isEmailName, isUsernameAvailable, USERNAME_HINT, validateUsername } from '../lib/profiles';
 import { resetPassword, signIn, signInWithOAuth, signUp } from '../lib/auth';
 
@@ -62,7 +63,7 @@ export default function AuthOverlay({ mode, onModeChange, onClose, onToast, onOp
           setMessage({ text: 'Please agree to Terms & Privacy Policy.', isError: true });
           return;
         }
-        await signUp(email.trim(), password, username.trim());
+        await signUp(email.trim(), password, username.trim(), storedReferral());
         setMessage({ text: '✅ Check your email to confirm your account!', isError: false });
       } else {
         await signIn(email.trim(), password);

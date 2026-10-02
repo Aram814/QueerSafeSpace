@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { deleteAccount, signOut, updatePassword } from '../lib/auth';
-import { AVATARS, isEmailName, isUsernameAvailable, saveAvatar, setBadgeVisibility, saveUsername, USERNAME_HINT, validateUsername } from '../lib/profiles';
+import { AVATARS, EXTRA_AVATARS, isEmailName, isUsernameAvailable, saveAvatar, setBadgeVisibility, saveUsername, USERNAME_HINT, validateUsername } from '../lib/profiles';
 import type { Profile } from '../lib/types';
 import FoundingBadge from '../components/FoundingBadge';
+import ImpactCard from '../components/ImpactCard';
 import Icon from '../components/Icon';
 import { PageShell } from './InfoPages';
 
@@ -131,7 +132,7 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
           </div>
         )}
         <div className="avatar-row" role="radiogroup" aria-label="Avatar">
-          {AVATARS.map((a) => (
+          {(profile?.founding ? [...AVATARS, ...EXTRA_AVATARS] : AVATARS).map((a) => (
             <button
               key={a}
               type="button"
@@ -166,6 +167,8 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
           Your username is shown publicly next to your ratings and comments. {USERNAME_HINT}
         </p>
       </article>
+
+      {profile?.founding && <ImpactCard onToast={onToast} />}
 
       <article className="info-card">
         <h2>Change password</h2>

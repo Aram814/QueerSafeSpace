@@ -81,6 +81,9 @@ async function repairUsername(user: User, profile: Profile, chosen: string): Pro
  * profiles is readable only by its owner, so this is the one and only path that
  * ever touches the table — nothing else may join a profile to a rating.
  */
+/** Extra avatars for Founding Members. */
+export const EXTRA_AVATARS = ['🦄', '🌈', '🦋', '🌻', '✨', '🪩', '🐝', '🦊', '🐙', '🌙'];
+
 /** The member's badge status, or nulls if they have none (or we cannot tell). */
 async function foundingStatus(userId: string): Promise<{ founding: boolean; badgeVisible: boolean }> {
   try {
@@ -95,7 +98,23 @@ async function foundingStatus(userId: string): Promise<{ founding: boolean; badg
   }
 }
 
+const referralAttempted = new Set<string>();
+
+/** A new member who arrived through a referral link tells the database once, then forgets the code. */
+async function claimReferral(user: User): Promise<void> {
+  const ref = String(user.user_metadata?.ref ?? '').trim();
+  if (!ref || referralAttempted.has(user.id)) return;
+  referralAttempted.add(user.id);
+  try {
+    await supabase.rpc('claim_referral', { p_code: ref });
+    void supabase.auth.updateUser({ data: { ref: null } });
+  } catch {
+    /* referrals are a nice-to-have; never block sign-in */
+  }
+}
+
 export async function loadProfile(user: User): Promise<Profile> {
+  void claimReferral(user);
   const profile = await loadProfileRow(user);
   return { ...profile, ...(await foundingStatus(user.id)) };
 }

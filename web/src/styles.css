@@ -2016,3 +2016,43 @@ svg.i {
 .rev-head .founding-badge {
   margin-top: 0;
 }
+
+/* ---------------------------------------------------------------- impact */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+
+.stat {
+  background: var(--surface-2);
+  border-radius: 14px;
+  padding: 12px;
+  display: grid;
+  gap: 2px;
+}
+
+.stat b {
+  font-family: var(--display);
+  font-size: 1.7rem;
+  line-height: 1;
+  color: var(--accent-ink);
+}
+
+.stat span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.impact-sub {
+  margin: 16px 0 4px;
+  font-family: var(--display);
+  font-size: 1.05rem;
+}
+
+.impact-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}

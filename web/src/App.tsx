@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { getSession, onAuthStateChange } from './lib/auth';
+import { captureReferral } from './lib/referral';
 import { loadProfile } from './lib/profiles';
 import type { Profile } from './lib/types';
 import AuthOverlay, { type AuthMode } from './components/AuthOverlay';
@@ -29,6 +30,10 @@ export default function App() {
   );
 
   const showToast = useCallback((message: string) => setToast(message), []);
+
+  useEffect(() => {
+    captureReferral();
+  }, []);
 
   useEffect(() => {
     let active = true;
