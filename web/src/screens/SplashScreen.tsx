@@ -53,12 +53,23 @@ export default function SplashScreen({ onSignUp, onSignIn, onBrowseAnonymously, 
             <Icon name="map" />
             Explore the map
           </button>
-          <button className="btn btn-secondary" onClick={onSignUp}>
-            Create an account
+          <button className="btn btn-secondary" onClick={onSignIn}>
+            Sign in
           </button>
-          <button className="btn btn-link" onClick={onSignIn}>
-            I already have an account
+          <button className="btn btn-link" onClick={onSignUp}>
+            New here? Create an account
           </button>
+        </div>
+
+        <div className="splash-help">
+          <Icon name="flask" size={18} />
+          <p>
+            QueerSafeSpace is in beta.{' '}
+            <button className="link-btn" onClick={() => onOpenPage('tester')}>
+              Help us test it
+            </button>{' '}
+            <span className="splash-help-note">(a volunteer sign-up, separate from your account)</span>
+          </p>
         </div>
 
         <p className="splash-legal">
