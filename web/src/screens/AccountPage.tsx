@@ -160,7 +160,7 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
                 role="radio"
                 aria-checked={avatar === def.id}
                 aria-label={open ? def.label : `${def.label} (locked)`}
-                title={open ? def.label : `Unlocks at ${TIER_UNLOCK[def.tier]} friends`}
+                title={open ? def.label : `Unlocks at ${TIER_UNLOCK[def.tier]} referrals`}
                 disabled={!open}
                 className={`avatar-opt${avatar === def.id ? ' on' : ''}${open ? '' : ' locked'}`}
                 onClick={() => void pickAvatar(def.id)}
@@ -173,8 +173,8 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
         </div>
         <p className="account-note avatar-note">
           {founding
-            ? `Invite friends with your code to unlock more avatars: ${TIER_UNLOCK[1]} friends unlocks the glow set, ${TIER_UNLOCK[2]} the rings and night sky, and ${TIER_UNLOCK[3]} a one-of-a-kind gold star.`
-            : 'Founding Members can unlock more avatars by inviting friends.'}
+            ? `Share your referral code to unlock more avatars: ${TIER_UNLOCK[1]} referrals unlocks the glow set, ${TIER_UNLOCK[2]} the rings and night sky, and ${TIER_UNLOCK[3]} a one-of-a-kind gold star.`
+            : 'Founding Members can unlock more avatars by sharing their referral code.'}
         </p>
         <form onSubmit={submitUsername}>
           <div className="fg">

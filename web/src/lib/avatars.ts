@@ -8,10 +8,10 @@ export type AvatarDef =
   | { id: string; label: string; tier: Tier; kind: 'star'; bg: string; fill: string }
   | { id: string; label: string; tier: Tier; kind: 'night'; bg: string; fill: string };
 
-/** 0 = everyone; higher tiers unlock as more friends join with your code. */
+/** 0 = everyone; higher tiers unlock as more referrals come in with your code. */
 export type Tier = 0 | 1 | 2 | 3;
 
-/** Friends who joined through your code before each tier unlocks. */
+/** Referrals (people who signed up with your code) needed for each tier. */
 export const TIER_UNLOCK: Record<Tier, number> = { 0: 0, 1: 5, 2: 10, 3: 20 };
 
 export const DEFAULT_AVATAR = 'flag-rainbow';

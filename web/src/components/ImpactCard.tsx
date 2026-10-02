@@ -83,7 +83,7 @@ export default function ImpactCard({
             </div>
             <div className="stat">
               <b>{impact.referrals}</b>
-              <span>{impact.referrals === 1 ? 'friend joined' : 'friends joined'} with your code</span>
+              <span>{impact.referrals === 1 ? 'referral' : 'referrals'} (people who signed up with your code)</span>
             </div>
           </div>
 
@@ -110,7 +110,7 @@ export default function ImpactCard({
 
           <h3 className="impact-sub">Your referral code</h3>
           <p className="account-note">
-            Friends can enter it when they sign up. We count the people who join with it. We never
+            Anyone can enter it when they sign up. Each new person who does counts as one referral. We never
             show who they are.
           </p>
           <div className="referral-code" aria-label="Your referral code">
