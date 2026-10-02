@@ -43,4 +43,4 @@ source, unnamed elements, and anything that is not a shop/venue/office. See `tra
 
 ## Tests
 
-`node --test tools/osm-import` (no network needed).
+`node --test tools/osm-import/transform.test.mjs` (no network needed).

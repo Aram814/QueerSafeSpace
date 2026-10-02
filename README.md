@@ -26,18 +26,14 @@ usernames are random (`friend-xxxxxx`), not derived from the email. See
 
 | Path | Description |
 | --- | --- |
-| `index.html` | The live production app: a single-file vanilla JS app using Leaflet and Supabase, served by GitHub Pages (`CNAME` sets the domain). Reference implementation. |
-| `web/` | React 18 + Vite + TypeScript port of the same app on the same Supabase backend. `src/lib/` is framework-free so a future React Native (Expo) client can reuse it. See [`web/README.md`](web/README.md). |
+| `web/` | The app: React 18 + Vite + TypeScript on Supabase, deployed on Vercel at www.queersafespace.org. `src/lib/` is framework-free so a future mobile client can reuse it. See [`web/README.md`](web/README.md). |
+| `tools/osm-import/` | Builds SQL files of OpenStreetMap places tagged as LGBTQ+ friendly, run from GitHub Actions. See its README. |
+| `.github/workflows/` | The on-demand "Import OSM listings" workflow. |
 | `supabase/migrations/` | SQL migrations: schema hardening (`text[]` tags, category check, PostGIS `geog` column and GiST index), RLS/anonymity rewrite, and the `user_id`-free public read views. |
 | `supabase/SCHEMA_NOTES.md` | Introspected pre-/post-migration schema and anonymity analysis. |
-| `tests/map.test.js` | Plain Node tests for pure utility functions extracted from `index.html`. |
-| `logo*.png` | Branding assets. |
+| `brand/` | Original logo and brand images, kept for reference. The app uses its own copies in `web/public/`. |
 
 ## Getting started
-
-**Live app (`index.html`):** open it in a browser or serve the repo root with any static server.
-
-**React app:**
 
 ```bash
 cd web
@@ -49,14 +45,14 @@ npm run dev                  # http://localhost:5173
 Only the anon/publishable key belongs in `.env.local`. Never use the service-role key or the
 Management API token, since Vite inlines `VITE_*` variables into the browser bundle.
 
-**Tests:**
+**Tests:** `node --test tools/osm-import/transform.test.mjs` (importer), and `npm run lint` / `npx tsc -b` in `web/`.
 
-```bash
-node tests/map.test.js
-```
+## History
+
+The project started as a single-file vanilla JS app (`index.html`) on GitHub Pages. It was replaced
+by the React app in `web/` and removed from the repository; the last commit that contains it is
+`c116581` (`git show c116581:index.html`).
 
 ## Status
 
-The project is moving from the single-file app to the React port. Until the port fully replaces
-`index.html`, changes to shared behavior should be made in both. Open items: OAuth providers,
-and a build/deploy workflow for `web/`.
+Beta. Open items: Google/Apple sign-in, a production map tile provider, and app store packaging.

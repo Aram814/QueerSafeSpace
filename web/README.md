@@ -1,8 +1,8 @@
 # QueerSafeSpace — web (React 18 + Vite + TypeScript)
 
-A port of the live single-file app at the repo root (`index.html`, deployed to GitHub Pages)
-into a React/Vite app backed by the same Supabase project. The root `index.html` is unchanged
-and remains the reference implementation.
+The QueerSafeSpace app: React 18 + Vite + TypeScript on Supabase, deployed on Vercel. It began as
+a port of the original single-file app (`index.html`), which has since been removed from the repo
+(see the History section of the root README).
 
 ## Environment setup
 
@@ -35,7 +35,7 @@ src/components/  UI: map, sheets, auth overlay, search, toast
 src/screens/     Splash and map screens
 ```
 
-Behaviour ported 1:1 from `index.html`: `overallRating` majority-vote tally, `PIN_COLORS`,
+Behaviour originally ported 1:1 from the old `index.html`: `overallRating` majority-vote tally, `PIN_COLORS`,
 `loadSpaces`, marker rendering (now react-leaflet), `submitSpace` (location insert + seed
 rating), `submitRating` (upsert on `space_id,user_id`), email auth, and the
 splash → auth → map flow.
