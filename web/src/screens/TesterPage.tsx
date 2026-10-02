@@ -61,7 +61,8 @@ export default function TesterPage({
           <p>
             Thank you for helping build QueerSafeSpace. We&apos;ll email you at{' '}
             <strong>{form.email.trim()}</strong> with next steps. In the meantime, the best way to
-            help is to open the map, search for places you know, and rate as many as you can.
+            help is to open the map, search for places you know firsthand, and rate them. We plan to
+            thank our early supporters with special perks.
           </p>
           <button className="btn btn-primary" onClick={onBack}>
             Start rating places
@@ -75,8 +76,8 @@ export default function TesterPage({
     <PageShell title="Help us build it" onBack={onBack}>
       <p className="page-lede">
         QueerSafeSpace is in beta and built by and for the community. We especially need{' '}
-        <strong>data collectors</strong>: people who will rate as many places as they can. Tell us
-        a little about yourself and how you would like to help.
+        <strong>data collectors</strong> and <strong>testers</strong>. Tell us a little about
+        yourself and how you would like to help.
       </p>
       <article className="info-card">
         <form onSubmit={submit} noValidate>
@@ -180,6 +181,12 @@ export default function TesterPage({
             onChange={(e) => setTrap(e.target.value)}
             name="website"
           />
+
+          <p className="account-note">
+            Please only rate places you have been to or know firsthand. Accuracy matters more than
+            how many you do. We can&apos;t offer payment, but we plan to thank our early supporters
+            with special perks.
+          </p>
 
           {error && <div className="fmsg error">{error}</div>}
           <button type="submit" className="btn btn-primary" disabled={busy}>

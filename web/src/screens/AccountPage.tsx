@@ -3,6 +3,7 @@ import type { User } from '@supabase/supabase-js';
 import { deleteAccount, signOut, updatePassword } from '../lib/auth';
 import { AVATARS, isEmailName, isUsernameAvailable, saveAvatar, saveUsername, USERNAME_HINT, validateUsername } from '../lib/profiles';
 import type { Profile } from '../lib/types';
+import FoundingBadge from '../components/FoundingBadge';
 import Icon from '../components/Icon';
 import { PageShell } from './InfoPages';
 
@@ -104,6 +105,12 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
       <article className="info-card">
         <h2>Profile</h2>
         <p className="account-email">{user.email}</p>
+        {profile?.founding && (
+          <div className="founding-row">
+            <FoundingBadge size="large" />
+            <p>Thank you for being here at the start. You helped build this.</p>
+          </div>
+        )}
         <div className="avatar-row" role="radiogroup" aria-label="Avatar">
           {AVATARS.map((a) => (
             <button

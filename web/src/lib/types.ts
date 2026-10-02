@@ -79,6 +79,8 @@ export interface Profile {
   username: string;
   avatar_url: string | null;
   sign_up_date: string | null;
+  /** Set from the founding_members table, never stored on the profile itself. */
+  founding?: boolean;
 }
 
 /** A place returned by Overpass or Nominatim, before it becomes a location. */

@@ -16,11 +16,19 @@ export const TESTER_ROLES: { value: TesterRole; label: string; hint: string }[] 
   {
     value: 'rater',
     label: 'Data collector',
-    hint: 'Submit as many place ratings as you can. Every rating makes the map more useful',
+    hint: 'Rate and add places you have been to or know firsthand, in the areas you know',
   },
-  { value: 'tester', label: 'Tester', hint: 'Try the app and tell us what breaks or confuses you' },
-  { value: 'ambassador', label: 'Brand ambassador', hint: 'Share QueerSafeSpace with your community' },
-  { value: 'feedback', label: 'Feedback', hint: 'Ideas, wishes and honest opinions' },
+  {
+    value: 'tester',
+    label: 'Tester',
+    hint: 'Use the app like anyone would, try features, and tell us what breaks or confuses you',
+  },
+  {
+    value: 'ambassador',
+    label: 'Brand ambassador',
+    hint: 'Share QueerSafeSpace with friends, groups and local businesses',
+  },
+  { value: 'feedback', label: 'Feedback', hint: 'Ideas, wishes and honest opinions, whenever you have them' },
 ];
 
 export const TESTER_DEVICES: { value: TesterDevice; label: string }[] = [

@@ -5,6 +5,7 @@ import { DEFAULT_AVATAR } from '../lib/profiles';
 import type { Profile } from '../lib/types';
 import type { InfoPage } from '../screens/InfoPages';
 import { setTheme, type ThemeChoice } from '../theme';
+import FoundingBadge from './FoundingBadge';
 import Icon, { type IconName } from './Icon';
 import ShieldLogo from './ShieldLogo';
 
@@ -61,6 +62,7 @@ export default function MenuDrawer({
           <div className="menu-id">
             <div className="menu-uname">{user ? (profile?.username ?? 'Member') : 'Guest'}</div>
             <div className="menu-email">{user?.email ?? 'Not signed in'}</div>
+            {profile?.founding && <FoundingBadge />}
           </div>
           <button className="menu-close" onClick={onClose} aria-label="Close menu">
             <Icon name="close" />

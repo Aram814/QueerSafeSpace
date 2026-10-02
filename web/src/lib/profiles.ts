@@ -81,7 +81,26 @@ async function repairUsername(user: User, profile: Profile, chosen: string): Pro
  * profiles is readable only by its owner, so this is the one and only path that
  * ever touches the table — nothing else may join a profile to a rating.
  */
+/** Whether this account has been granted the Founding Member badge (false if we cannot tell). */
+async function isFoundingMember(userId: string): Promise<boolean> {
+  try {
+    const { data } = await supabase
+      .from('founding_members')
+      .select('user_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+    return Boolean(data);
+  } catch {
+    return false;
+  }
+}
+
 export async function loadProfile(user: User): Promise<Profile> {
+  const profile = await loadProfileRow(user);
+  return { ...profile, founding: await isFoundingMember(user.id) };
+}
+
+async function loadProfileRow(user: User): Promise<Profile> {
   // The name picked on the sign-up form travels in the account's metadata.
   const chosen = String(user.user_metadata?.username ?? '').trim();
   const fallback: Profile = {
