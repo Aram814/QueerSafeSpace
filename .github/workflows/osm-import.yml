@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 20
       - name: Run tests
-        run: node --test tools/osm-import
+        run: node --test tools/osm-import/transform.test.mjs
       - name: Download listings from OpenStreetMap
         run: node tools/osm-import/import.mjs --states="${{ inputs.states }}" --out=out
       - uses: actions/upload-artifact@v4
