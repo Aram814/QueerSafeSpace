@@ -8,11 +8,11 @@ export type AvatarDef =
   | { id: string; label: string; tier: Tier; kind: 'star'; bg: string; fill: string }
   | { id: string; label: string; tier: Tier; kind: 'night'; bg: string; fill: string };
 
-/** 0 = everyone, 1 = unlocked by referrals, 2 = unlocked by more referrals. */
-export type Tier = 0 | 1 | 2;
+/** 0 = everyone; higher tiers unlock as more friends join with your code. */
+export type Tier = 0 | 1 | 2 | 3;
 
 /** Friends who joined through your code before each tier unlocks. */
-export const TIER_UNLOCK: Record<Tier, number> = { 0: 0, 1: 3, 2: 10 };
+export const TIER_UNLOCK: Record<Tier, number> = { 0: 0, 1: 5, 2: 10, 3: 20 };
 
 export const DEFAULT_AVATAR = 'flag-rainbow';
 
@@ -27,26 +27,18 @@ export const AVATAR_DEFS: AvatarDef[] = [
   { id: 'flag-aro', label: 'Aro', tier: 0, kind: 'flag', stripes: ['#3DA542', '#A7D379', '#FFFFFF', '#A9A9A9', '#000000'] },
   { id: 'flag-genderfluid', label: 'Genderfluid', tier: 0, kind: 'flag', stripes: ['#FF76A4', '#FFFFFF', '#C011D7', '#000000', '#2F3CBE'] },
   { id: 'flag-agender', label: 'Agender', tier: 0, kind: 'flag', stripes: ['#000000', '#BCC4C7', '#FFFFFF', '#B7F684', '#FFFFFF', '#BCC4C7', '#000000'] },
-  { id: 'heart-coral', label: 'Coral heart', tier: 0, kind: 'heart', bg: '#FFE4DE', fill: '#F25C54' },
-  { id: 'heart-amber', label: 'Amber heart', tier: 0, kind: 'heart', bg: '#FFF1D6', fill: '#F59E0B' },
-  { id: 'heart-green', label: 'Green heart', tier: 0, kind: 'heart', bg: '#DDF5E3', fill: '#2FA35B' },
-  { id: 'heart-sky', label: 'Sky heart', tier: 0, kind: 'heart', bg: '#DCEFFF', fill: '#3B9AE8' },
-  { id: 'heart-violet', label: 'Violet heart', tier: 0, kind: 'heart', bg: '#EBE2FF', fill: '#8B5CF6' },
-  { id: 'heart-pink', label: 'Pink heart', tier: 0, kind: 'heart', bg: '#FFE0EE', fill: '#EC4899' },
-  { id: 'heart-navy', label: 'Navy heart', tier: 0, kind: 'heart', bg: '#E4E8F2', fill: '#243B6B' },
 
   { id: 'glow-sunrise', label: 'Sunrise', tier: 1, kind: 'glow', from: '#FF9A56', to: '#F25C9A' },
   { id: 'glow-aurora', label: 'Aurora', tier: 1, kind: 'glow', from: '#3DDC97', to: '#4F6CFF' },
   { id: 'glow-ocean', label: 'Ocean', tier: 1, kind: 'glow', from: '#5BCEFA', to: '#2D5BE3' },
   { id: 'glow-dusk', label: 'Dusk', tier: 1, kind: 'glow', from: '#F5A9B8', to: '#7C4DFF' },
-  { id: 'glow-meadow', label: 'Meadow', tier: 1, kind: 'glow', from: '#FFED00', to: '#1FA463' },
   { id: 'glow-candy', label: 'Candy', tier: 1, kind: 'glow', from: '#FF8AD8', to: '#6EC5FF' },
 
   { id: 'ring-rainbow', label: 'Rainbow ring', tier: 2, kind: 'ring', stripes: ['#E40303', '#FF8C00', '#FFED00', '#008026', '#004DFF', '#750787'] },
   { id: 'ring-trans', label: 'Trans ring', tier: 2, kind: 'ring', stripes: ['#5BCEFA', '#F5A9B8', '#FFFFFF', '#F5A9B8', '#5BCEFA'] },
   { id: 'ring-bi', label: 'Bi ring', tier: 2, kind: 'ring', stripes: ['#D60270', '#9B4F96', '#0038A8'] },
   { id: 'ring-pan', label: 'Pan ring', tier: 2, kind: 'ring', stripes: ['#FF218C', '#FFD800', '#21B1FF'] },
-  { id: 'star-gold', label: 'Gold star', tier: 2, kind: 'star', bg: '#2A2150', fill: '#FFC83D' },
+  { id: 'star-gold', label: 'Gold star', tier: 3, kind: 'star', bg: '#2A2150', fill: '#FFC83D' },
   { id: 'night-heart', label: 'Night sky', tier: 2, kind: 'night', bg: '#1B1840', fill: '#FF7AB6' },
 ];
 

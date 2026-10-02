@@ -173,7 +173,7 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
         </div>
         <p className="account-note avatar-note">
           {founding
-            ? `Invite friends with your code to unlock more avatars: ${TIER_UNLOCK[1]} friends unlocks the glow set, ${TIER_UNLOCK[2]} unlocks the rings and stars.`
+            ? `Invite friends with your code to unlock more avatars: ${TIER_UNLOCK[1]} friends unlocks the glow set, ${TIER_UNLOCK[2]} the rings and night sky, and ${TIER_UNLOCK[3]} a one-of-a-kind gold star.`
             : 'Founding Members can unlock more avatars by inviting friends.'}
         </p>
         <form onSubmit={submitUsername}>
