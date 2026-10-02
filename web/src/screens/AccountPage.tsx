@@ -173,7 +173,7 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
         </div>
         <p className="account-note avatar-note">
           {founding
-            ? `Share your referral code to unlock more avatars: ${TIER_UNLOCK[1]} referrals unlocks the glow set, ${TIER_UNLOCK[2]} the rings and night sky, and ${TIER_UNLOCK[3]} a one-of-a-kind gold star.`
+            ? `Share your referral code to unlock more avatars. Tiers unlock at ${TIER_UNLOCK[1]} and ${TIER_UNLOCK[2]} referrals, and at ${TIER_UNLOCK[3]} you get a one-of-a-kind exclusive avatar.`
             : 'Founding Members can unlock more avatars by sharing their referral code.'}
         </p>
         <form onSubmit={submitUsername}>

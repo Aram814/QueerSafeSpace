@@ -38,8 +38,8 @@ export const AVATAR_DEFS: AvatarDef[] = [
   { id: 'ring-trans', label: 'Trans ring', tier: 2, kind: 'ring', stripes: ['#5BCEFA', '#F5A9B8', '#FFFFFF', '#F5A9B8', '#5BCEFA'] },
   { id: 'ring-bi', label: 'Bi ring', tier: 2, kind: 'ring', stripes: ['#D60270', '#9B4F96', '#0038A8'] },
   { id: 'ring-pan', label: 'Pan ring', tier: 2, kind: 'ring', stripes: ['#FF218C', '#FFD800', '#21B1FF'] },
-  { id: 'star-gold', label: 'Gold star', tier: 3, kind: 'star', bg: '#14102E', fill: '#FFC83D' },
   { id: 'night-heart', label: 'Night sky', tier: 2, kind: 'night', bg: '#1B1840', fill: '#FF7AB6' },
+  { id: 'star-gold', label: 'Gold star', tier: 3, kind: 'star', bg: '#14102E', fill: '#FFC83D' },
 ];
 
 export function avatarDef(id: string | null | undefined): AvatarDef | undefined {
