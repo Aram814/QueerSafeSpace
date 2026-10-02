@@ -98,7 +98,13 @@ async function claimReferral(user: User): Promise<void> {
   if (!ref || referralAttempted.has(user.id)) return;
   referralAttempted.add(user.id);
   try {
-    await supabase.rpc('claim_referral', { p_code: ref });
+    const { error } = await supabase.rpc('claim_referral', { p_code: ref });
+    if (error) {
+      // Keep the code so the next sign-in can try again.
+      referralAttempted.delete(user.id);
+      console.error('claim_referral error:', error.message);
+      return;
+    }
     void supabase.auth.updateUser({ data: { ref: null } });
   } catch {
     /* referrals are a nice-to-have; never block sign-in */
