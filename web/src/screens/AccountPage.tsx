@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { deleteAccount, signOut, updatePassword } from '../lib/auth';
-import { AVATARS, isEmailName, isUsernameAvailable, saveAvatar, saveUsername, USERNAME_HINT, validateUsername } from '../lib/profiles';
+import { AVATARS, isEmailName, isUsernameAvailable, saveAvatar, setBadgeVisibility, saveUsername, USERNAME_HINT, validateUsername } from '../lib/profiles';
 import type { Profile } from '../lib/types';
 import FoundingBadge from '../components/FoundingBadge';
 import Icon from '../components/Icon';
@@ -38,6 +38,17 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
       onProfileChange({ ...profile, avatar_url: next });
     } catch (err) {
       onToast(err instanceof Error ? err.message : 'Could not save your avatar');
+    }
+  }
+
+  async function toggleBadge(show: boolean) {
+    if (!profile) return;
+    onProfileChange({ ...profile, badgeVisible: show });
+    try {
+      await setBadgeVisibility(show);
+    } catch (err) {
+      onProfileChange({ ...profile, badgeVisible: !show });
+      onToast(err instanceof Error ? err.message : 'Could not update your badge setting');
     }
   }
 
@@ -109,6 +120,14 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
           <div className="founding-row">
             <FoundingBadge size="large" />
             <p>Thank you for being here at the start. You helped build this.</p>
+            <label className="badge-toggle">
+              <input
+                type="checkbox"
+                checked={Boolean(profile.badgeVisible)}
+                onChange={(e) => void toggleBadge(e.target.checked)}
+              />
+              <span>Show my badge next to my ratings and comments</span>
+            </label>
           </div>
         )}
         <div className="avatar-row" role="radiogroup" aria-label="Avatar">

@@ -2000,3 +2000,19 @@ svg.i {
   color: var(--muted);
   font-size: 0.88rem;
 }
+
+.badge-toggle {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 0.9rem;
+}
+
+.badge-toggle input {
+  margin-top: 3px;
+  accent-color: var(--primary);
+}
+
+.rev-head .founding-badge {
+  margin-top: 0;
+}

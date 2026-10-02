@@ -7,7 +7,9 @@
 create table if not exists public.founding_members (
   user_id    uuid primary key references auth.users (id) on delete cascade,
   granted_at timestamptz not null default now(),
-  note       text
+  note       text,
+  -- Off by default. The member can turn it on to show the badge next to their ratings and comments.
+  show_badge boolean not null default false
 );
 
 alter table public.founding_members enable row level security;
@@ -19,6 +21,38 @@ create policy founding_members_select_own on public.founding_members
 
 revoke all on public.founding_members from anon, authenticated;
 grant select on public.founding_members to authenticated;
+
+-- Members can only flip their own show_badge switch (never grant themselves a badge).
+create or replace function public.set_badge_visibility(p_show boolean)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.founding_members set show_badge = coalesce(p_show, false) where user_id = auth.uid();
+$$;
+
+revoke all on function public.set_badge_visibility(boolean) from public, anon;
+grant execute on function public.set_badge_visibility(boolean) to authenticated;
+
+-- Ratings are shown with the author's username (see public_usernames). When the author has chosen to
+-- show their badge, `founding` is true. It is false for everyone else, and reveals nothing more.
+create or replace view public.public_ratings as
+  select
+    r.id,
+    r.space_id,
+    r.rating,
+    r.comment,
+    r.safety_tags,
+    r.created_at,
+    p.username,
+    coalesce(f.show_badge, false) as founding
+  from public.ratings r
+  left join public.profiles p on p.user_id = r.user_id
+  left join public.founding_members f on f.user_id = r.user_id;
+
+alter view public.public_ratings set (security_invoker = off);
+grant select on public.public_ratings to anon, authenticated;
 
 -- ---------------------------------------------------------------------------
 -- How to grant the badge (run these yourself when you decide someone has earned it)

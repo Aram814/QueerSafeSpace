@@ -10,6 +10,7 @@ import {
   VERDICTS,
 } from '../lib/ratings';
 import type { OverallRating, SafetyRating, SpaceDetail } from '../lib/types';
+import FoundingBadge from './FoundingBadge';
 import Icon, { type IconName } from './Icon';
 
 interface Props {
@@ -182,6 +183,7 @@ export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate }:
                     <Icon name={BADGE[r.rating]} size={11} />
                   </span>
                   <span className="rev-name">{r.username || 'Former member'}</span>
+                  {r.founding && <FoundingBadge />}
                   <span className="rev-date">
                     {r.created_at ? new Date(r.created_at).toLocaleDateString() : ''}
                   </span>
