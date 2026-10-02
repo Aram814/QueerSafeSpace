@@ -1,30 +1,22 @@
 import { useEffect, useState } from 'react';
-import {
-  currentPosition,
-  loadImpact,
-  loadSiteStats,
-  referralLink,
-  type Impact,
-  type SiteStats,
-} from '../lib/impact';
+import { currentPosition, displayCode, loadSiteStats, type Impact, type SiteStats } from '../lib/impact';
 import Icon from './Icon';
 
-/** "Your impact": personal numbers, community numbers and a referral link. Founding Members only. */
-export default function ImpactCard({ onToast }: { onToast: (message: string) => void }) {
-  const [impact, setImpact] = useState<Impact | null>(null);
+/** "Your impact": personal numbers, community numbers and a referral code. Founding Members only. */
+export default function ImpactCard({
+  impact,
+  error,
+  onToast,
+}: {
+  impact: Impact | null;
+  error: string | null;
+  onToast: (message: string) => void;
+}) {
   const [site, setSite] = useState<SiteStats | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
     (async () => {
-      try {
-        const mine = await loadImpact();
-        if (alive) setImpact(mine);
-      } catch (err) {
-        if (alive) setError(err instanceof Error ? err.message : 'Could not load your stats');
-        return;
-      }
       const position = await currentPosition();
       try {
         const stats = await loadSiteStats(position);
@@ -40,15 +32,15 @@ export default function ImpactCard({ onToast }: { onToast: (message: string) => 
 
   async function share() {
     if (!impact) return;
-    const url = referralLink(impact.referralCode);
-    const text = 'Join me on QueerSafeSpace, a community map of places that are safe for LGBTQ+ people.';
+    const code = displayCode(impact.referralCode);
+    const text = `Join me on QueerSafeSpace, a community map of places that are safe for LGBTQ+ people. Sign up at queersafespace.org and enter my code ${code}.`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'QueerSafeSpace', text, url });
+        await navigator.share({ title: 'QueerSafeSpace', text });
         return;
       }
-      await navigator.clipboard.writeText(url);
-      onToast('Link copied');
+      await navigator.clipboard.writeText(text);
+      onToast('Message copied');
     } catch {
       /* user closed the share sheet */
     }
@@ -57,10 +49,10 @@ export default function ImpactCard({ onToast }: { onToast: (message: string) => 
   async function copy() {
     if (!impact) return;
     try {
-      await navigator.clipboard.writeText(referralLink(impact.referralCode));
-      onToast('Link copied');
+      await navigator.clipboard.writeText(displayCode(impact.referralCode));
+      onToast('Code copied');
     } catch {
-      onToast('Could not copy. Select the link and copy it by hand.');
+      onToast('Could not copy. Select the code and copy it by hand.');
     }
   }
 
@@ -91,7 +83,7 @@ export default function ImpactCard({ onToast }: { onToast: (message: string) => 
             </div>
             <div className="stat">
               <b>{impact.referrals}</b>
-              <span>{impact.referrals === 1 ? 'friend joined' : 'friends joined'} through your link</span>
+              <span>{impact.referrals === 1 ? 'friend joined' : 'friends joined'} with your code</span>
             </div>
           </div>
 
@@ -116,19 +108,21 @@ export default function ImpactCard({ onToast }: { onToast: (message: string) => 
             </div>
           )}
 
-          <h3 className="impact-sub">Your referral link</h3>
+          <h3 className="impact-sub">Your referral code</h3>
           <p className="account-note">
-            Share it with friends. We count the people who join through it. We never show who they
-            are.
+            Friends can enter it when they sign up. We count the people who join with it. We never
+            show who they are.
           </p>
-          <input className="fi" readOnly value={referralLink(impact.referralCode)} aria-label="Your referral link" onFocus={(e) => e.currentTarget.select()} />
+          <div className="referral-code" aria-label="Your referral code">
+            {displayCode(impact.referralCode)}
+          </div>
           <div className="impact-actions">
             <button className="btn btn-primary" onClick={() => void share()}>
               <Icon name="heart" />
-              Share my link
+              Share my code
             </button>
             <button className="btn btn-secondary" onClick={() => void copy()}>
-              Copy link
+              Copy code
             </button>
           </div>
         </>

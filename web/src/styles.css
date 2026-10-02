@@ -1795,10 +1795,16 @@ svg.i {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: var(--sky-soft);
   display: grid;
   place-items: center;
-  font-size: 1.5rem;
+  overflow: hidden;
+}
+
+.avatar-emoji {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--sky-soft);
 }
 
 .account-email {
@@ -1821,14 +1827,48 @@ svg.i {
 }
 
 .avatar-opt {
-  width: 44px;
-  height: 44px;
+  position: relative;
+  width: 48px;
+  height: 48px;
+  padding: 0;
   border-radius: 50%;
   border: 2px solid var(--line);
   background: var(--surface-2);
-  font-size: 1.4rem;
   display: grid;
   place-items: center;
+}
+
+.avatar-opt.locked svg {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+
+.avatar-opt:disabled {
+  cursor: not-allowed;
+}
+
+.avatar-lock {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  font-size: 0.8rem;
+}
+
+.avatar-note {
+  margin: -4px 0 14px;
+}
+
+.referral-code {
+  margin: 10px 0;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--accent-ink);
+  background: var(--sky-soft);
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  user-select: all;
 }
 
 .avatar-opt.on {

@@ -1,10 +1,13 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { deleteAccount, signOut, updatePassword } from '../lib/auth';
-import { AVATARS, EXTRA_AVATARS, isEmailName, isUsernameAvailable, saveAvatar, setBadgeVisibility, saveUsername, USERNAME_HINT, validateUsername } from '../lib/profiles';
+import { isEmailName, isUsernameAvailable, saveAvatar, setBadgeVisibility, saveUsername, USERNAME_HINT, validateUsername } from '../lib/profiles';
 import type { Profile } from '../lib/types';
 import FoundingBadge from '../components/FoundingBadge';
+import Avatar from '../components/Avatar';
 import ImpactCard from '../components/ImpactCard';
+import { AVATAR_DEFS, DEFAULT_AVATAR, isUnlocked, TIER_UNLOCK } from '../lib/avatars';
+import { loadImpact, type Impact } from '../lib/impact';
 import Icon from '../components/Icon';
 import { PageShell } from './InfoPages';
 
@@ -30,7 +33,23 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
   const [deleteMsg, setDeleteMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const avatar = profile?.avatar_url ?? AVATARS[0];
+  const [impact, setImpact] = useState<Impact | null>(null);
+  const [impactError, setImpactError] = useState<string | null>(null);
+  const founding = Boolean(profile?.founding);
+
+  useEffect(() => {
+    if (!founding) return;
+    let alive = true;
+    loadImpact()
+      .then((i) => alive && setImpact(i))
+      .catch((err) => alive && setImpactError(err instanceof Error ? err.message : 'Could not load your stats'));
+    return () => {
+      alive = false;
+    };
+  }, [founding]);
+
+  const referrals = impact?.referrals ?? 0;
+  const avatar = profile?.avatar_url ?? DEFAULT_AVATAR;
 
   async function pickAvatar(next: string) {
     if (!profile) return;
@@ -132,19 +151,31 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
           </div>
         )}
         <div className="avatar-row" role="radiogroup" aria-label="Avatar">
-          {(profile?.founding ? [...AVATARS, ...EXTRA_AVATARS] : AVATARS).map((a) => (
-            <button
-              key={a}
-              type="button"
-              role="radio"
-              aria-checked={avatar === a}
-              className={`avatar-opt${avatar === a ? ' on' : ''}`}
-              onClick={() => void pickAvatar(a)}
-            >
-              {a}
-            </button>
-          ))}
+          {AVATAR_DEFS.map((def) => {
+            const open = isUnlocked(def, referrals);
+            return (
+              <button
+                key={def.id}
+                type="button"
+                role="radio"
+                aria-checked={avatar === def.id}
+                aria-label={open ? def.label : `${def.label} (locked)`}
+                title={open ? def.label : `Unlocks at ${TIER_UNLOCK[def.tier]} friends`}
+                disabled={!open}
+                className={`avatar-opt${avatar === def.id ? ' on' : ''}${open ? '' : ' locked'}`}
+                onClick={() => void pickAvatar(def.id)}
+              >
+                <Avatar id={def.id} size={40} />
+                {!open && <span className="avatar-lock" aria-hidden="true">🔒</span>}
+              </button>
+            );
+          })}
         </div>
+        <p className="account-note avatar-note">
+          {founding
+            ? `Invite friends with your code to unlock more avatars: ${TIER_UNLOCK[1]} friends unlocks the glow set, ${TIER_UNLOCK[2]} unlocks the rings and stars.`
+            : 'Founding Members can unlock more avatars by inviting friends.'}
+        </p>
         <form onSubmit={submitUsername}>
           <div className="fg">
             <label className="fl" htmlFor="acct-username">
@@ -168,7 +199,7 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
         </p>
       </article>
 
-      {profile?.founding && <ImpactCard onToast={onToast} />}
+      {founding && <ImpactCard impact={impact} error={impactError} onToast={onToast} />}
 
       <article className="info-card">
         <h2>Change password</h2>

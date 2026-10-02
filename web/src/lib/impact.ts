@@ -69,6 +69,14 @@ export function currentPosition(): Promise<{ lat: number; lon: number } | null> 
   });
 }
 
-export function referralLink(code: string): string {
-  return `${window.location.origin}/?ref=${encodeURIComponent(code)}`;
+/** "ab3k9m" or "QSS-AB3K9M" both become the friendly display form QSS-AB3K9M. */
+export function displayCode(code: string): string {
+  return `QSS-${code.toUpperCase()}`;
+}
+
+/** Checks a typed code without creating an account. Network trouble counts as "can't tell". */
+export async function checkReferralCode(code: string): Promise<boolean | null> {
+  const { data, error } = await supabase.rpc('referral_code_valid', { p_code: code });
+  if (error) return null;
+  return Boolean(data);
 }

@@ -2,12 +2,7 @@ import type { User } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import type { Profile } from './types';
 
-export const DEFAULT_AVATAR = '🏳️‍🌈';
-
-export const AVATARS = [
-  '🏳️‍🌈', '🏳️‍⚧️', '👩', '👨', '🧑', '❤️', '🧡', '💛',
-  '💚', '💙', '💜', '🩵', '🩷', '🤍', '🖤',
-];
+import { DEFAULT_AVATAR } from './avatars';
 
 /** Usernames are public, so the default must not reveal anything about the person's email. */
 function fallbackUsername(): string {
@@ -81,9 +76,6 @@ async function repairUsername(user: User, profile: Profile, chosen: string): Pro
  * profiles is readable only by its owner, so this is the one and only path that
  * ever touches the table — nothing else may join a profile to a rating.
  */
-/** Extra avatars for Founding Members. */
-export const EXTRA_AVATARS = ['🦄', '🌈', '🦋', '🌻', '✨', '🪩', '🐝', '🦊', '🐙', '🌙'];
-
 /** The member's badge status, or nulls if they have none (or we cannot tell). */
 async function foundingStatus(userId: string): Promise<{ founding: boolean; badgeVisible: boolean }> {
   try {
