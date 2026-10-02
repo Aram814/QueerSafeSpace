@@ -202,7 +202,7 @@ export default function AuthOverlay({ mode, onModeChange, onClose, onToast, onOp
                   value={refCode}
                   onChange={(e) => setRefCode(e.target.value)}
                 />
-                <p className="field-hint">Did a friend invite you? Enter their code so they get credit.</p>
+                <p className="field-hint">Do you have a referral code? Enter it here so the person who shared it gets credit.</p>
               </div>
               <div className="fg">
                 <label className="fl" htmlFor="a-cpw">
