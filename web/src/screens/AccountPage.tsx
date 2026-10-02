@@ -151,8 +151,8 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
           </div>
         )}
         <div className="avatar-row" role="radiogroup" aria-label="Avatar">
-          {AVATAR_DEFS.map((def) => {
-            const open = isUnlocked(def, referrals);
+          {AVATAR_DEFS.filter((def) => def.tier !== 'admin' || profile?.admin).map((def) => {
+            const open = def.tier === 'admin' ? Boolean(profile?.admin) : isUnlocked(def, referrals);
             return (
               <button
                 key={def.id}
@@ -160,7 +160,7 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
                 role="radio"
                 aria-checked={avatar === def.id}
                 aria-label={open ? def.label : `${def.label} (locked)`}
-                title={open ? def.label : `Unlocks at ${TIER_UNLOCK[def.tier]} referrals`}
+                title={open ? def.label : def.tier === 'admin' ? def.label : `Unlocks at ${TIER_UNLOCK[def.tier]} referrals`}
                 disabled={!open}
                 className={`avatar-opt${avatar === def.id ? ' on' : ''}${open ? '' : ' locked'}`}
                 onClick={() => void pickAvatar(def.id)}

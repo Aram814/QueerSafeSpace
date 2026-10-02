@@ -80,6 +80,12 @@ export default function MenuDrawer({
               Account settings
             </button>
           )}
+          {profile?.admin && (
+            <button className="menu-item" onClick={() => onOpenPage('admin')}>
+              <Icon name="flask" />
+              Admin
+            </button>
+          )}
           <button className="menu-item" onClick={() => onOpenPage('crisis')}>
             <Icon name="sos" />
             Crisis resources

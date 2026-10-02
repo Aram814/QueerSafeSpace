@@ -2142,3 +2142,102 @@ svg.i {
   margin-top: 2px;
   color: var(--accent-ink);
 }
+
+/* ------------------------------------------------------------------ admin */
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 120px;
+  margin-top: 8px;
+}
+
+.bar-col {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 2px;
+}
+
+.bar {
+  display: block;
+  width: 100%;
+  min-height: 2px;
+  background: var(--accent-ink);
+  border-radius: 3px 3px 0 0;
+}
+
+.bar-num,
+.bar-day {
+  font-size: 0.65rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.admin-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+
+.admin-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.admin-main {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.admin-email,
+.admin-meta,
+.admin-note {
+  font-size: 0.85rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.admin-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-tags em {
+  font-style: normal;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--sky-soft);
+}
+
+.page-body > *,
+.admin-main,
+.stat-grid > * {
+  min-width: 0;
+}
+
+.bars {
+  overflow: hidden;
+}
+
+.bar-day {
+  font-size: 0.6rem;
+}
+
+.bar-col:nth-child(even) .bar-day {
+  visibility: hidden;
+}

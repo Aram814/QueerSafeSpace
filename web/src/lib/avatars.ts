@@ -6,13 +6,14 @@ export type AvatarDef =
   | { id: string; label: string; tier: Tier; kind: 'glow'; from: string; to: string; motif: 'sun' | 'aurora' | 'waves' | 'moon' | 'dots' }
   | { id: string; label: string; tier: Tier; kind: 'ring'; stripes: string[] }
   | { id: string; label: string; tier: Tier; kind: 'star'; bg: string; fill: string }
-  | { id: string; label: string; tier: Tier; kind: 'night'; bg: string; fill: string };
+  | { id: string; label: string; tier: Tier; kind: 'night'; bg: string; fill: string }
+  | { id: string; label: string; tier: Tier; kind: 'logo'; bg: string };
 
 /** 0 = everyone; higher tiers unlock as more referrals come in with your code. */
-export type Tier = 0 | 1 | 2 | 3;
+export type Tier = 0 | 1 | 2 | 3 | 'admin';
 
 /** Referrals (people who signed up with your code) needed for each tier. */
-export const TIER_UNLOCK: Record<Tier, number> = { 0: 0, 1: 5, 2: 10, 3: 20 };
+export const TIER_UNLOCK = { 0: 0, 1: 5, 2: 10, 3: 20 } as const;
 
 export const DEFAULT_AVATAR = 'flag-rainbow';
 
@@ -40,6 +41,8 @@ export const AVATAR_DEFS: AvatarDef[] = [
   { id: 'ring-pan', label: 'Pan ring', tier: 2, kind: 'ring', stripes: ['#FF218C', '#FFD800', '#21B1FF'] },
   { id: 'night-heart', label: 'Night sky', tier: 2, kind: 'night', bg: '#1B1840', fill: '#FF7AB6' },
   { id: 'star-gold', label: 'Gold star', tier: 3, kind: 'star', bg: '#14102E', fill: '#FFC83D' },
+  // Only the owner/admin account is offered this one.
+  { id: 'logo-shield', label: 'QueerSafeSpace logo', tier: 'admin', kind: 'logo', bg: '#EAF4FA' },
 ];
 
 export function avatarDef(id: string | null | undefined): AvatarDef | undefined {
@@ -47,5 +50,5 @@ export function avatarDef(id: string | null | undefined): AvatarDef | undefined 
 }
 
 export function isUnlocked(def: AvatarDef, referrals: number): boolean {
-  return referrals >= TIER_UNLOCK[def.tier];
+  return def.tier === 'admin' ? false : referrals >= TIER_UNLOCK[def.tier];
 }

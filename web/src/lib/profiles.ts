@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 import type { Profile } from './types';
 
 import { DEFAULT_AVATAR } from './avatars';
+import { checkAdmin } from './admin';
 
 /** Usernames are public, so the default must not reveal anything about the person's email. */
 function fallbackUsername(): string {
@@ -114,7 +115,8 @@ async function claimReferral(user: User): Promise<void> {
 export async function loadProfile(user: User): Promise<Profile> {
   void claimReferral(user);
   const profile = await loadProfileRow(user);
-  return { ...profile, ...(await foundingStatus(user.id)) };
+  const [founding, admin] = await Promise.all([foundingStatus(user.id), checkAdmin()]);
+  return { ...profile, ...founding, admin };
 }
 
 async function loadProfileRow(user: User): Promise<Profile> {
