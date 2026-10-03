@@ -116,7 +116,10 @@ export default function AuthOverlay({ mode, onModeChange, onClose, onToast, onOp
     <div className="overlay center" role="dialog" aria-modal="true">
       <div className="sheet">
         <div className="sheet-header">
-          <span className="sheet-title">{mode === 'signin' ? 'Sign In' : 'Sign Up'}</span>
+          <div>
+            <span className="sheet-brand wordmark">QueerSafeSpace</span>
+            <span className="sheet-title">{mode === 'signin' ? 'Sign In' : 'Sign Up'}</span>
+          </div>
           <button className="close-x" onClick={onClose} aria-label="Close">
             ✕
           </button>

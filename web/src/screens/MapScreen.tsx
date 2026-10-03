@@ -238,7 +238,7 @@ export default function MapScreen({
       <div className="topbar">
         <div className="brand">
           <ShieldLogo className="brand-shield" />
-          <span className="brand-name">QueerSafeSpace</span>
+          <span className="brand-name wordmark">QueerSafeSpace</span>
           <span className="beta-tag">Beta</span>
         </div>
         <PlaceSearch
