@@ -49,7 +49,7 @@ const HOTLINES: { name: string; note?: string; label: string; href: string; icon
     text: 'Free text-based support from trained crisis counselors, any time.',
   },
   {
-    name: 'GLBT National Hotline',
+    name: 'LGBT National Hotline',
     label: '1-888-843-4564',
     href: 'tel:18888434564',
     icon: 'phone',
