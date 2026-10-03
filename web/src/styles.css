@@ -378,11 +378,22 @@ svg.i {
   font-size: 2.2rem;
   line-height: 1.05;
   font-weight: 800;
+}
+
+/* The name in rainbow, used where the name is the brand (welcome, top bar, sign-in). */
+.wordmark {
+  padding-bottom: 0.12em;
+  /* Plain colour first, for any browser that cannot clip a gradient to text. */
   color: var(--accent-ink);
+  background: linear-gradient(90deg, #e03c3c, #f58a2f 20%, #f6c945 40%, #3e9e5e 58%, #3b8bd0 78%, #8a6db8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .splash-tagline {
   margin: 6px 0 0;
+  text-wrap: balance;
   color: var(--muted);
   font-size: 1rem;
   max-width: 300px;
@@ -589,6 +600,10 @@ svg.i {
   font-size: 1.2rem;
   color: var(--accent-ink);
   white-space: nowrap;
+}
+
+.brand-name {
+  line-height: 1.2;
 }
 
 .brand-shield {
@@ -1276,9 +1291,18 @@ svg.i {
 }
 
 .sheet-title {
+  display: block;
   font-family: var(--display);
   font-weight: 800;
   font-size: 1.2rem;
+}
+
+.sheet-brand {
+  display: block;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 0.95rem;
+  line-height: 1.2;
 }
 
 .close-x {
