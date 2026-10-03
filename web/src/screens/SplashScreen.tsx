@@ -24,7 +24,7 @@ export default function SplashScreen({ onSignUp, onSignIn, onBrowseAnonymously, 
         <ShieldLogo className="splash-badge" />
         <h1 className="splash-title">QueerSafeSpace</h1>
         <p className="splash-tagline">
-          Know before you go. Because safety shouldn&apos;t be a privilege.
+          Because Safety Shouldn&apos;t Be A Privilege
         </p>
 
         <ul className="splash-facts">

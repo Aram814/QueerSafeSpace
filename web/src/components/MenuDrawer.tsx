@@ -153,7 +153,7 @@ export default function MenuDrawer({
           )}
         </nav>
 
-        <div className="menu-foot">QueerSafeSpace &middot; Because safety shouldn&apos;t be a privilege</div>
+        <div className="menu-foot">QueerSafeSpace &middot; Because Safety Shouldn&apos;t Be A Privilege</div>
       </aside>
     </div>
   );
