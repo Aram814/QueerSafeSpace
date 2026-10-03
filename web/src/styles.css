@@ -375,14 +375,21 @@ svg.i {
 
 .splash-title {
   margin: 0;
+  padding-bottom: 0.08em;
   font-size: 2.2rem;
   line-height: 1.05;
   font-weight: 800;
+  /* Plain colour first, for any browser that cannot clip a gradient to text. */
   color: var(--accent-ink);
+  background: linear-gradient(90deg, #e03c3c, #f58a2f 20%, #f6c945 40%, #3e9e5e 58%, #3b8bd0 78%, #8a6db8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .splash-tagline {
   margin: 6px 0 0;
+  text-wrap: balance;
   color: var(--muted);
   font-size: 1rem;
   max-width: 300px;
