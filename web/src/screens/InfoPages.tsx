@@ -193,6 +193,14 @@ export function PrivacyPage({ onBack }: { onBack: () => void }) {
           address.
         </p>
 
+        <h2>Announcements</h2>
+        <p>
+          We may email people with an account about QueerSafeSpace itself, such as new features or
+          important changes, only a few times a year. Every announcement has an unsubscribe link. We
+          use Resend to send them, so it receives your email address for that purpose. We never use
+          your email for advertising and never sell it.
+        </p>
+
         <h2>Reports</h2>
         <p>
           If you report a comment, we keep your report, linked to your account, only to review it. The
