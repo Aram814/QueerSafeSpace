@@ -129,7 +129,7 @@ export function PrivacyPage({ onBack }: { onBack: () => void }) {
   return (
     <PageShell title="Privacy policy" onBack={onBack}>
       <article className="legal-doc">
-        <p className="legal-date">Effective date: September 29, 2026</p>
+        <p className="legal-date">Effective date: October 4, 2026</p>
         <p>QueerSafeSpace respects your privacy and is committed to protecting your personal information.</p>
 
         <h2>What we collect</h2>
@@ -138,7 +138,7 @@ export function PrivacyPage({ onBack }: { onBack: () => void }) {
           and basic usage data to improve the app.
         </p>
         <p>
-          If you join through another member&apos;s referral link, we record which member referred
+          If you join using another member&apos;s referral code, we record which member referred
           you. That member only ever sees a count, never your name or details.
         </p>
         <p>
@@ -194,7 +194,10 @@ export function PrivacyPage({ onBack }: { onBack: () => void }) {
         </p>
 
         <h2>Data storage</h2>
-        <p>Data is stored securely via Supabase. You can request account deletion by contacting us.</p>
+        <p>
+          Data is stored securely via Supabase. You can delete your account and its data yourself in
+          Account settings, or ask us to do it.
+        </p>
 
         <h2>Contact</h2>
         <p>{CONTACT_EMAIL}</p>
@@ -207,25 +210,181 @@ export function TermsPage({ onBack }: { onBack: () => void }) {
   return (
     <PageShell title="Terms & conditions" onBack={onBack}>
       <article className="legal-doc">
-        <p className="legal-date">Effective date: September 13, 2025</p>
-        <p>By using QueerSafeSpace, you agree to these Terms. You must be at least 13 years old.</p>
-
-        <h2>Community guidelines</h2>
+        <p className="legal-date">Effective date: October 4, 2026</p>
         <p>
-          Do not submit false, misleading, or harmful information. Do not harass or harm other
-          community members. Respect everyone&apos;s identity and experience.
+          These Terms are an agreement between you and QueerSafeSpace (&ldquo;we&rdquo;,
+          &ldquo;us&rdquo;). By creating an account or using the app or website, you agree to them. If
+          you do not agree, please do not use QueerSafeSpace.
         </p>
 
-        <h2>Content</h2>
+        <h2>Who can use it</h2>
         <p>
-          Space submissions are community-generated. QueerSafeSpace does not guarantee the accuracy of
-          any safety rating. Always use your own judgment.
+          You must be at least 13 years old. If you are under 18, please use QueerSafeSpace with the
+          knowledge of a parent or guardian.
         </p>
 
-        <h2>Limitation of liability</h2>
+        <h2>What QueerSafeSpace is, and is not</h2>
         <p>
-          QueerSafeSpace is provided as-is. We are not liable for any harm resulting from reliance on
-          community-submitted data.
+          QueerSafeSpace is a community map. People share their own experiences of places, and we
+          also show places listed on public map sources. It is an information tool only. It is not a
+          safety service, a security service, an emergency service, or professional advice of any
+          kind.
+        </p>
+        <p>
+          If you are in danger or need urgent help, call your local emergency number (911 in the US).
+          You can find support lines under Crisis resources in the menu.
+        </p>
+
+        <h2>Safety is your call</h2>
+        <p>
+          Ratings, tags, comments and listings are opinions and information from other people. They
+          may be wrong, out of date, or reflect one person&apos;s experience on one day. A place
+          marked &ldquo;safe&rdquo; may not be safe for you, and a place with no rating or a poor
+          rating is not necessarily unsafe. Staff, owners, policies and other customers change.
+        </p>
+        <p>
+          We do not verify ratings, visit places, or promise that any place, person, event or
+          experience will be safe, welcoming or free from harassment, discrimination, discomfort or
+          harm. You are responsible for your own decisions and for your own safety. Use your
+          judgment, trust your instincts, and take whatever precautions you think are right when you
+          go anywhere.
+        </p>
+        <p>
+          You use QueerSafeSpace, and visit any place you find through it, at your own risk. You
+          understand that something unpleasant or unsafe can happen at any place, and you accept that
+          risk.
+        </p>
+
+        <h2>Ratings, comments and places you add</h2>
+        <p>
+          You are responsible for what you post. When you rate, comment or add a place, you agree
+          that:
+        </p>
+        <ul>
+          <li>it is based on your own real, firsthand experience, and you believe it to be true;</li>
+          <li>
+            you will describe what happened, not attack anyone. Do not name or identify private
+            individuals, do not share anyone&apos;s personal information, and do not post hateful,
+            threatening, harassing or sexually explicit content;
+          </li>
+          <li>
+            you have no financial or personal connection to the place that would make your rating
+            misleading, and you are not rating a place because of a personal dispute;
+          </li>
+          <li>you will not post fake, paid, copied or repeated ratings.</li>
+        </ul>
+        <p>
+          You keep ownership of what you post. You give us a free, worldwide, permanent licence to
+          store, display, adapt and use it in QueerSafeSpace, including after you delete your
+          account, in a form that is not linked to you.
+        </p>
+        <p>
+          Content shown on QueerSafeSpace was written by community members, not by us, and does not
+          represent our views. We are not the author or publisher of what members post.
+        </p>
+
+        <h2>Listed places and businesses</h2>
+        <p>
+          Some places come from public sources such as OpenStreetMap, and some searches use other
+          providers. These are listings, not endorsements or ratings. We have no relationship with
+          the businesses and organizations shown, and a listing does not mean they support, endorse
+          or are affiliated with QueerSafeSpace or its community. Details such as names, addresses
+          and hours may be wrong or out of date. If you own or run a place and believe something
+          shown about it is inaccurate, contact us and we will review it.
+        </p>
+
+        <h2>Rules</h2>
+        <p>Do not:</p>
+        <ul>
+          <li>harass, threaten or harm anyone, or use QueerSafeSpace to find, follow or target a person;</li>
+          <li>post false, misleading or harmful information;</li>
+          <li>
+            try to find out who wrote a rating, or to link usernames to real people, emails or
+            accounts;
+          </li>
+          <li>
+            scrape, copy in bulk, or resell the data, or interfere with the service, its security or
+            other people&apos;s use of it;
+          </li>
+          <li>break the law, or use QueerSafeSpace for anything unlawful.</li>
+        </ul>
+
+        <h2>Your account and username</h2>
+        <p>
+          Give accurate information and keep your password private; you are responsible for activity
+          on your account. Your username is shown publicly next to your ratings and comments. Please
+          do not use your real name. You can change your username, or delete your account and its
+          data, at any time in Account settings.
+        </p>
+
+        <h2>Volunteers, testers and Founding Members</h2>
+        <p>
+          People who help test, rate places, or spread the word are volunteers. Volunteering does not
+          make anyone an employee, contractor or partner of QueerSafeSpace, and no payment, wage or
+          other compensation is promised. Features such as the Founding Member badge, extra avatars
+          and referral counts are small thanks for helping. They have no cash value, can&apos;t be
+          sold or exchanged, and we may change or end them at any time. Any other perk is a gift, not
+          a promise.
+        </p>
+
+        <h2>Moderation</h2>
+        <p>
+          We are not required to monitor content, but we may review, edit, hide or remove any content,
+          and suspend or close any account, at any time and for any reason, including breaking these
+          Terms. You can report a problem using the contact details below.
+        </p>
+
+        <h2>No warranties</h2>
+        <p>
+          QueerSafeSpace is provided &ldquo;as is&rdquo; and &ldquo;as available&rdquo;. To the
+          fullest extent the law allows, we make no promises or warranties of any kind, express or
+          implied, including about accuracy, completeness, reliability, availability, fitness for a
+          particular purpose, or that the service will be uninterrupted, secure or error-free.
+        </p>
+
+        <h2>Limit of our liability</h2>
+        <p>
+          To the fullest extent the law allows, QueerSafeSpace and the people who run, build, volunteer
+          for or contribute to it are not liable for any loss, injury, harm or damage of any kind
+          arising from or connected to your use of, or reliance on, QueerSafeSpace or anything on it.
+          This includes, for example, harassment, discrimination, assault, discomfort, embarrassment,
+          property loss, emotional distress or any other harm that happens at or near a place shown on
+          the map, whether or not it was marked safe, and anything done or said by other users, by
+          businesses or by anyone else.
+        </p>
+        <p>
+          This also covers indirect, incidental, special, consequential and punitive damages, lost
+          profits and lost data. If a court decides we are liable despite this, our total liability
+          for all claims is limited to US$100. Some places do not allow these limits, so they apply
+          to you only as far as your local law permits. Nothing in these Terms limits any right you
+          have that cannot legally be limited.
+        </p>
+
+        <h2>Release and responsibility for your content</h2>
+        <p>
+          You release QueerSafeSpace and the people involved in running it from any claim connected
+          to other users&apos; content or to your visit to any place. You also agree to cover claims,
+          losses and costs that come from content you post or from your breaking these Terms.
+        </p>
+
+        <h2>Changes</h2>
+        <p>
+          We may change, pause or stop QueerSafeSpace, or change these Terms, at any time. When the
+          Terms change, we will update the date above. Using QueerSafeSpace after a change means you
+          accept the new Terms.
+        </p>
+
+        <h2>Governing law</h2>
+        <p>
+          These Terms are governed by the laws of the State of Florida, USA, without regard to its
+          conflict-of-law rules. Any dispute will be handled in the state or federal courts located in
+          Florida, and you agree to those courts. If any part of these Terms is found unenforceable,
+          the rest still applies.
+        </p>
+
+        <h2>Contact</h2>
+        <p>
+          Questions, content reports, or corrections: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
         </p>
       </article>
     </PageShell>
