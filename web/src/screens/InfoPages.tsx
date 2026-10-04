@@ -193,6 +193,12 @@ export function PrivacyPage({ onBack }: { onBack: () => void }) {
           address.
         </p>
 
+        <h2>Unconfirmed accounts</h2>
+        <p>
+          If you create an account but never confirm your email, we automatically delete it after 7
+          days. To use QueerSafeSpace after that, sign up again.
+        </p>
+
         <h2>Data storage</h2>
         <p>
           Data is stored securely via Supabase. You can delete your account and its data yourself in
