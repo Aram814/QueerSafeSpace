@@ -18,6 +18,7 @@ interface Props {
   isSignedIn: boolean;
   onClose: () => void;
   onRate: () => void;
+  onReport: (ratingId: string) => void;
 }
 
 const BADGE: Record<OverallRating, IconName> = {
@@ -48,7 +49,7 @@ function shortAddress(name: string, address: string): string {
  * Reviews are deliberately author-less: a rating is never joined to a profile, so only the
  * date, verdict, tags and comment are shown.
  */
-export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate }: Props) {
+export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate, onReport }: Props) {
   const ratings = useMemo(() => space.ratings ?? [], [space.ratings]);
   const total = ratings.length;
   const counts = countRatings(ratings);
@@ -189,6 +190,13 @@ export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate }:
                   </span>
                 </div>
                 <div className="rev-text">{r.comment}</div>
+                <button
+                  className="rev-report"
+                  onClick={() => onReport(r.id)}
+                  aria-label={`Report the comment by ${r.username || 'a former member'}`}
+                >
+                  Report
+                </button>
               </article>
             ))
           )}

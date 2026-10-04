@@ -86,7 +86,10 @@ export default function RateSheet({ spaceId, userId, onClose, onSubmitted }: Pro
           />
         </div>
 
-        <p className="rate-note">Your rating is shown with your username, never your email.</p>
+        <p className="rate-note">
+          Your rating is shown with your username, never your email. Please describe what happened and
+          keep it respectful. Don&apos;t name private individuals.
+        </p>
 
         {message && <div className={`fmsg${message.isError ? ' error' : ''}`}>{message.text}</div>}
 

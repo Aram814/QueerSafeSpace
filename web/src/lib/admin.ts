@@ -131,3 +131,41 @@ export async function grantFounding(): Promise<number> {
   if (error) throw new Error(error.message);
   return Number(data ?? 0);
 }
+
+export interface AdminReport {
+  ratingId: string;
+  place: string;
+  author: string;
+  rating: 'safe' | 'mixed' | 'not_safe';
+  comment: string;
+  hidden: boolean;
+  reasons: string[];
+  reportCount: number;
+  autoFlagged: boolean;
+  firstReported: string;
+  notes: string[];
+}
+
+export async function loadReports(): Promise<AdminReport[]> {
+  const { data, error } = await supabase.rpc('admin_reports');
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
+    ratingId: r.rating_id as string,
+    place: r.place as string,
+    author: r.author as string,
+    rating: r.rating as AdminReport['rating'],
+    comment: (r.comment as string | null) ?? '',
+    hidden: Boolean(r.hidden),
+    reasons: (r.reasons as string[]) ?? [],
+    reportCount: Number(r.report_count),
+    autoFlagged: Boolean(r.auto_flagged),
+    firstReported: r.first_reported as string,
+    notes: (r.notes as string[]) ?? [],
+  }));
+}
+
+/** 'hide' hides the comment, 'dismiss' keeps it, 'restore' shows a hidden comment again. */
+export async function resolveReport(ratingId: string, action: 'hide' | 'dismiss' | 'restore'): Promise<void> {
+  const { error } = await supabase.rpc('admin_resolve_report', { p_rating_id: ratingId, p_action: action });
+  if (error) throw new Error(error.message);
+}

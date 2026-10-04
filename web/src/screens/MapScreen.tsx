@@ -11,6 +11,7 @@ import MapView from '../components/MapView';
 import PlaceSearch from '../components/PlaceSearch';
 import RateSheet from '../components/RateSheet';
 import SpaceDetailSheet from '../components/SpaceDetailSheet';
+import ReportSheet from '../components/ReportSheet';
 import { signOut } from '../lib/auth';
 import { DEFAULT_CENTER, getDistKm, smartSearch } from '../lib/geo';
 import { PIN_COLORS, type SpaceFilter } from '../lib/ratings';
@@ -50,6 +51,7 @@ export default function MapScreen({
   const [flyTo, setFlyTo] = useState<{ lat: number; lon: number; zoom: number } | null>(null);
   const [detail, setDetail] = useState<SpaceDetail | null>(null);
   const [rateSpaceId, setRateSpaceId] = useState<string | null>(null);
+  const [reportRatingId, setReportRatingId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [pendingPlace, setPendingPlace] = useState<PlaceResult | null>(null);
   const [recenterTick, setRecenterTick] = useState(0);
@@ -358,6 +360,24 @@ export default function MapScreen({
           isSignedIn={signedIn}
           onClose={() => setDetail(null)}
           onRate={() => openRate(detail.id)}
+          onReport={(ratingId) => {
+            if (!signedIn) {
+              onRequestAuth();
+              return;
+            }
+            setReportRatingId(ratingId);
+          }}
+        />
+      )}
+
+      {reportRatingId && user && (
+        <ReportSheet
+          ratingId={reportRatingId}
+          onClose={() => setReportRatingId(null)}
+          onSent={() => {
+            setReportRatingId(null);
+            onToast('Thanks. We will take a look.');
+          }}
         />
       )}
 
