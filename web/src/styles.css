@@ -2265,3 +2265,14 @@ svg.i {
 .bar-col:nth-child(even) .bar-day {
   visibility: hidden;
 }
+
+.admin-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-bar .account-note {
+  margin: 0;
+}
