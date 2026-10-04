@@ -193,6 +193,12 @@ export function PrivacyPage({ onBack }: { onBack: () => void }) {
           address.
         </p>
 
+        <h2>Reports</h2>
+        <p>
+          If you report a comment, we keep your report, linked to your account, only to review it. The
+          person who wrote the comment is never told who reported it.
+        </p>
+
         <h2>Unconfirmed accounts</h2>
         <p>
           If you create an account but never confirm your email, we automatically delete it after 7
@@ -337,7 +343,8 @@ export function TermsPage({ onBack }: { onBack: () => void }) {
         <p>
           We are not required to monitor content, but we may review, edit, hide or remove any content,
           and suspend or close any account, at any time and for any reason, including breaking these
-          Terms. You can report a problem using the contact details below.
+          Terms. We also block some language automatically. You can report a comment with the Report
+          button beneath it, or use the contact details below.
         </p>
 
         <h2>No warranties</h2>

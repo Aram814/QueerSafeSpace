@@ -2276,3 +2276,29 @@ svg.i {
 .admin-bar .account-note {
   margin: 0;
 }
+
+.rev-report {
+  display: block;
+  margin: 6px 0 0 auto;
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.78rem;
+  text-decoration: underline;
+}
+
+.report-row {
+  flex-direction: column;
+}
+
+.report-text {
+  overflow-wrap: anywhere;
+}
+
+.report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

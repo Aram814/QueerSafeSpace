@@ -8,6 +8,7 @@ import Avatar from '../components/Avatar';
 import ImpactCard from '../components/ImpactCard';
 import { AVATAR_DEFS, DEFAULT_AVATAR, isUnlocked, TIER_UNLOCK } from '../lib/avatars';
 import { loadImpact, type Impact } from '../lib/impact';
+import { isTextAllowed } from '../lib/moderation';
 import Icon from '../components/Icon';
 import { PageShell } from './InfoPages';
 
@@ -83,6 +84,10 @@ export default function AccountPage({ user, profile, onBack, onProfileChange, on
     }
     if (isEmailName(next, user.email)) {
       setUsernameMsg({ text: 'Please don\u2019t use the first part of your email as your username.', error: true });
+      return;
+    }
+    if (!(await isTextAllowed(next))) {
+      setUsernameMsg({ text: 'That username isn\u2019t allowed. Please choose another.', error: true });
       return;
     }
     if (!(await isUsernameAvailable(next))) {

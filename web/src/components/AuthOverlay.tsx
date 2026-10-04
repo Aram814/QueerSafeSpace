@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { OAUTH_ENABLED } from '../config';
 import { storedReferral } from '../lib/referral';
 import { checkReferralCode, displayCode } from '../lib/impact';
+import { isTextAllowed } from '../lib/moderation';
 import { isEmailName, isUsernameAvailable, USERNAME_HINT, validateUsername } from '../lib/profiles';
 import { resetPassword, signIn, signInWithOAuth, signUp } from '../lib/auth';
 
@@ -55,6 +56,10 @@ export default function AuthOverlay({ mode, onModeChange, onClose, onToast, onOp
         const cleanRef = refCode.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
         if (cleanRef && (await checkReferralCode(cleanRef)) === false) {
           setMessage({ text: 'We could not find that referral code. Check it, or clear the box to continue without one.', isError: true });
+          return;
+        }
+        if (!(await isTextAllowed(username.trim()))) {
+          setMessage({ text: 'That username isn\u2019t allowed. Please pick another.', isError: true });
           return;
         }
         if (!(await isUsernameAvailable(username.trim()))) {
