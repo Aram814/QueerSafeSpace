@@ -77,7 +77,12 @@ export async function loadOverview(): Promise<AdminOverview> {
 }
 
 export async function loadDailySignups(days = 14): Promise<{ day: string; accounts: number }[]> {
-  const { data, error } = await supabase.rpc('admin_daily_signups', { p_days: days });
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  let { data, error } = await supabase.rpc('admin_daily_signups', { p_days: days, p_tz: tz });
+  if (error) {
+    // Before the time-zone script has been run, fall back to counting days in UTC.
+    ({ data, error } = await supabase.rpc('admin_daily_signups', { p_days: days }));
+  }
   if (error) throw new Error(error.message);
   return (data ?? []) as { day: string; accounts: number }[];
 }

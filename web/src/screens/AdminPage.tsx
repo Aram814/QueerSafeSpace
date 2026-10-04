@@ -26,6 +26,7 @@ interface Data {
 }
 
 const when = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+const timeOnly = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit', second: '2-digit' });
 const dayName = new Intl.DateTimeFormat(undefined, { month: 'numeric', day: 'numeric' });
 
 function ago(iso: string | null): string {
@@ -46,9 +47,12 @@ export default function AdminPage({ onBack, onToast }: Props) {
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
 
   const refresh = useCallback(async () => {
     setError(null);
+    setLoading(true);
     try {
       const [overview, daily, accounts, testers] = await Promise.all([
         loadOverview(),
@@ -57,13 +61,28 @@ export default function AdminPage({ onBack, onToast }: Props) {
         loadTesters(),
       ]);
       setData({ overview, daily, accounts, testers });
+      setUpdatedAt(new Date());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load the admin data');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
+  // Load on open, again every minute, and whenever the tab or app comes back to the front.
   useEffect(() => {
     void refresh();
+    const timer = window.setInterval(() => void refresh(), 60_000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+    };
   }, [refresh]);
 
   async function grant() {
@@ -89,7 +108,7 @@ export default function AdminPage({ onBack, onToast }: Props) {
     }
   }
 
-  if (error) {
+  if (error && !data) {
     return (
       <PageShell title="Admin" onBack={onBack}>
         <article className="info-card">
@@ -116,6 +135,15 @@ export default function AdminPage({ onBack, onToast }: Props) {
 
   return (
     <PageShell title="Admin" onBack={onBack}>
+      <div className="admin-bar">
+        <span className="account-note">
+          {loading ? 'Refreshing…' : error ? `Could not refresh: ${error}` : updatedAt ? `Updated ${timeOnly.format(updatedAt)}` : ''}
+        </span>
+        <button className="btn btn-secondary" disabled={loading} onClick={() => void refresh()}>
+          {loading ? 'Refreshing…' : 'Refresh'}
+        </button>
+      </div>
+
       <article className="info-card">
         <h2>Accounts</h2>
         <div className="stat-grid">
@@ -207,9 +235,6 @@ export default function AdminPage({ onBack, onToast }: Props) {
             </li>
           ))}
         </ul>
-        <button className="btn btn-secondary" onClick={() => void refresh()}>
-          Refresh
-        </button>
       </article>
     </PageShell>
   );
