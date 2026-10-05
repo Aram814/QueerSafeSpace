@@ -1,9 +1,18 @@
 import { useEffect, useReducer, type ReactNode } from 'react';
 import { canPromptInstall, isIos, onInstallChange, promptInstall } from '../lib/install';
 import Icon from '../components/Icon';
-import { CONTACT_EMAIL, FEEDBACK_HREF, INSTAGRAM_HREF } from '../config';
+import { CONTACT_EMAIL, DONATE_PROVIDER, DONATE_URL, FEEDBACK_HREF, INSTAGRAM_HREF } from '../config';
 
-export type InfoPage = 'crisis' | 'contact' | 'privacy' | 'terms' | 'account' | 'tester' | 'admin' | 'install';
+export type InfoPage =
+  | 'crisis'
+  | 'contact'
+  | 'privacy'
+  | 'terms'
+  | 'account'
+  | 'tester'
+  | 'admin'
+  | 'support'
+  | 'install';
 
 export function PageShell({ title, onBack, children }: { title: string; onBack: () => void; children: ReactNode }) {
   return (
@@ -121,6 +130,57 @@ export function ContactPage({ onBack, onOpenPage }: { onBack: () => void; onOpen
             Instagram
           </a>
         </p>
+      </article>
+    </PageShell>
+  );
+}
+
+export function SupportPage({ onBack, onOpenPage }: { onBack: () => void; onOpenPage: (page: InfoPage) => void }) {
+  const via = DONATE_PROVIDER ? ` through ${DONATE_PROVIDER}` : '';
+  return (
+    <PageShell title="Support QueerSafeSpace" onBack={onBack}>
+      <article className="info-card">
+        <h2>Free for everyone</h2>
+        <p>
+          The map, the ratings and the comments are free, and they will stay free. Safety information
+          should never be behind a paywall.
+        </p>
+        <p>
+          QueerSafeSpace is built and run independently. If you would like to help keep it going,
+          a donation covers what it costs to run:
+        </p>
+        <ul>
+          <li>hosting, the database and the email that sends your sign-in links;</li>
+          <li>map and address data;</li>
+          <li>the time it takes to keep improving it and keep it safe.</li>
+        </ul>
+        {DONATE_URL && (
+          <div className="info-actions">
+            <a className="btn btn-primary" href={DONATE_URL} target="_blank" rel="noopener noreferrer">
+              <Icon name="heart" />
+              Donate{via}
+            </a>
+          </div>
+        )}
+        <p className="account-note">
+          QueerSafeSpace is not a nonprofit, so donations are not tax-deductible. A donation does not
+          change your account, and it never affects any rating. The payment is handled by the donation
+          service, which has its own privacy policy. We never see your card details.
+        </p>
+      </article>
+      <article className="info-card">
+        <h2>Other ways to help</h2>
+        <ul>
+          <li>Rate places you know. Honest ratings are the most valuable thing here.</li>
+          <li>Share a place with a friend using the Share button on its page.</li>
+          <li>Tell your community, a local group or a favorite business about QueerSafeSpace.</li>
+        </ul>
+        <div className="info-actions">
+          <button className="btn btn-secondary" onClick={() => onOpenPage('tester')}>
+            <Icon name="flask" />
+            Become a tester
+          </button>
+        </div>
       </article>
     </PageShell>
   );
@@ -248,6 +308,12 @@ export function PrivacyPage({ onBack }: { onBack: () => void }) {
           These providers have their own privacy policies. If you would rather not share your
           location, block it in your browser settings; you can still search by typing a place or
           address.
+        </p>
+
+        <h2>Donations</h2>
+        <p>
+          If you donate, the payment is handled by the donation service you are sent to, under its own
+          privacy policy. We do not receive your card details.
         </p>
 
         <h2>Announcements</h2>

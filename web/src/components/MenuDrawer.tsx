@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { canPromptInstall, onInstallChange, promptInstall, shouldOfferInstall } from '../lib/install';
 import type { User } from '@supabase/supabase-js';
-import { FEEDBACK_HREF } from '../config';
+import { DONATE_URL, FEEDBACK_HREF } from '../config';
 import Avatar from './Avatar';
 import type { Profile } from '../lib/types';
 import type { InfoPage } from '../screens/InfoPages';
@@ -111,6 +111,12 @@ export default function MenuDrawer({
             >
               <Icon name="plus" />
               Install app
+            </button>
+          )}
+          {DONATE_URL && (
+            <button className="menu-item" onClick={() => onOpenPage('support')}>
+              <Icon name="heart" />
+              Support QueerSafeSpace
             </button>
           )}
 
