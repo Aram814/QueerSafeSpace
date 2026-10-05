@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { getSession, onAuthStateChange } from './lib/auth';
 import { captureReferral } from './lib/referral';
+import { placeFromAddress } from './lib/share';
 import { loadProfile } from './lib/profiles';
 import type { Profile } from './lib/types';
 import AuthOverlay, { type AuthMode } from './components/AuthOverlay';
@@ -17,7 +18,8 @@ import { ContactPage, CrisisPage, InstallPage, PrivacyPage, TermsPage, type Info
 type Screen = 'splash' | 'main';
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('splash');
+  // A shared place link goes straight to the map; everyone else starts at the welcome screen.
+  const [screen, setScreen] = useState<Screen>(() => (placeFromAddress() ? 'main' : 'splash'));
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [authMode, setAuthMode] = useState<AuthMode | null>(null);

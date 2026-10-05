@@ -2,5 +2,6 @@
   "headers": [{ "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }],
   "functions": {
     "api/*.js": { "maxDuration": 30 }
-  }
+  },
+  "rewrites": [{ "source": "/p/:id", "destination": "/api/share?id=:id" }]
 }
