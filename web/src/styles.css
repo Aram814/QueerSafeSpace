@@ -2302,3 +2302,15 @@ svg.i {
   flex-wrap: wrap;
   gap: 8px;
 }
+
+.directions-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.directions-choice .btn {
+  min-width: 0;
+  padding-inline: 10px;
+  white-space: nowrap;
+}

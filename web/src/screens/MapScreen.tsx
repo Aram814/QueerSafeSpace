@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import AddSpaceSheet from '../components/AddSpaceSheet';
 import Icon from '../components/Icon';
@@ -12,6 +12,7 @@ import PlaceSearch from '../components/PlaceSearch';
 import RateSheet from '../components/RateSheet';
 import SpaceDetailSheet from '../components/SpaceDetailSheet';
 import ReportSheet from '../components/ReportSheet';
+import { placeFromAddress } from '../lib/share';
 import { signOut } from '../lib/auth';
 import { DEFAULT_CENTER, getDistKm, smartSearch } from '../lib/geo';
 import { PIN_COLORS, type SpaceFilter } from '../lib/ratings';
@@ -108,6 +109,26 @@ export default function MapScreen({
   const openDetail = useCallback(async (spaceId: string) => {
     const space = await loadSpaceDetail(spaceId);
     if (space) setDetail(space);
+  }, []);
+
+  // A shared link (/p/<id>, then /?place=<id>) opens that place on arrival.
+  useEffect(() => {
+    const id = placeFromAddress();
+    if (!id) return;
+    window.history.replaceState(null, '', window.location.pathname);
+    void (async () => {
+      const space = await loadSpaceDetail(id);
+      if (!space) {
+        onToast('That place is no longer on the map');
+        return;
+      }
+      setDetail(space);
+      if (typeof space.latitude === 'number' && typeof space.longitude === 'number') {
+        setFlyTo({ lat: space.latitude, lon: space.longitude, zoom: 16 });
+      }
+    })();
+    // Runs once, when the map first appears.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Say why location failed, once per attempt (a recenter click starts a new attempt).
@@ -360,6 +381,7 @@ export default function MapScreen({
           isSignedIn={signedIn}
           onClose={() => setDetail(null)}
           onRate={() => openRate(detail.id)}
+          onToast={onToast}
           onReport={(ratingId) => {
             if (!signedIn) {
               onRequestAuth();

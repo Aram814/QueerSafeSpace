@@ -10,6 +10,8 @@ import {
   VERDICTS,
 } from '../lib/ratings';
 import type { OverallRating, SafetyRating, SpaceDetail } from '../lib/types';
+import { appleDirectionsUrl, googleDirectionsUrl, isAppleDevice } from '../lib/maps';
+import { placeShareUrl } from '../lib/share';
 import FoundingBadge from './FoundingBadge';
 import Icon, { type IconName } from './Icon';
 
@@ -19,6 +21,7 @@ interface Props {
   onClose: () => void;
   onRate: () => void;
   onReport: (ratingId: string) => void;
+  onToast: (message: string) => void;
 }
 
 const BADGE: Record<OverallRating, IconName> = {
@@ -49,7 +52,21 @@ function shortAddress(name: string, address: string): string {
  * Reviews are deliberately author-less: a rating is never joined to a profile, so only the
  * date, verdict, tags and comment are shown.
  */
-export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate, onReport }: Props) {
+export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate, onReport, onToast }: Props) {
+  async function share() {
+    const url = placeShareUrl(space.id);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `${space.name} on QueerSafeSpace`, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      onToast('Link copied');
+    } catch {
+      /* the share sheet was closed, or copying was blocked */
+    }
+  }
+
   const ratings = useMemo(() => space.ratings ?? [], [space.ratings]);
   const total = ratings.length;
   const counts = countRatings(ratings);
@@ -207,16 +224,42 @@ export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate, o
             <Icon name={isSignedIn ? 'star' : 'login'} />
             {isSignedIn ? 'Rate this place' : 'Sign in to rate'}
           </button>
-          {hasLocation && (
+          <button className="btn btn-secondary" onClick={() => void share()}>
+            <Icon name="share" />
+            Share
+          </button>
+          {hasLocation && !isAppleDevice() && (
             <a
               className="btn btn-secondary"
               target="_blank"
               rel="noopener noreferrer"
-              href={`https://www.google.com/maps/dir/?api=1&destination=${space.latitude},${space.longitude}`}
+              href={googleDirectionsUrl(space.latitude as number, space.longitude as number)}
             >
               <Icon name="map" />
               Directions
             </a>
+          )}
+          {hasLocation && isAppleDevice() && (
+            <div className="directions-choice" role="group" aria-label="Directions">
+              <a
+                className="btn btn-secondary"
+                target="_blank"
+                rel="noopener noreferrer"
+                href={appleDirectionsUrl(space.latitude as number, space.longitude as number)}
+              >
+                <Icon name="map" />
+                Apple Maps
+              </a>
+              <a
+                className="btn btn-secondary"
+                target="_blank"
+                rel="noopener noreferrer"
+                href={googleDirectionsUrl(space.latitude as number, space.longitude as number)}
+              >
+                <Icon name="map" />
+                Google Maps
+              </a>
+            </div>
           )}
         </div>
       </div>

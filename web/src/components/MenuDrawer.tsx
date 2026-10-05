@@ -1,7 +1,7 @@
-import { DONATE_URL } from '../config';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { canPromptInstall, onInstallChange, promptInstall, shouldOfferInstall } from '../lib/install';
 import type { User } from '@supabase/supabase-js';
-import { FEEDBACK_HREF } from '../config';
+import { DONATE_URL, FEEDBACK_HREF } from '../config';
 import Avatar from './Avatar';
 import type { Profile } from '../lib/types';
 import type { InfoPage } from '../screens/InfoPages';
@@ -37,6 +37,9 @@ export default function MenuDrawer({
   onSignIn,
   onSignOut,
 }: Props) {
+  const [installable, setInstallable] = useState(shouldOfferInstall());
+  useEffect(() => onInstallChange(() => setInstallable(shouldOfferInstall())), []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     document.addEventListener('keydown', onKey);
@@ -71,44 +74,51 @@ export default function MenuDrawer({
         </div>
 
         <nav className="menu-nav">
-          <button className="menu-item" onClick={onClose}>
-            <Icon name="map" />
-            Map
-          </button>
-          {user && (
-            <button className="menu-item" onClick={() => onOpenPage('account')}>
-              <Icon name="user" />
-              Account settings
-            </button>
-          )}
-          {profile?.admin && (
-            <button className="menu-item" onClick={() => onOpenPage('admin')}>
-              <Icon name="flask" />
-              Admin
+          {user ? (
+            <>
+              <button className="menu-item" onClick={() => onOpenPage('account')}>
+                <Icon name="user" />
+                Account settings
+              </button>
+              {profile?.admin && (
+                <button className="menu-item" onClick={() => onOpenPage('admin')}>
+                  <Icon name="flask" />
+                  Admin
+                </button>
+              )}
+            </>
+          ) : (
+            <button className="menu-item" onClick={onSignIn}>
+              <Icon name="login" />
+              Sign in
             </button>
           )}
           <button className="menu-item" onClick={() => onOpenPage('crisis')}>
             <Icon name="sos" />
             Crisis resources
           </button>
+          {installable && (
+            <button
+              className="menu-item"
+              onClick={() => {
+                if (canPromptInstall()) {
+                  onClose();
+                  void promptInstall();
+                } else {
+                  onOpenPage('install');
+                }
+              }}
+            >
+              <Icon name="plus" />
+              Install app
+            </button>
+          )}
           {DONATE_URL && (
             <button className="menu-item" onClick={() => onOpenPage('support')}>
               <Icon name="heart" />
               Support QueerSafeSpace
             </button>
           )}
-          <button className="menu-item" onClick={() => onOpenPage('contact')}>
-            <Icon name="mail" />
-            Contact us
-          </button>
-          <button className="menu-item" onClick={() => onOpenPage('privacy')}>
-            <Icon name="lock" />
-            Privacy policy
-          </button>
-          <button className="menu-item" onClick={() => onOpenPage('terms')}>
-            <Icon name="file" />
-            Terms &amp; conditions
-          </button>
 
           <div className="menu-sep" />
 
@@ -122,6 +132,10 @@ export default function MenuDrawer({
           <button className="menu-item" onClick={() => onOpenPage('tester')}>
             <Icon name="flask" />
             Become a tester
+          </button>
+          <button className="menu-item" onClick={() => onOpenPage('contact')}>
+            <Icon name="mail" />
+            Contact us
           </button>
 
           <div className="menu-sep" />
@@ -147,16 +161,23 @@ export default function MenuDrawer({
 
           <div className="menu-sep" />
 
-          {user ? (
-            <button className="menu-item" onClick={onSignOut}>
-              <Icon name="logout" />
-              Sign out
-            </button>
-          ) : (
-            <button className="menu-item" onClick={onSignIn}>
-              <Icon name="login" />
-              Sign in
-            </button>
+          <button className="menu-item" onClick={() => onOpenPage('privacy')}>
+            <Icon name="lock" />
+            Privacy policy
+          </button>
+          <button className="menu-item" onClick={() => onOpenPage('terms')}>
+            <Icon name="file" />
+            Terms &amp; conditions
+          </button>
+
+          {user && (
+            <>
+              <div className="menu-sep" />
+              <button className="menu-item" onClick={onSignOut}>
+                <Icon name="logout" />
+                Sign out
+              </button>
+            </>
           )}
         </nav>
 

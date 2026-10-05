@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { getSession, onAuthStateChange } from './lib/auth';
 import { captureReferral } from './lib/referral';
+import { placeFromAddress } from './lib/share';
 import { loadProfile } from './lib/profiles';
 import type { Profile } from './lib/types';
 import AuthOverlay, { type AuthMode } from './components/AuthOverlay';
@@ -12,12 +13,13 @@ import AccountPage from './screens/AccountPage';
 import TesterPage from './screens/TesterPage';
 import AdminPage from './screens/AdminPage';
 import ResetPasswordScreen from './screens/ResetPasswordScreen';
-import { ContactPage, CrisisPage, PrivacyPage, SupportPage, TermsPage, type InfoPage } from './screens/InfoPages';
+import { ContactPage, CrisisPage, InstallPage, PrivacyPage, SupportPage, TermsPage, type InfoPage } from './screens/InfoPages';
 
 type Screen = 'splash' | 'main';
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('splash');
+  // A shared place link goes straight to the map; everyone else starts at the welcome screen.
+  const [screen, setScreen] = useState<Screen>(() => (placeFromAddress() ? 'main' : 'splash'));
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [authMode, setAuthMode] = useState<AuthMode | null>(null);
@@ -84,6 +86,7 @@ export default function App() {
       )}
 
       {page === 'crisis' && <CrisisPage onBack={() => setPage(null)} />}
+      {page === 'install' && <InstallPage onBack={() => setPage(null)} />}
       {page === 'contact' && <ContactPage onBack={() => setPage(null)} onOpenPage={setPage} />}
       {page === 'support' && <SupportPage onBack={() => setPage(null)} onOpenPage={setPage} />}
       {page === 'privacy' && <PrivacyPage onBack={() => setPage(null)} />}
