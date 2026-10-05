@@ -118,6 +118,13 @@ export function dedupe(rows) {
 
 const q = (s) => `'${String(s).replaceAll("'", "''")}'`;
 
+/** Splits rows into groups of at most `size`, keeping their order. */
+export function chunkRows(rows, size) {
+  const parts = [];
+  for (let i = 0; i < rows.length; i += size) parts.push(rows.slice(i, i + size));
+  return parts;
+}
+
 export function toSql(rows, label) {
   const values = rows
     .map(

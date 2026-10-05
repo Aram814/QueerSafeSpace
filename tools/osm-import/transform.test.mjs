@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildAddress, dedupe, toRow, toSql } from './transform.mjs';
+import { buildAddress, chunkRows, dedupe, toRow, toSql } from './transform.mjs';
 
 const els = JSON.parse(readFileSync(new URL('./fixtures/florida-sample.json', import.meta.url)));
 const results = els.map((e) => ({ e, r: toRow(e, 'FL') }));
@@ -64,4 +64,12 @@ test('marks places that need a lookup', () => {
   const disco = results.find((x) => x.e.tags.name === 'Disco Pony Nightclub').r;
   assert.equal(enigma.needsGeocode, true);
   assert.equal(disco.needsGeocode, false);
+});
+
+test('splits places into combined files without losing or reordering any', () => {
+  const rows = Array.from({ length: 7 }, (_, i) => i);
+  const parts = chunkRows(rows, 3);
+  assert.deepEqual(parts.map((p) => p.length), [3, 3, 1]);
+  assert.deepEqual(parts.flat(), rows);
+  assert.deepEqual(chunkRows([], 3), []);
 });
