@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { canPromptInstall, onInstallChange, promptInstall, shouldOfferInstall } from '../lib/install';
 import type { User } from '@supabase/supabase-js';
 import { FEEDBACK_HREF } from '../config';
 import Avatar from './Avatar';
@@ -36,6 +37,9 @@ export default function MenuDrawer({
   onSignIn,
   onSignOut,
 }: Props) {
+  const [installable, setInstallable] = useState(shouldOfferInstall());
+  useEffect(() => onInstallChange(() => setInstallable(shouldOfferInstall())), []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     document.addEventListener('keydown', onKey);
@@ -90,6 +94,22 @@ export default function MenuDrawer({
             <Icon name="sos" />
             Crisis resources
           </button>
+          {installable && (
+            <button
+              className="menu-item"
+              onClick={() => {
+                if (canPromptInstall()) {
+                  onClose();
+                  void promptInstall();
+                } else {
+                  onOpenPage('install');
+                }
+              }}
+            >
+              <Icon name="plus" />
+              Install app
+            </button>
+          )}
           <button className="menu-item" onClick={() => onOpenPage('contact')}>
             <Icon name="mail" />
             Contact us
