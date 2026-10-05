@@ -1,5 +1,5 @@
 import { useEffect, useReducer, type ReactNode } from 'react';
-import { canPromptInstall, isIos, onInstallChange, promptInstall } from '../lib/install';
+import { canPromptInstall, isAndroid, isIos, onInstallChange, promptInstall } from '../lib/install';
 import Icon from '../components/Icon';
 import { CONTACT_EMAIL, DONATE_PROVIDER, DONATE_URL, FEEDBACK_HREF, INSTAGRAM_HREF } from '../config';
 
@@ -186,10 +186,59 @@ export function SupportPage({ onBack, onOpenPage }: { onBack: () => void; onOpen
   );
 }
 
+type InstallPlatform = 'ios' | 'android' | 'computer';
+
+const STEPS: Record<InstallPlatform, { title: string; steps: ReactNode[] }> = {
+  ios: {
+    title: 'iPhone or iPad',
+    steps: [
+      <>
+        Open this page in <strong>Safari</strong>. Chrome and Edge on a recent iPhone also work.
+      </>,
+      <>
+        Tap the <strong>Share</strong> button (a square with an arrow pointing up). In Safari it is at the
+        bottom or top of the screen.
+      </>,
+      <>
+        Scroll down and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>.
+      </>,
+    ],
+  },
+  android: {
+    title: 'Android phone or tablet',
+    steps: [
+      <>
+        Open this page in <strong>Chrome</strong>, <strong>Edge</strong> or <strong>Samsung Internet</strong>.
+      </>,
+      <>
+        Open the browser menu (the three dots) and tap <strong>Install app</strong> or{' '}
+        <strong>Add to Home screen</strong>.
+      </>,
+      <>Confirm. The QueerSafeSpace icon appears with your other apps.</>,
+    ],
+  },
+  computer: {
+    title: 'Computer (Windows, Mac or Chromebook)',
+    steps: [
+      <>
+        Open this page in <strong>Chrome</strong> or <strong>Edge</strong>.
+      </>,
+      <>
+        Click the <strong>install icon</strong> at the right end of the address bar, or open the browser menu
+        and choose <strong>Install QueerSafeSpace</strong>.
+      </>,
+      <>
+        On a Mac in Safari, choose <strong>File</strong>, then <strong>Add to Dock</strong>.
+      </>,
+    ],
+  },
+};
+
 export function InstallPage({ onBack }: { onBack: () => void }) {
   const [, force] = useReducer((n: number) => n + 1, 0);
   useEffect(() => onInstallChange(force), []);
-  const ios = isIos();
+  const mine: InstallPlatform = isIos() ? 'ios' : isAndroid() ? 'android' : 'computer';
+  const ordered: InstallPlatform[] = [mine, ...(['ios', 'android', 'computer'] as InstallPlatform[]).filter((p) => p !== mine)];
   return (
     <PageShell title="Install the app" onBack={onBack}>
       <article className="info-card">
@@ -207,36 +256,19 @@ export function InstallPage({ onBack }: { onBack: () => void }) {
           </div>
         )}
       </article>
-      {ios ? (
-        <article className="info-card">
-          <h2>On iPhone or iPad</h2>
+      {ordered.map((id) => (
+        <article className="info-card" key={id}>
+          <h2>
+            {STEPS[id].title}
+            {id === mine && <span className="detail-count">Your device</span>}
+          </h2>
           <ol>
-            <li>
-              Open this page in <strong>Safari</strong>.
-            </li>
-            <li>
-              Tap the <strong>Share</strong> button (the square with an arrow pointing up).
-            </li>
-            <li>
-              Scroll down and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>.
-            </li>
+            {STEPS[id].steps.map((step, i) => (
+              <li key={i}>{step}</li>
+            ))}
           </ol>
         </article>
-      ) : (
-        <article className="info-card">
-          <h2>On Android or a computer</h2>
-          <ol>
-            <li>
-              Open this page in <strong>Chrome</strong> or <strong>Edge</strong>.
-            </li>
-            <li>
-              Open the browser menu (the three dots) and tap <strong>Install app</strong> or{' '}
-              <strong>Add to Home screen</strong>.
-            </li>
-            <li>Confirm. The QueerSafeSpace icon appears with your other apps.</li>
-          </ol>
-        </article>
-      )}
+      ))}
     </PageShell>
   );
 }
