@@ -158,7 +158,8 @@ export function PrivacyPage({ onBack }: { onBack: () => void }) {
         <p>
           If you allow it, your device location is used to center the map and to find places near you.
           We do not store it or link it to your account, and we do not track your movement. The only
-          locations we save are the places you choose to submit.
+          locations we save are the places you choose to submit. To open the map where you last were,
+          your browser may remember your last position on your own device; it is never sent to us.
         </p>
 
         <h2>Searching for places</h2>
