@@ -12,7 +12,7 @@ import AccountPage from './screens/AccountPage';
 import TesterPage from './screens/TesterPage';
 import AdminPage from './screens/AdminPage';
 import ResetPasswordScreen from './screens/ResetPasswordScreen';
-import { ContactPage, CrisisPage, PrivacyPage, TermsPage, type InfoPage } from './screens/InfoPages';
+import { ContactPage, CrisisPage, PrivacyPage, SupportPage, TermsPage, type InfoPage } from './screens/InfoPages';
 
 type Screen = 'splash' | 'main';
 
@@ -85,6 +85,7 @@ export default function App() {
 
       {page === 'crisis' && <CrisisPage onBack={() => setPage(null)} />}
       {page === 'contact' && <ContactPage onBack={() => setPage(null)} onOpenPage={setPage} />}
+      {page === 'support' && <SupportPage onBack={() => setPage(null)} onOpenPage={setPage} />}
       {page === 'privacy' && <PrivacyPage onBack={() => setPage(null)} />}
       {page === 'terms' && <TermsPage onBack={() => setPage(null)} />}
 

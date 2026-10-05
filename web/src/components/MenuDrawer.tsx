@@ -1,3 +1,4 @@
+import { DONATE_URL } from '../config';
 import { useEffect } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { FEEDBACK_HREF } from '../config';
@@ -90,6 +91,12 @@ export default function MenuDrawer({
             <Icon name="sos" />
             Crisis resources
           </button>
+          {DONATE_URL && (
+            <button className="menu-item" onClick={() => onOpenPage('support')}>
+              <Icon name="heart" />
+              Support QueerSafeSpace
+            </button>
+          )}
           <button className="menu-item" onClick={() => onOpenPage('contact')}>
             <Icon name="mail" />
             Contact us
