@@ -74,20 +74,23 @@ export default function MenuDrawer({
         </div>
 
         <nav className="menu-nav">
-          <button className="menu-item" onClick={onClose}>
-            <Icon name="map" />
-            Map
-          </button>
-          {user && (
-            <button className="menu-item" onClick={() => onOpenPage('account')}>
-              <Icon name="user" />
-              Account settings
-            </button>
-          )}
-          {profile?.admin && (
-            <button className="menu-item" onClick={() => onOpenPage('admin')}>
-              <Icon name="flask" />
-              Admin
+          {user ? (
+            <>
+              <button className="menu-item" onClick={() => onOpenPage('account')}>
+                <Icon name="user" />
+                Account settings
+              </button>
+              {profile?.admin && (
+                <button className="menu-item" onClick={() => onOpenPage('admin')}>
+                  <Icon name="flask" />
+                  Admin
+                </button>
+              )}
+            </>
+          ) : (
+            <button className="menu-item" onClick={onSignIn}>
+              <Icon name="login" />
+              Sign in
             </button>
           )}
           <button className="menu-item" onClick={() => onOpenPage('crisis')}>
@@ -110,18 +113,6 @@ export default function MenuDrawer({
               Install app
             </button>
           )}
-          <button className="menu-item" onClick={() => onOpenPage('contact')}>
-            <Icon name="mail" />
-            Contact us
-          </button>
-          <button className="menu-item" onClick={() => onOpenPage('privacy')}>
-            <Icon name="lock" />
-            Privacy policy
-          </button>
-          <button className="menu-item" onClick={() => onOpenPage('terms')}>
-            <Icon name="file" />
-            Terms &amp; conditions
-          </button>
 
           <div className="menu-sep" />
 
@@ -135,6 +126,10 @@ export default function MenuDrawer({
           <button className="menu-item" onClick={() => onOpenPage('tester')}>
             <Icon name="flask" />
             Become a tester
+          </button>
+          <button className="menu-item" onClick={() => onOpenPage('contact')}>
+            <Icon name="mail" />
+            Contact us
           </button>
 
           <div className="menu-sep" />
@@ -160,16 +155,23 @@ export default function MenuDrawer({
 
           <div className="menu-sep" />
 
-          {user ? (
-            <button className="menu-item" onClick={onSignOut}>
-              <Icon name="logout" />
-              Sign out
-            </button>
-          ) : (
-            <button className="menu-item" onClick={onSignIn}>
-              <Icon name="login" />
-              Sign in
-            </button>
+          <button className="menu-item" onClick={() => onOpenPage('privacy')}>
+            <Icon name="lock" />
+            Privacy policy
+          </button>
+          <button className="menu-item" onClick={() => onOpenPage('terms')}>
+            <Icon name="file" />
+            Terms &amp; conditions
+          </button>
+
+          {user && (
+            <>
+              <div className="menu-sep" />
+              <button className="menu-item" onClick={onSignOut}>
+                <Icon name="logout" />
+                Sign out
+              </button>
+            </>
           )}
         </nav>
 
