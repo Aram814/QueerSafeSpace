@@ -10,6 +10,7 @@ import {
   VERDICTS,
 } from '../lib/ratings';
 import type { OverallRating, SafetyRating, SpaceDetail } from '../lib/types';
+import { placeShareUrl } from '../lib/share';
 import FoundingBadge from './FoundingBadge';
 import Icon, { type IconName } from './Icon';
 
@@ -19,6 +20,7 @@ interface Props {
   onClose: () => void;
   onRate: () => void;
   onReport: (ratingId: string) => void;
+  onToast: (message: string) => void;
 }
 
 const BADGE: Record<OverallRating, IconName> = {
@@ -49,7 +51,21 @@ function shortAddress(name: string, address: string): string {
  * Reviews are deliberately author-less: a rating is never joined to a profile, so only the
  * date, verdict, tags and comment are shown.
  */
-export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate, onReport }: Props) {
+export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate, onReport, onToast }: Props) {
+  async function share() {
+    const url = placeShareUrl(space.id);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `${space.name} on QueerSafeSpace`, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      onToast('Link copied');
+    } catch {
+      /* the share sheet was closed, or copying was blocked */
+    }
+  }
+
   const ratings = useMemo(() => space.ratings ?? [], [space.ratings]);
   const total = ratings.length;
   const counts = countRatings(ratings);
@@ -206,6 +222,10 @@ export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate, o
           <button className="btn btn-primary" onClick={onRate}>
             <Icon name={isSignedIn ? 'star' : 'login'} />
             {isSignedIn ? 'Rate this place' : 'Sign in to rate'}
+          </button>
+          <button className="btn btn-secondary" onClick={() => void share()}>
+            <Icon name="share" />
+            Share
           </button>
           {hasLocation && (
             <a
