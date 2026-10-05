@@ -6,12 +6,12 @@ export const FEEDBACK_HREF = `mailto:${CONTACT_EMAIL}?subject=${encodeURICompone
 )}`;
 
 /**
- * Where the donate button goes (a Ko-fi, Stripe or similar page). Leave unset to hide every
- * "Support QueerSafeSpace" link. Set VITE_DONATE_URL in Vercel (and optionally VITE_DONATE_PROVIDER,
- * for example "Ko-fi"), then redeploy.
+ * Where the donate button goes. The public Ko-fi page is the default. To use a different page, or to
+ * hide every "Support QueerSafeSpace" link, set VITE_DONATE_URL in Vercel (an empty value hides them)
+ * and optionally VITE_DONATE_PROVIDER, then redeploy.
  */
-export const DONATE_URL: string = (import.meta.env.VITE_DONATE_URL ?? '').trim();
-export const DONATE_PROVIDER: string = (import.meta.env.VITE_DONATE_PROVIDER ?? '').trim();
+export const DONATE_URL: string = (import.meta.env.VITE_DONATE_URL ?? 'https://ko-fi.com/queersafespace').trim();
+export const DONATE_PROVIDER: string = (import.meta.env.VITE_DONATE_PROVIDER ?? 'Ko-fi').trim();
 
 export const INSTAGRAM_HREF = 'https://www.instagram.com/queersafespace.lgbt';
 
