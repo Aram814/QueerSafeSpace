@@ -1,3 +1,4 @@
+import { quietPosition } from './location';
 import { supabase } from './supabase';
 
 export interface Impact {
@@ -57,16 +58,9 @@ export async function loadSiteStats(at: { lat: number; lon: number } | null): Pr
   };
 }
 
-/** Best-effort position; resolves to null if denied, unavailable or slow. */
+/** Best-effort position for the community numbers. Never pops up a permission prompt. */
 export function currentPosition(): Promise<{ lat: number; lon: number } | null> {
-  return new Promise((resolve) => {
-    if (!('geolocation' in navigator)) return resolve(null);
-    navigator.geolocation.getCurrentPosition(
-      (p) => resolve({ lat: p.coords.latitude, lon: p.coords.longitude }),
-      () => resolve(null),
-      { enableHighAccuracy: false, timeout: 5000, maximumAge: 10 * 60 * 1000 },
-    );
-  });
+  return quietPosition();
 }
 
 /** "ab3k9m" or "QSS-AB3K9M" both become the friendly display form QSS-AB3K9M. */

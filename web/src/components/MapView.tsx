@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import L from 'leaflet';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import { DEFAULT_CENTER } from '../lib/geo';
+import { lastLocation, markAsked, rememberLocation, shouldAutoLocate } from '../lib/location';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CATEGORY_ICONS, matchesFilter, overallRating, RATING_LABELS, type SpaceFilter } from '../lib/ratings';
 import type { MapBounds } from '../lib/spaces';
@@ -85,6 +86,7 @@ function MapEffects({
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
     const located = (e: L.LocationEvent) => {
       locateRetried.current = false;
+      rememberLocation(e.latlng.lat, e.latlng.lng);
       if (!interacted.current) map.setView(e.latlng, 13);
       cbs.current.onUserLocated(e.latlng.lat, e.latlng.lng);
     };
@@ -115,9 +117,22 @@ function MapEffects({
     map.on('dragstart', touched);
     map.on('zoomstart', touched);
     moved();
-    map.locate(LOCATE_OPTIONS);
+    // Ask by itself only when the browser already allows it, or the very first time. Otherwise
+    // open where the person last was; the locate button asks (and re-centres) on demand.
+    let cancelled = false;
+    void shouldAutoLocate().then((auto) => {
+      if (cancelled) return;
+      if (auto) {
+        markAsked();
+        map.locate(LOCATE_OPTIONS);
+        return;
+      }
+      const last = lastLocation();
+      if (last && !interacted.current) map.setView([last.lat, last.lon], 12);
+    });
     const timer = setTimeout(() => map.invalidateSize(), 200);
     return () => {
+      cancelled = true;
       clearTimeout(timer);
       clearTimeout(retryTimer);
       map.off('locationfound', located);
