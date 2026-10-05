@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QueerSafeSpace is offline</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; box-sizing: border-box;
+         font-family: Nunito, system-ui, sans-serif; background: #f4f6f8; color: #10233a; text-align: center; }
+  @media (prefers-color-scheme: dark) { body { background: #0d1a2a; color: #e8eef5; } }
+  main { max-width: 420px; }
+  h1 { font-size: 1.6rem; margin: 0 0 8px;
+       background: linear-gradient(90deg,#e03c3c,#f58a2f 20%,#f6c945 40%,#3e9e5e 58%,#3b8bd0 78%,#8a6db8);
+       -webkit-background-clip: text; background-clip: text; color: transparent; }
+  p { margin: 0 0 16px; line-height: 1.5; }
+  button { font: inherit; font-weight: 800; border: 0; border-radius: 12px; padding: 12px 20px; background: #163a63; color: #fff; }
+  @media (prefers-color-scheme: dark) { button { background: #a9dcea; color: #0d2540; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>You&rsquo;re offline</h1>
+  <p>QueerSafeSpace needs a connection to show the map and the latest ratings. Check your connection and try again.</p>
+  <p>If you are in danger, call your local emergency number (911 in the US).</p>
+  <button onclick="location.reload()">Try again</button>
+</main>
+</body>
+</html>

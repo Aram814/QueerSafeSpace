@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
+import { useEffect, useReducer, type ReactNode } from 'react';
+import { canPromptInstall, isIos, onInstallChange, promptInstall } from '../lib/install';
 import Icon from '../components/Icon';
 import { CONTACT_EMAIL, FEEDBACK_HREF, INSTAGRAM_HREF } from '../config';
 
-export type InfoPage = 'crisis' | 'contact' | 'privacy' | 'terms' | 'account' | 'tester' | 'admin';
+export type InfoPage = 'crisis' | 'contact' | 'privacy' | 'terms' | 'account' | 'tester' | 'admin' | 'install';
 
 export function PageShell({ title, onBack, children }: { title: string; onBack: () => void; children: ReactNode }) {
   return (
@@ -121,6 +122,61 @@ export function ContactPage({ onBack, onOpenPage }: { onBack: () => void; onOpen
           </a>
         </p>
       </article>
+    </PageShell>
+  );
+}
+
+export function InstallPage({ onBack }: { onBack: () => void }) {
+  const [, force] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => onInstallChange(force), []);
+  const ios = isIos();
+  return (
+    <PageShell title="Install the app" onBack={onBack}>
+      <article className="info-card">
+        <h2>Put QueerSafeSpace on your home screen</h2>
+        <p>
+          It opens full screen like an app, with its own icon, and it is always the latest version.
+          There is nothing to download from a store.
+        </p>
+        {canPromptInstall() && (
+          <div className="info-actions">
+            <button className="btn btn-primary" onClick={() => void promptInstall()}>
+              <Icon name="plus" />
+              Install now
+            </button>
+          </div>
+        )}
+      </article>
+      {ios ? (
+        <article className="info-card">
+          <h2>On iPhone or iPad</h2>
+          <ol>
+            <li>
+              Open this page in <strong>Safari</strong>.
+            </li>
+            <li>
+              Tap the <strong>Share</strong> button (the square with an arrow pointing up).
+            </li>
+            <li>
+              Scroll down and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>.
+            </li>
+          </ol>
+        </article>
+      ) : (
+        <article className="info-card">
+          <h2>On Android or a computer</h2>
+          <ol>
+            <li>
+              Open this page in <strong>Chrome</strong> or <strong>Edge</strong>.
+            </li>
+            <li>
+              Open the browser menu (the three dots) and tap <strong>Install app</strong> or{' '}
+              <strong>Add to Home screen</strong>.
+            </li>
+            <li>Confirm. The QueerSafeSpace icon appears with your other apps.</li>
+          </ol>
+        </article>
+      )}
     </PageShell>
   );
 }
