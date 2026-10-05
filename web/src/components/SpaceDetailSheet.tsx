@@ -10,6 +10,7 @@ import {
   VERDICTS,
 } from '../lib/ratings';
 import type { OverallRating, SafetyRating, SpaceDetail } from '../lib/types';
+import { appleDirectionsUrl, googleDirectionsUrl, isAppleDevice } from '../lib/maps';
 import { placeShareUrl } from '../lib/share';
 import FoundingBadge from './FoundingBadge';
 import Icon, { type IconName } from './Icon';
@@ -227,16 +228,38 @@ export default function SpaceDetailSheet({ space, isSignedIn, onClose, onRate, o
             <Icon name="share" />
             Share
           </button>
-          {hasLocation && (
+          {hasLocation && !isAppleDevice() && (
             <a
               className="btn btn-secondary"
               target="_blank"
               rel="noopener noreferrer"
-              href={`https://www.google.com/maps/dir/?api=1&destination=${space.latitude},${space.longitude}`}
+              href={googleDirectionsUrl(space.latitude as number, space.longitude as number)}
             >
               <Icon name="map" />
               Directions
             </a>
+          )}
+          {hasLocation && isAppleDevice() && (
+            <div className="directions-choice" role="group" aria-label="Directions">
+              <a
+                className="btn btn-secondary"
+                target="_blank"
+                rel="noopener noreferrer"
+                href={appleDirectionsUrl(space.latitude as number, space.longitude as number)}
+              >
+                <Icon name="map" />
+                Apple Maps
+              </a>
+              <a
+                className="btn btn-secondary"
+                target="_blank"
+                rel="noopener noreferrer"
+                href={googleDirectionsUrl(space.latitude as number, space.longitude as number)}
+              >
+                <Icon name="map" />
+                Google Maps
+              </a>
+            </div>
           )}
         </div>
       </div>
