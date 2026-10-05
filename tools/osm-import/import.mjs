@@ -9,7 +9,7 @@
 // Nothing is written to the database; review the files, then run them in the Supabase SQL Editor.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { buildAddress, dedupe, toRow, toSql } from './transform.mjs';
+import { buildAddress, chunkRows, dedupe, toRow, toSql } from './transform.mjs';
 import { GEOCODE_DELAY_MS, reverseGeocode } from './geocode.mjs';
 
 const STATES = {
@@ -34,6 +34,7 @@ const MIRRORS = [
 const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.split('=')[1];
 const wanted = (arg('states') ?? '').split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
 const outDir = arg('out') ?? 'out';
+const BUNDLE_SIZE = 250; // places per combined file, small enough to paste into the SQL Editor
 const geocodeOn = !process.argv.includes('--no-geocode');
 const states = wanted.length ? wanted : Object.keys(STATES);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -75,6 +76,7 @@ async function fetchState(code) {
 
 mkdirSync(outDir, { recursive: true });
 const summary = [];
+const everything = []; // every listed place, for the combined files
 for (const code of states) {
   if (!STATES[code]) {
     console.warn(`Unknown state code ${code}, skipping`);
@@ -112,10 +114,19 @@ for (const code of states) {
     }
   }
   if (unique.length) writeFileSync(`${outDir}/${code}.sql`, toSql(unique, STATES[code]));
+  everything.push(...unique);
   summary.push({ state: code, found: elements.length, listed: unique.length, looked_up: looked, skipped });
   console.log(`  ${elements.length} found, ${unique.length} listed, ${looked} addresses looked up`);
   await sleep(5_000); // be polite to the free public server
 }
+
+// Combined files: a few big ones are quicker to load than one file per state.
+const parts = chunkRows(everything, BUNDLE_SIZE);
+parts.forEach((rows, i) => {
+  const name = `all-part-${String(i + 1).padStart(2, '0')}`;
+  writeFileSync(`${outDir}/${name}.sql`, toSql(rows, `all states, part ${i + 1} of ${parts.length}`));
+});
+if (parts.length) console.log(`Wrote ${parts.length} combined file(s) of up to ${BUNDLE_SIZE} places each.`);
 
 writeFileSync(`${outDir}/summary.json`, JSON.stringify(summary, null, 2));
 const total = summary.reduce((n, s) => n + (s.listed ?? 0), 0);

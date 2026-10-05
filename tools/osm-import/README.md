@@ -8,7 +8,8 @@ contributors, ODbL.
 ## Run it
 
 GitHub → **Actions** → **Import OSM listings** → **Run workflow**. Leave `states` empty for all
-states, or enter codes like `FL,GA`. When it finishes, download the `osm-listings` artifact.
+states, or enter codes like `FL,GA`. When it finishes, download the `osm-listings` artifact. It has one file per state, and also a few
+combined files (`all-part-01.sql`, `all-part-02.sql`, ...) of up to 250 places each, which are quicker to load.
 
 Or locally (Node 20+): `node tools/osm-import/import.mjs --states=FL --out=out`
 
@@ -16,7 +17,9 @@ Or locally (Node 20+): `node tools/osm-import/import.mjs --states=FL --out=out`
 
 1. Make sure these migrations have been run: `20251001150000_listed_places.sql`,
    `20251001160000_spaces_in_view.sql`.
-2. In the Supabase SQL Editor, paste one state's `.sql` file and run it. Re-running is safe.
+2. In the Supabase SQL Editor, paste one `.sql` file at a time (the combined `all-part-NN.sql` files, or
+   a single state's file) and run it. Re-running is safe: places already loaded are skipped, so you
+   can load everything again without creating duplicates.
 3. `summary.json` lists how many places were found/listed per state and why others were skipped.
 
 ## Addresses
