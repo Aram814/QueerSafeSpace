@@ -35,6 +35,10 @@ export interface AdminAccount {
   founding: boolean;
   testerSignup: boolean;
   viaReferral: boolean;
+  /** Places this account has rated; null until the account-ratings script has been run. */
+  ratingCount: number | null;
+  /** States of the places they rated, e.g. ["PA", "WA"]. */
+  ratedStates: string[];
 }
 
 export interface AdminTester {
@@ -90,6 +94,16 @@ export async function loadDailySignups(days = 14): Promise<{ day: string; accoun
 export async function loadRecentAccounts(limit = 25): Promise<AdminAccount[]> {
   const { data, error } = await supabase.rpc('admin_recent_accounts', { p_limit: limit });
   if (error) throw new Error(error.message);
+  // Optional: the page still works before the account-ratings script has been run.
+  const ratingsRes = await supabase.rpc('admin_account_ratings');
+  const ratings = new Map<string, { count: number; states: string[] }>();
+  const haveRatings = !ratingsRes.error;
+  for (const r of (ratingsRes.data ?? []) as Record<string, unknown>[]) {
+    ratings.set(String(r.email).toLowerCase(), {
+      count: Number(r.rating_count) || 0,
+      states: ((r.states as string[] | null) ?? []).slice().sort(),
+    });
+  }
   return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
     createdAt: r.created_at as string,
     email: r.email as string,
@@ -99,6 +113,8 @@ export async function loadRecentAccounts(limit = 25): Promise<AdminAccount[]> {
     founding: Boolean(r.founding),
     testerSignup: Boolean(r.tester_signup),
     viaReferral: Boolean(r.via_referral),
+    ratingCount: haveRatings ? (ratings.get(String(r.email).toLowerCase())?.count ?? 0) : null,
+    ratedStates: ratings.get(String(r.email).toLowerCase())?.states ?? [],
   }));
 }
 
