@@ -39,9 +39,18 @@ const geocodeOn = !process.argv.includes('--no-geocode');
 const states = wanted.length ? wanted : Object.keys(STATES);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function query(code) {
+// The state outline is found by its ISO code; if that finds nothing, by its name.
+const AREA = [
+  (code) => `area["ISO3166-2"="US-${code}"][admin_level=4]->.s;`,
+  (code) => `area["ISO3166-2"="US-${code}"]->.s;`,
+  (code) => `area["name"="${STATES[code]}"]["boundary"="administrative"][admin_level=4]->.s;`,
+  // Built from the state's border itself, in case the ready-made outline is missing or out of date.
+  (code) => `rel["ISO3166-2"="US-${code}"]["boundary"="administrative"];map_to_area->.s;`,
+];
+
+function query(code, variant = 0) {
   return `[out:json][timeout:240];
-area["ISO3166-2"="US-${code}"][admin_level=4]->.s;
+${AREA[variant](code)}
 (
   nwr["lgbtq"~"^(primary|only|welcome|yes)$"](area.s);
   nwr["lgbtq:welcome"="yes"](area.s);
@@ -49,20 +58,27 @@ area["ISO3166-2"="US-${code}"][admin_level=4]->.s;
 out center tags;`;
 }
 
-async function fetchState(code) {
+async function fetchState(code, variant = 0) {
   let lastError;
-  for (let attempt = 0; attempt < 6; attempt++) {
-    const url = MIRRORS[attempt % MIRRORS.length];
+  for (let attempt = 0; attempt < 8; attempt++) {
+    // The main server every other try; the mirrors in between.
+    const url = attempt % 2 === 0 ? MIRRORS[0] : MIRRORS[1 + ((attempt - 1) / 2) % (MIRRORS.length - 1)];
     try {
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'content-type': 'application/x-www-form-urlencoded', 'user-agent': 'QueerSafeSpace-import/1.0 (QueerSafeSpace.LGBT@gmail.com)' },
-        body: `data=${encodeURIComponent(query(code))}`,
+        body: `data=${encodeURIComponent(query(code, variant))}`,
       });
       if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);
       const json = await res.json();
       if (json.remark && /error|timeout/i.test(json.remark) && !json.elements?.length) {
         throw new Error(`Overpass remark: ${json.remark}`);
+      }
+      if (!json.elements?.length) {
+        // The mirrors can answer "nothing" when they simply lack the data, so only the main server's
+        // empty answer is believed; otherwise try again.
+        if (url !== MIRRORS[0]) throw new Error(`empty answer from a mirror (${url}), not trusted`);
+        console.warn(`  ${code} query ${variant + 1}: no results${json.remark ? ` (remark: ${json.remark})` : ''}, server ${url}`);
       }
       return json.elements ?? [];
     } catch (err) {
@@ -72,6 +88,22 @@ async function fetchState(code) {
     }
   }
   throw lastError;
+}
+
+// Still nothing: say whether the state outline was found at all, so the log shows why.
+async function diagnose(code) {
+  try {
+    const res = await fetch(MIRRORS[0], {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded', 'user-agent': 'QueerSafeSpace-import/1.0 (QueerSafeSpace.LGBT@gmail.com)' },
+      body: `data=${encodeURIComponent(`[out:json][timeout:60];(area["ISO3166-2"="US-${code}"];);out count;`)}`,
+    });
+    const json = await res.json();
+    const n = json.elements?.[0]?.tags?.total ?? '?';
+    console.warn(`  ${code}: outline found ${n} time(s); no LGBTQ+ places are tagged inside it.`);
+  } catch (err) {
+    console.warn(`  ${code}: could not check the outline (${err.message})`);
+  }
 }
 
 mkdirSync(outDir, { recursive: true });
@@ -86,6 +118,9 @@ for (const code of states) {
   let elements;
   try {
     elements = await fetchState(code);
+    // A state with nothing is suspicious (Pennsylvania has real listings), so try the other ways of finding it.
+    for (let v = 1; !elements.length && v < AREA.length; v++) elements = await fetchState(code, v);
+    if (!elements.length) await diagnose(code);
   } catch (err) {
     summary.push({ state: code, error: err.message });
     continue;
