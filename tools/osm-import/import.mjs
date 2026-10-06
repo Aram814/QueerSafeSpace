@@ -44,6 +44,8 @@ const AREA = [
   (code) => `area["ISO3166-2"="US-${code}"][admin_level=4]->.s;`,
   (code) => `area["ISO3166-2"="US-${code}"]->.s;`,
   (code) => `area["name"="${STATES[code]}"]["boundary"="administrative"][admin_level=4]->.s;`,
+  // Built from the state's border itself, in case the ready-made outline is missing or out of date.
+  (code) => `rel["ISO3166-2"="US-${code}"]["boundary"="administrative"];map_to_area->.s;`,
 ];
 
 function query(code, variant = 0) {
@@ -82,6 +84,22 @@ async function fetchState(code, variant = 0) {
   throw lastError;
 }
 
+// Still nothing: say whether the state outline was found at all, so the log shows why.
+async function diagnose(code) {
+  try {
+    const res = await fetch(MIRRORS[0], {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded', 'user-agent': 'QueerSafeSpace-import/1.0 (QueerSafeSpace.LGBT@gmail.com)' },
+      body: `data=${encodeURIComponent(`[out:json][timeout:60];(area["ISO3166-2"="US-${code}"];);out count;`)}`,
+    });
+    const json = await res.json();
+    const n = json.elements?.[0]?.tags?.total ?? '?';
+    console.warn(`  ${code}: outline found ${n} time(s); no LGBTQ+ places are tagged inside it.`);
+  } catch (err) {
+    console.warn(`  ${code}: could not check the outline (${err.message})`);
+  }
+}
+
 mkdirSync(outDir, { recursive: true });
 const summary = [];
 const everything = []; // every listed place, for the combined files
@@ -96,6 +114,7 @@ for (const code of states) {
     elements = await fetchState(code);
     // A state with nothing is suspicious (Pennsylvania has real listings), so try the other ways of finding it.
     for (let v = 1; !elements.length && v < AREA.length; v++) elements = await fetchState(code, v);
+    if (!elements.length) await diagnose(code);
   } catch (err) {
     summary.push({ state: code, error: err.message });
     continue;
