@@ -60,8 +60,9 @@ out center tags;`;
 
 async function fetchState(code, variant = 0) {
   let lastError;
-  for (let attempt = 0; attempt < 6; attempt++) {
-    const url = MIRRORS[attempt % MIRRORS.length];
+  for (let attempt = 0; attempt < 8; attempt++) {
+    // The main server every other try; the mirrors in between.
+    const url = attempt % 2 === 0 ? MIRRORS[0] : MIRRORS[1 + ((attempt - 1) / 2) % (MIRRORS.length - 1)];
     try {
       const res = await fetch(url, {
         method: 'POST',
@@ -73,7 +74,12 @@ async function fetchState(code, variant = 0) {
       if (json.remark && /error|timeout/i.test(json.remark) && !json.elements?.length) {
         throw new Error(`Overpass remark: ${json.remark}`);
       }
-      if (!json.elements?.length) console.warn(`  ${code} query ${variant + 1}: no results${json.remark ? ` (remark: ${json.remark})` : ''}, server ${url}`);
+      if (!json.elements?.length) {
+        // The mirrors can answer "nothing" when they simply lack the data, so only the main server's
+        // empty answer is believed; otherwise try again.
+        if (url !== MIRRORS[0]) throw new Error(`empty answer from a mirror (${url}), not trusted`);
+        console.warn(`  ${code} query ${variant + 1}: no results${json.remark ? ` (remark: ${json.remark})` : ''}, server ${url}`);
+      }
       return json.elements ?? [];
     } catch (err) {
       lastError = err;
