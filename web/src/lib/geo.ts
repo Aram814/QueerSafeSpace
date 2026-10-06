@@ -505,6 +505,36 @@ export const DEFAULT_CENTER = { lat: 39.5, lon: -98.35 };
 
 const normName = (n: string): string => n.toLowerCase().replace(/\s+/g, ' ').trim();
 
+const NAME_NOISE = new Set(['the', 'and', 'of', 'llc', 'inc', 'co', 'company']);
+
+function nameTokens(name: string): string[] {
+  return name
+    .toLowerCase()
+    .replace(/['\u2019]/g, '')
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .split(' ')
+    .filter((w) => w && !NAME_NOISE.has(w));
+}
+
+/**
+ * Is this the same business? Near each other (150 m) AND named alike: one name's words are all in
+ * the other, or at least half the words are shared. Distance alone is not enough: stores in a strip
+ * mall are a few metres apart ("DapperJoe's Barber Shop" next to "White Rabbit Smoke Shop").
+ */
+export function samePlace(
+  a: { name: string; lat: number; lon: number },
+  b: { name: string; lat: number; lon: number },
+): boolean {
+  if (getDistKm(a.lat, a.lon, b.lat, b.lon) > 0.15) return false;
+  const ta = nameTokens(a.name);
+  const tb = nameTokens(b.name);
+  if (!ta.length || !tb.length) return false;
+  const [small, large] = ta.length <= tb.length ? [ta, tb] : [tb, ta];
+  const shared = small.filter((w) => large.includes(w)).length;
+  return shared === small.length || shared / new Set([...ta, ...tb]).size >= 0.5;
+}
+
 /** Same place = same name (case/space-insensitive) within 150 m. */
 function dedupe(results: PlaceResult[]): PlaceResult[] {
   const out: PlaceResult[] = [];

@@ -14,7 +14,7 @@ import SpaceDetailSheet from '../components/SpaceDetailSheet';
 import ReportSheet from '../components/ReportSheet';
 import { placeFromAddress } from '../lib/share';
 import { signOut } from '../lib/auth';
-import { DEFAULT_CENTER, getDistKm, smartSearch } from '../lib/geo';
+import { DEFAULT_CENTER, getDistKm, samePlace, smartSearch } from '../lib/geo';
 import { PIN_COLORS, type SpaceFilter } from '../lib/ratings';
 import { loadSpaceDetail, loadSpacesInView, type MapBounds } from '../lib/spaces';
 import type { PlaceResult, Profile, Space, SpaceDetail } from '../lib/types';
@@ -199,7 +199,7 @@ export default function MapScreen({
     const withKnown = (found: PlaceResult[]): PlaceResult[] =>
       [
         ...known,
-        ...found.filter((r) => !known.some((k) => getDistKm(k.lat, k.lon, r.lat, r.lon) < 0.1)),
+        ...found.filter((r) => !known.some((k) => samePlace(k, r))),
       ].sort((a, b) => (a.dist ?? 0) - (b.dist ?? 0));
     if (known.length) onPartial(known);
 
@@ -226,7 +226,7 @@ export default function MapScreen({
       (sp) =>
         sp.latitude != null &&
         sp.longitude != null &&
-        getDistKm(result.lat, result.lon, sp.latitude, sp.longitude) < 0.1,
+        samePlace({ name: sp.name, lat: sp.latitude, lon: sp.longitude }, result),
     );
     if (nearby) {
       setPendingPlace(null);
@@ -281,7 +281,7 @@ export default function MapScreen({
               (sp) =>
                 sp.latitude != null &&
                 sp.longitude != null &&
-                getDistKm(result.lat, result.lon, sp.latitude, sp.longitude) < 0.1,
+                samePlace({ name: sp.name, lat: sp.latitude, lon: sp.longitude }, result),
             )
           }
         />
