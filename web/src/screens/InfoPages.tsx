@@ -301,6 +301,10 @@ export function PrivacyPage({ onBack }: { onBack: () => void }) {
           Please don&apos;t use your real name. You can change your username at any time in Account
           settings. We never sell your data or share it with advertisers.
         </p>
+        <p>
+          The person running QueerSafeSpace can see, for each account, how many places it has rated
+          and in which states. We use this only to understand where the community is growing.
+        </p>
 
         <h2>Location data</h2>
         <p>

@@ -299,6 +299,15 @@ export default function AdminPage({ onBack, onToast }: Props) {
                 <span className="admin-meta">
                   joined {ago(a.createdAt)} · last seen {ago(a.lastSignInAt)}
                 </span>
+                {a.ratingCount !== null && (
+                  <span className="admin-meta">
+                    {a.ratingCount === 0
+                      ? 'no places rated yet'
+                      : `rated ${a.ratingCount} ${a.ratingCount === 1 ? 'place' : 'places'}${
+                          a.ratedStates.length ? ` · ${a.ratedStates.join(', ')}` : ''
+                        }`}
+                  </span>
+                )}
                 <span className="admin-tags">
                   {!a.confirmed && <em>email not confirmed</em>}
                   {a.founding && <em>Founding Member</em>}
