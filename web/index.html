@@ -16,14 +16,15 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <title>QueerSafeSpace</title>
+    <title>QueerSafeSpace – LGBTQ+ safe places, rated by the community</title>
     <meta
       name="description"
-      content="A community-driven map for the LGBTQ+ community to find and share safe, inclusive spaces."
+      content="A free community map where LGBTQ+ people find and rate safe, welcoming places. Because Safety Shouldn't Be A Privilege."
     />
+    <link rel="canonical" href="https://www.queersafespace.org/" />
     <meta property="og:site_name" content="QueerSafeSpace" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="QueerSafeSpace" />
+    <meta property="og:title" content="QueerSafeSpace – LGBTQ+ safe places, rated by the community" />
     <meta
       property="og:description"
       content="A community map of places that are safe for LGBTQ+ people. Because Safety Shouldn't Be A Privilege."
@@ -33,6 +34,15 @@
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "QueerSafeSpace",
+        "url": "https://www.queersafespace.org/",
+        "description": "A free community map where LGBTQ+ people find and rate safe, welcoming places."
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -49,6 +59,15 @@
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <h1>QueerSafeSpace</h1>
+      <p>
+        QueerSafeSpace is a free community map where LGBTQ+ people find and rate safe, welcoming
+        places: cafes, bars, clinics, churches, shops and more. Because Safety Shouldn't Be A
+        Privilege.
+      </p>
+      <p>Please turn on JavaScript to use the map.</p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
